@@ -1,0 +1,238 @@
+\documentclass[a4paper,11pt]{article}
+\advance\voffset by -20mm
+\advance\hoffset by -15mm
+\setlength{\textwidth}{165mm}
+\setlength{\textheight}{240mm}
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{url}
+\usepackage{bm}
+
+%\newcommand{\vect}[1]{\vec{#1}}
+\newcommand{\vect}[1]{\boldsymbol{#1}}
+\newcommand{\vvect}[1]{\overrightarrow{#1}}
+\newcommand{\tens}[1]{\boldsymbol{#1}}
+\newcommand{\scalar}[2]{\vect{#1}\cdot\vect{#2}}
+\newcommand{\nonbfscalar}[2]{{#1}\cdot{#2}}
+\newcommand{\nnabla}{{\bf \nabla}}
+\newcommand{\nablaone}{\nabla_{\hspace{-.2em}1}}
+\newcommand{\nnablaone}{\nnabla_{\hspace{-.2em}1}}
+\newcommand{\deltafieq}{\delta\hspace{-.1em}f_i^{eq}}
+\newcommand{\divergence}[1]{\nnabla \cdot #1}
+\newcommand{\contract}[2]{\tens{#1}:\tens{#2}}
+%\newcommand{\laplacian}{\nabla^2}
+\newcommand{\laplacian}{{\Delta}}
+\newcommand{\hermitscalar}[2]{\left<#1|#2\right>}
+\newcommand{\Mach}{\mathit{Ma}}
+\newcommand{\LE}{\mathit{LE}}
+\newcommand{\DP}{\mathit{DP}}
+\newcommand{\trace}{\mathit{Tr}}
+
+\newcommand*{\Scale}[2][4]{\scalebox{#1}{$#2$}}%
+\newcommand{\tautensor}{\ensuremath{\tens{\tau}}}
+\newcommand{\pitensor}{\ensuremath{\tens{\Pi}}}
+\newcommand{\idtensor}{\ensuremath{\tens{I}}}
+
+\title{Equations}
+
+\begin{document}
+\maketitle
+
+\begin{equation}\label{eq:navier-stokes}
+\partial_t\vect{u} + (\scalar{u}{\nnabla})\vect{u} = -\frac{1}{\rho_0}\nnabla p + \nu \laplacian\vect{u}.
+\end{equation}
+
+\begin{equation}\label{eq:poisson}
+\scalar{\nnabla}{u} = 0
+\end{equation}
+
+\begin{equation}\label{eq:poisson}
+\laplacian p = -\rho_0 (\nnabla\vect{u}):(\nnabla\vect{u})^T.
+\end{equation}
+
+\begin{equation}
+\vect{u}(\vect{x},t)
+\end{equation}
+\begin{equation}
+p(\vect{x},t)
+\end{equation}
+\begin{equation}
+\nu
+\end{equation}
+
+\begin{equation}
+\vec{u}^* = \frac{\vec{u}}{U}
+\end{equation}
+
+\begin{equation}
+p^* = \frac{p}{\rho_0 U^2}
+\end{equation}
+
+\begin{equation}
+\partial_t^* = \frac{L}{V} \partial_t
+\end{equation}
+
+\begin{equation}
+\vec{\nabla}^* = L\vec{\nabla}
+\end{equation}
+
+\begin{equation}
+\mathit{Re} = \frac{UL}{\nu}
+\end{equation}
+
+
+\begin{equation}\label{eq:navier-stokes}
+\partial_t^*\vect{u^*} + (\scalar{u^*}{\nabla ^*})\vect{u^*} = -\nnabla p ^* + \frac{\nu}{UL} \laplacian\vect{u^*}.
+\end{equation}
+
+\begin{equation}
+f_i^\mathrm{in}(\vect{x},t)
+\end{equation}
+
+\begin{equation}
+f_i^\mathrm{out}(\vect{x},t)
+\end{equation}
+
+\begin{equation}
+f^\mathrm{in}
+\end{equation}
+
+\begin{equation}
+f^\mathrm{out}
+\end{equation}
+
+\begin{equation}
+\rho(\vect{x},t) = \sum_{i=0}^{8} f_i^\mathrm{in}(\vect{x},t)
+\end{equation}
+
+\begin{equation}
+\vect{u}(\vect{x},t) = \frac{1}{\rho(\vect{x},t)}\frac{\delta x}{\delta t}\sum_{i=0}^{8} \vect{v}_i f_i^\mathrm{in}(\vect{x},t)
+\end{equation}
+
+\begin{equation}
+n_i^\mathrm{out}(\vect{x},t) = n_i^\mathrm{in}(\vect{x},t)+\Omega_i(\vect{x},t)
+\end{equation}
+
+\begin{equation}
+f_i^\mathrm{in}(\vect{x},t) = f_i^\mathrm{out}(\vect{x}-\vect{v}_i\delta x, t-\delta t)
+\end{equation}
+
+\begin{equation}
+n_i^\mathrm{in}(\vect{x},t) = n_i^\mathrm{out}(\vect{x}-\vect{v}_i\delta x, t-\delta t)
+\end{equation}
+
+\begin{equation}
+p = c_s^2\rho
+\end{equation}
+
+\begin{equation}
+c_s^2 = \frac{1}{3} \frac{\delta x^2}{\delta t^2}
+\end{equation}
+
+\begin{equation}
+f_i^\mathrm{out} - f_i^\mathrm{in} = -\omega\left(f_i^\mathrm{in}-E(i,\rho,\vec{u})\right)
+\end{equation}
+
+\begin{equation}
+E(i,\rho,\vect{u}) = \rho\, t_i\left(1+\frac{\nonbfscalar{\frac{\delta x}{\delta t}\vect{v}_i}{\vect{u}}}{c_s^2}+\frac{1}{2\,c_s^4}\left(\nonbfscalar{\Scale[1.0]{\frac{\delta x}{\delta t}}\vect{v}_i}{\vect{u}}\right)^2-\frac{1}{2\,c_s^2}\left|\vect{u}\right|^2\right)
+\end{equation}
+
+\begin{equation}
+\nu = \delta t\,c_s^2\left(\frac{1}{\omega}-\frac{1}{2}\right)
+\end{equation}
+
+\begin{equation}
+f_8^\mathrm{in}
+\end{equation}
+
+\begin{equation}
+f_7^\mathrm{in}
+\end{equation}
+
+\begin{equation}
+f_6^\mathrm{in}
+\end{equation}
+
+\begin{equation}
+f_5^\mathrm{in}
+\end{equation}
+
+\begin{equation}
+f_4^\mathrm{in}
+\end{equation}
+
+\begin{equation}
+f_3^\mathrm{in}
+\end{equation}
+
+\begin{equation}
+f_2^\mathrm{in}
+\end{equation}
+
+\begin{equation}
+f_1^\mathrm{in}
+\end{equation}
+
+\begin{equation}
+f_0^\mathrm{in}
+\end{equation}
+
+\begin{equation}
+f_8^\mathrm{out}
+\end{equation}
+
+\begin{equation}
+f_7^\mathrm{out}
+\end{equation}
+
+\begin{equation}
+f_6^\mathrm{out}
+\end{equation}
+
+\begin{equation}
+f_5^\mathrm{out}
+\end{equation}
+
+\begin{equation}
+f_4^\mathrm{out}
+\end{equation}
+
+\begin{equation}
+f_3^\mathrm{out}
+\end{equation}
+
+\begin{equation}
+f_2^\mathrm{out}
+\end{equation}
+
+\begin{equation}
+f_1^\mathrm{out}
+\end{equation}
+
+\begin{equation}
+f_0^\mathrm{out}
+\end{equation}
+
+\begin{equation}
+f_i^\mathrm{in}(\vect{x},t+1) = f_j^\mathrm{out}(\vect{x},t)
+\end{equation}
+
+\begin{equation}
+v_i = -v_j
+\end{equation}
+
+\begin{equation}
+f_0^\mathrm{in} = E(0,\rho\,\vect{u}) + (f_8^\mathrm{in}-E(8,\rho,\vect{u}))
+\end{equation}
+
+\begin{equation}
+f_1^\mathrm{in} = E(1,\rho\,\vect{u}) + (f_7^\mathrm{in}-E(7,\rho,\vect{u}))
+\end{equation}
+
+\begin{equation}
+f_2^\mathrm{in} = E(2,\rho\,\vect{u}) + (f_6^\mathrm{in}-E(6,\rho,\vect{u}))
+\end{equation}
+
+\end{document}
+
