@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdbool.h>
+#include <libgen.h>
 #include <pgm.h>
 #include <array.h>
 
@@ -122,7 +123,7 @@ int main(int argc, const char * argv[])
 
     // Read arguments (hopfuly the images path)
     if (argc != 2) {
-        fprintf(stderr, "%s img_path\n", argv[0]);
+        fprintf(stderr, "usage: %s <img_path>\n", basename((char*)argv[0]));
         return EXIT_FAILURE;
     }
 
