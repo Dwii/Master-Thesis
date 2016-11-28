@@ -1,13 +1,13 @@
 /*!
- * \file    pgmlib.h
+ * \file    pgm.h
  * \brief   PGM image library.
  * \author  Adrien Python
  * \version 2.0 BETA
  * \date    01.12.2011
  */
 
-#ifndef __PGMLIB_H
-#define __PGMLIB_H
+#ifndef PGM_H
+#define PGM_H
 
 typedef struct pgm_image pgm_image;
 
@@ -144,4 +144,4 @@ void pgm_resize(pgm_image* pgm, size_t width, size_t height);
 void pgm_get_info(pgm_image* pgm, pgm_info* info);
 
 
-#endif  /* __PGMLIB_H */
+#endif  /* PGMLIB_H */

@@ -1,17 +1,16 @@
 /*!
- * \file    main.c
+ * \file    lbmFlowAroundCylinder.c
  * \brief   (Almost) "One to one" C implementation of lbmFlowAroundCylinder.py
  * \author  Adrien Python
  * \date    21.11.2016
  */
 
-
+#include <libc.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdbool.h>
-#include <libc.h>
-#include "pgmlib.h"
-#include "array.h"
+#include <pgm.h>
+#include <array.h>
 
 #define MAX_ITER 2000000     // Total number of time iterations
 #define RE       220.0       // Reynolds number
@@ -22,8 +21,8 @@
 #define CY       ((NY) / 2)  // Y coordinates of the cylinder
 #define R        ((NY) / 9)  // Cylinder radius
 #define ULB      0.04        // Velocity in lattice units
-#define NULB     ((ULB) * (R) / (RE)) // Viscoscity in lattice units
-#define OMEGA    (1. / (3*NULB+0.5))  // Relaxation parameter
+#define NULB     ((ULB) * (R) / (RE))   // Viscoscity in lattice units
+#define OMEGA    (1. / (3*(NULB)+0.5))  // Relaxation parameter
 
 #define SQUARE(a) ((a)*(a))
 

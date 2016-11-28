@@ -1,6 +1,6 @@
 /*!
  * \file    array.c
- * \brief   Array toolbox.
+ * \brief   Array toolbox
  * \author  Adrien Python
  * \version 1.0
  * \date    21.11.2016

@@ -1,5 +1,5 @@
 /*!
- * \file    pgmlib.c
+ * \file    pgm.c
  * \brief   PGM image library.
  * \author  Adrien Python
  * \version 2.0 BETA
@@ -11,7 +11,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <math.h>
-#include "pgmlib.h"
+#include "pgm.h"
 
 
 #define IS_BETWEEN(n,min,max) ((n) >= (min) && (n) <= (max))

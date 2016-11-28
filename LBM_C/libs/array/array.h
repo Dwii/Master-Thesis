@@ -8,8 +8,8 @@
  *          those designed for a specific dimension.
  */
 
-#ifndef __ARRAY_H__
-#define __ARRAY_H__
+#ifndef ARRAY_H
+#define ARRAY_H
 
 #include <stdbool.h>
 
@@ -324,4 +324,4 @@ void array_roll2d_x_s(size_t size0, size_t size1, double array[size0][size1], ss
  */
 void array_roll2d_s(size_t size0, size_t size1, double array[size0][size1], const ssize_t shift[2]);
 
-#endif /* __ARRAY_H__ */
+#endif /* ARRAY_H */
