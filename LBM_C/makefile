@@ -1,4 +1,4 @@
-all: libs lbm_py2c
+all: libs lbm_py2c lbm_collisions_by_cells
 
 run: all
 ifeq ($(strip $(project)),)
@@ -13,8 +13,12 @@ libs:
 lbm_py2c: 
 	make -C lbm_py2c
 
+lbm_collisions_by_cells: 
+	make -C lbm_collisions_by_cells
+
 clean:
 	make -C libs clean
 	make -C lbm_py2c clean
+	make -C lbm_collisions_by_cells clean
 
-.PHONY: run libs lbm_py2c clean
+.PHONY: run libs clean lbm_py2c lbm_collisions_by_cells
