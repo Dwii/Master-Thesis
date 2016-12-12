@@ -1,4 +1,4 @@
-all: libs lbm_py2c lbm_collisions_by_cells
+all: libs lbm_py2c lbm_collisions_by_cells lbm_palabos_friendly
 
 run: all
 ifeq ($(strip $(project)),)
@@ -16,9 +16,13 @@ lbm_py2c:
 lbm_collisions_by_cells: 
 	make -C lbm_collisions_by_cells
 
+lbm_palabos_friendly:
+	make -C lbm_palabos_friendly
+
 clean:
 	make -C libs clean
 	make -C lbm_py2c clean
 	make -C lbm_collisions_by_cells clean
+	make -C lbm_palabos_friendly clean
 
-.PHONY: run libs clean lbm_py2c lbm_collisions_by_cells
+.PHONY: run libs clean lbm_py2c lbm_collisions_by_cells lbm_palabos_friendly
