@@ -6,7 +6,7 @@ AR=ar
 all: $(OUT)
 
 
-$(OUT): array.o array.h
+$(OUT): array.o
 	$(AR) rcs $@ $^ 
 
 array.o : array.c array.h

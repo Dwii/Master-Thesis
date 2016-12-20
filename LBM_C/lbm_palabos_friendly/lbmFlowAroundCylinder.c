@@ -1,8 +1,8 @@
 /*!
  * \file    lbmFlowAroundCylinder.c
- * \brief   (Almost) "One to one" C implementation of lbmFlowAroundCylinder.py
+ * \brief   Palabos friendly version of lbm_py2c for variables alignments.
  * \author  Adrien Python
- * \date    21.11.2016
+ * \date    20.12.2016
  */
 
 #include <libc.h>
@@ -27,17 +27,11 @@
 
 #define SQUARE(a) ((a)*(a))
 
-const ssize_t V[][2] = {
-    { 0, 0},
-    {-1, 1}, {-1, 0}, {-1,-1}, { 0,-1},
-    { 1,-1}, { 1, 0}, { 1, 1}, { 0, 1}
+const ssize_t V[][9] = {
+    { 1, 1, 1, 0, 0, 0,-1,-1,-1 },
+    { 1, 0,-1, 1, 0,-1, 1, 0,-1 }
 };
-const double T[] = {
-    4./9,
-    1./36, 1./9, 1./36, 1./9,
-    1./36, 1./9, 1./36, 1./9
-};
-
+const double T[] = { 1./36, 1./9, 1./36, 1./9, 4./9, 1./9, 1./36, 1./9, 1./36 };
 
 /**
  * Setup: cylindrical obstacle and velocity inlet with perturbation
@@ -70,58 +64,49 @@ static void initVelocity(double*** vel)
 /**
  * Equilibrium distribution function.
  */
-static void equilibrium(double*** feq, double** rho, double*** u)
+static void equilibrium(double*** feq, double** rho, double*** u, size_t x, size_t y)
 {
-    double usqr[NX][NY];
-    
-    for (int x = 0; x < NX; x++) {
-        for (int y = 0; y < NY; y++) {
-            usqr[x][y] = 3./2 * ( SQUARE(u[0][x][y]) + SQUARE(u[1][x][y]) );
-        }
-    }
-    
-    double cu[NX][NY];
+    double usqr = 3./2 * ( SQUARE(u[0][x][y]) + SQUARE(u[1][x][y]) );
     
     for (int f = 0; f < 9; f++) {
-        for (int x = 0; x < NX; x++) {
-            for (int y = 0; y < NY; y++) {
-                cu[x][y] = 3 * ( V[f][0] * u[0][x][y] + V[f][1] * u[1][x][y] );
-                feq[f][x][y] = rho[x][y] * T[f] * ( 1 + cu[x][y] + 0.5 * SQUARE(cu[x][y]) - usqr[x][y] );
-            }
+        double cu = 3 * ( V[0][f] * u[0][x][y] + V[1][f] * u[1][x][y] );
+        feq[x][y][f] = rho[x][y] * T[f] * ( 1 + cu + 0.5 * SQUARE(cu) - usqr );
+    }
+}
+
+static void macroscopic(double*** fin, double** rho, double*** u, size_t x, size_t y)
+{
+    
+    rho[x][y] = 0;
+    u[0][x][y] = u[1][x][y] = 0;
+
+    for (int f = 0; f < 9; f++) {
+        rho[x][y] += fin[x][y][f];
+
+        u[0][x][y] += V[0][f] * fin[x][y][f];
+        u[1][x][y] += V[1][f] * fin[x][y][f];
+    }
+    
+    u[0][x][y] /= rho[x][y];
+    u[1][x][y] /= rho[x][y];
+}
+
+static void initCol(size_t* col, ssize_t v0)
+{
+    for (int f = 0, i = 0; f < 9 && i < 3; f++) {
+        if (V[0][f] == v0) {
+            col[i++] = f;
         }
     }
 }
 
-static void macroscopic(double*** fin, double** rho, double*** u)
+static void initOpp(size_t* opp)
 {
-    // density (rho) is the sum of the nine populations
-    for (int x = 0; x < NX; x++) {
-        for (int y = 0; y < NY; y++) {
-            rho[x][y] = 0;
-            for (int f = 0; f < 9; f++) {
-                rho[x][y] += fin[f][x][y];
-            }
-        }
-    }
-    
-    {
-        double zero = 0;
-        array_set3(2, NX, NY, sizeof(double), u, &zero);
-    }
-    
     for (int f = 0; f < 9; f++) {
-        for (int x = 0; x < NX; x++) {
-            for (int y = 0; y < NY; y++) {
-                u[0][x][y] += V[f][0] * fin[f][x][y];
-                u[1][x][y] += V[f][1] * fin[f][x][y];
-            }
-        }
-    }
-    
-    for (int d = 0; d < 2; d++) {
-        for (int x = 0; x < NX; x++) {
-            for (int y = 0; y < NY; y++) {
-                u[d][x][y] /= rho[x][y];
+        for (int g = 0; g < 9; g++) {
+            if (V[0][f] == -V[0][g] && V[1][f] == -V[1][g]) {
+                opp[f] = g;
+                break;
             }
         }
     }
@@ -140,7 +125,7 @@ int main(int argc, const char * argv[])
     
     
     const size_t A_SIZE0[3] = {2, NX, NY};
-    const size_t A_SIZE1[3] = {9, NX, NY};
+    const size_t A_SIZE1[3] = {NX, NY, 9};
     const size_t A_SIZE2[2] = {NX, NY};
     
     double*** u = array_create(3, A_SIZE0, sizeof(double));    // velocity to impose on inflow boundary cells
@@ -151,9 +136,12 @@ int main(int argc, const char * argv[])
     bool** obstacles = array_create(2, A_SIZE2, sizeof(bool)); // Obstacles definition
     double*** vel = array_create(3, A_SIZE0, sizeof(double));  // Velocity
     
-    const int COL1[] = { 0, 1, 2};
-    const int COL2[] = { 3, 4, 5};
-    const int COL3[] = { 6, 7, 8};
+    size_t COL1[3], COL2[3], COL3[3], OPP[9];
+    
+    initCol(COL1,  1);
+    initCol(COL2,  0);
+    initCol(COL3, -1);
+    initOpp(OPP);
 
     (void) COL1;
     
@@ -166,8 +154,13 @@ int main(int argc, const char * argv[])
     initVelocity(vel);
     
     // Initialization of the populations at equilibrium with the given velocity.
-    equilibrium(fin, rho, vel);
     
+    for (int x = 0; x < NX; x++) {
+        for (int y = 0; y < NY; y++) {
+            equilibrium(fin, rho, vel, x, y);
+        }
+    }
+
     pgm_image* pgm = pgm_create(NX, NY);
     
     for (int time = 0; time < MAX_ITER; time++) {
@@ -175,61 +168,60 @@ int main(int argc, const char * argv[])
         // Right wall: outflow condition.
         for (int i = 0; i < 3; i++) {
             for (int y = 0, f = COL3[i]; y < NY; y++) {
-                fin[f][NX-1][y] = fin[f][NX-2][y];
+                fin[NX-1][y][f] = fin[NX-2][y][f];
             }
         }
         
-        // Compute macroscopic variables, density and velocity
-        macroscopic(fin, rho, u);
-        
-        // Left wall: inflow condition
-        for (size_t d = 0; d < 2; d++) {
-            for (size_t y = 0; y < NY; y++) {
+        for (size_t y = 0; y < NY; y++) {
+            // Compute macroscopic variables, density and velocity
+            for (size_t x = 0; x < NX; x++) {
+                macroscopic(fin, rho, u, x, y);
+            }
+            
+            // Left wall: inflow condition
+            for (size_t d = 0; d < 2; d++) {
                 u[d][0][y] = vel[d][0][y];
             }
-        }
-        
-        // Calculate the density
-        for (size_t y = 0; y < NY; y++) {
+            
+            // Calculate the density
             double s2 = 0, s3 = 0;
             for (size_t i = 0; i < 3; i++) {
-                s2 += fin[COL2[i]][0][y];
-                s3 += fin[COL3[i]][0][y];
+                s2 += fin[0][y][COL2[i]];
+                s3 += fin[0][y][COL3[i]];
             }
             rho[0][y] = 1./(1 - u[0][0][y]) * (s2 + 2*s3);
-        }
-        
-        // Compute equilibrium
-        equilibrium(feq, rho, u);
-        for (size_t y = 0; y < NY; y++) {
-            fin[0][0][y] = feq[0][0][y] + fin[8][0][y] - feq[8][0][y];
-            fin[1][0][y] = feq[1][0][y] + fin[7][0][y] - feq[7][0][y];
-            fin[2][0][y] = feq[2][0][y] + fin[6][0][y] - feq[6][0][y];
-        }
-        
-        // Collision step
-        for (size_t f = 0; f < 9; f++) {
+            
+            // Compute equilibrium
             for (size_t x = 0; x < NX; x++) {
-                for (size_t y = 0; y < NY; y++) {
-                    fout[f][x][y] = fin[f][x][y] - OMEGA * (fin[f][x][y] - feq[f][x][y]);
-                }
+                equilibrium(feq, rho, u, x, y);
             }
-        }
-        
-        // Bounce-back condition for obstacle
-        for (size_t f = 0; f < 9; f++) {
+            
+            for (size_t i = 0, f = COL1[i]; i < 3; f = COL1[++i]) {
+                fin[0][y][f] = feq[0][y][f] + fin[0][y][OPP[f]] - feq[0][y][OPP[f]];
+            }
+            
             for (size_t x = 0; x < NX; x++) {
-                for (size_t y = 0; y < NY; y++) {
+                for (size_t f = 0; f < 9; f++) {
                     if (obstacles[x][y]) {
-                        fout[f][x][y] = fin[8-f][x][y];
+                        // Bounce-back condition for obstacle
+                        fout[x][y][f] = fin[x][y][OPP[f]];
+                    } else {
+                        // Collision step
+                        fout[x][y][f] = fin[x][y][f] - OMEGA * (fin[x][y][f] - feq[x][y][f]);
                     }
                 }
             }
         }
         
         // Streaming step
-        for (size_t f = 0; f < 9; f++) {
-            array_roll2_to(NX, NY, sizeof(double), fout[f], fin[f], V[f]);
+        for (size_t x = 0; x < NX; x++) {
+            for (size_t y = 0; y < NY; y++) {
+                for (size_t f = 0; f < 9; f++) {
+                    size_t x_dst = (x + NX + V[0][f]) % NX;
+                    size_t y_dst = (y + NY + V[1][f]) % NY;
+                    fin[x_dst][y_dst][f] = fout[x][y][f];
+                }
+            }
         }
         
         // Visualization of the velocity.

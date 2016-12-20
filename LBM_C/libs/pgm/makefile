@@ -4,7 +4,7 @@ OUT=libpgm.a
 
 all: $(OUT)
 
-$(OUT): pgm.o pgm.h
+$(OUT): pgm.o
 	$(AR) rcs $@ $^ 
 
 array.o : pgm.c pgm.h

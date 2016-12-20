@@ -1,8 +1,13 @@
-all: libs lbm_py2c lbm_collisions_by_cells lbm_palabos_friendly
+PROJECTS=lbm_py2c lbm_palabos_friendly
+
+all: libs $(PROJECTS)
 
 run: all
 ifeq ($(strip $(project)),)
-	@echo "missing project name: make run project=<project name>"
+	@echo
+	@echo "usage: make run project=<project name>"
+	@echo "project names: "
+	@$(foreach project, $(PROJECTS), echo " - $(project)";)
 else
 	make -C $(project) run
 endif
@@ -10,19 +15,11 @@ endif
 libs: 
 	make -C libs
 
-lbm_py2c: 
-	make -C lbm_py2c
-
-lbm_collisions_by_cells: 
-	make -C lbm_collisions_by_cells
-
-lbm_palabos_friendly:
-	make -C lbm_palabos_friendly
+$(PROJECTS): 
+	make -C $@
 
 clean:
 	make -C libs clean
-	make -C lbm_py2c clean
-	make -C lbm_collisions_by_cells clean
-	make -C lbm_palabos_friendly clean
+	@$(foreach project, $(PROJECTS), make -C $(project) clean;)
 
-.PHONY: run libs clean lbm_py2c lbm_collisions_by_cells lbm_palabos_friendly
+.PHONY: run libs clean $(PROJECTS)

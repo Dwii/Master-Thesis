@@ -1,7 +1,5 @@
-doc/~$Intro_LBM_Handout.pptx
-doc/Intro_LBM_Handout.pptx
-
-*.xcodeproj
+# Directories
+bin/
 
 # Object files
 *.o
@@ -26,3 +24,9 @@ doc/Intro_LBM_Handout.pptx
 *.i*86
 *.x86_64
 *.hex
+
+# Misc
+*.xcodeproj
+*.pgm
+*.pptx
+.DS_Store

@@ -27,8 +27,17 @@
 
 #define SQUARE(a) ((a)*(a))
 
-const ssize_t V[][2] = { {1,1}, {1,0}, {1,-1}, {0,1}, {0,0}, {0,-1}, {-1,1}, {-1,0}, {-1,-1} };
-const double T[] = { 1./36, 1./9, 1./36, 1./9, 4./9, 1./9, 1./36, 1./9, 1./36 };
+const ssize_t V[][2] = {
+    { 0, 0},
+    {-1, 1}, {-1, 0}, {-1,-1}, { 0,-1},
+    { 1,-1}, { 1, 0}, { 1, 1}, { 0, 1}
+};
+
+const double T[] = {
+    4./9,
+    1./36, 1./9, 1./36, 1./9,
+    1./36, 1./9, 1./36, 1./9
+};
 
 /**
  * Setup: cylindrical obstacle and velocity inlet with perturbation
@@ -118,6 +127,27 @@ static void macroscopic(double*** fin, double** rho, double*** u)
     }
 }
 
+static void initCol(size_t* col, ssize_t v0)
+{
+    for (int f = 0, i = 0; f < 9 && i < 3; f++) {
+        if (V[f][0] == v0) {
+            col[i++] = f;
+        }
+    }
+}
+
+static void initOpp(size_t* opp)
+{
+    for (int f = 0; f < 9; f++) {
+        for (int g = 0; g < 9; g++) {
+            if (V[f][0] == -V[g][0] && V[f][1] == -V[g][1]) {
+                opp[f] = g;
+                break;
+            }
+        }
+    }
+}
+
 int main(int argc, const char * argv[])
 {
 
@@ -141,10 +171,13 @@ int main(int argc, const char * argv[])
     double** rho = array_create(2, A_SIZE2, sizeof(double));   // Density
     bool** obstacles = array_create(2, A_SIZE2, sizeof(bool)); // Obstacles definition
     double*** vel = array_create(3, A_SIZE0, sizeof(double));  // Velocity
-    
-    const int COL1[] = { 0, 1, 2};
-    const int COL2[] = { 3, 4, 5};
-    const int COL3[] = { 6, 7, 8};
+
+    size_t COL1[3], COL2[3], COL3[3], OPP[9];
+
+    initCol(COL1,  1);
+    initCol(COL2,  0);
+    initCol(COL3, -1);
+    initOpp(OPP);
 
     (void) COL1;
     
@@ -165,7 +198,7 @@ int main(int argc, const char * argv[])
         
         // Right wall: outflow condition.
         for (int i = 0; i < 3; i++) {
-            for (int y = 0, f = COL3[i]; y < NY; y++) {
+            for (size_t y = 0, f = COL3[i]; y < NY; y++) {
                 fin[f][NX-1][y] = fin[f][NX-2][y];
             }
         }
@@ -192,12 +225,12 @@ int main(int argc, const char * argv[])
         
         // Compute equilibrium
         equilibrium(feq, rho, u);
-        for (size_t y = 0; y < NY; y++) {
-            fin[0][0][y] = feq[0][0][y] + fin[8][0][y] - feq[8][0][y];
-            fin[1][0][y] = feq[1][0][y] + fin[7][0][y] - feq[7][0][y];
-            fin[2][0][y] = feq[2][0][y] + fin[6][0][y] - feq[6][0][y];
+        for (size_t i = 0; i < 3; i++) {
+            for (size_t y = 0, f = COL1[i]; y < NY; y++) {
+                fin[f][0][y] = feq[f][0][y] + fin[OPP[f]][0][y] - feq[OPP[f]][0][y];
+            }
         }
-        
+     
         // Collision step
         for (size_t f = 0; f < 9; f++) {
             for (size_t x = 0; x < NX; x++) {
@@ -212,7 +245,7 @@ int main(int argc, const char * argv[])
             for (size_t x = 0; x < NX; x++) {
                 for (size_t y = 0; y < NY; y++) {
                     if (obstacles[x][y]) {
-                        fout[f][x][y] = fin[8-f][x][y];
+                        fout[f][x][y] = fin[OPP[f]][x][y];
                     }
                 }
             }
@@ -229,7 +262,7 @@ int main(int argc, const char * argv[])
             for (size_t x = 0; x < NX; x++) {
                 for (size_t y = 0; y < NY; y++) {
                     vel[x][y] = sqrt( SQUARE(u[0][x][y]) + SQUARE(u[1][x][y]) );
-                    int color =  255 * vel[x][y] * 10;
+                    int color =  fmin(255, 255 * vel[x][y] * 10);
                     pgm_set_pixel(pgm, x, y, color);
                 }
             }
