@@ -1,20 +1,37 @@
+# Compiler
 CC=gcc -fPIC
-FLAGS=-g -Wall -Wextra -pedantic -std=gnu99
-OUT=libarray.a
 AR=ar
 
-all: $(OUT)
+# Binary target
+BIN=libarray.a
 
+# Directories
+OBJDIR=obj
 
-$(OUT): array.o
+# Source and object files
+SRCS=$(wildcard *.c)
+OBJS=$(addprefix $(OBJDIR)/,$(SRCS:.c=.o))
+
+# Flags
+CFLAGS=-g -Wall -Wextra -pedantic -std=gnu99
+
+all: $(OBJDIR) $(BIN)
+
+$(OBJDIR) $(BINDIR) $(IMGDIR): 
+	mkdir -p $@
+
+$(BIN): $(OBJS)
 	$(AR) rcs $@ $^ 
 
-array.o : array.c array.h
-	$(CC) $(FLAGS) -o $@ -c $<
+-include $(OBJS:.o=.d)
+
+$(OBJDIR)/%.o : %.c
+	echo $(OBJS:.o=.d)
+	$(CC) -MMD $(CFLAGS) -o $@ -c $< $(INCS)
 
 clean:
-	rm -f *.o *.a
+	rm -rf $(OBJDIR) $(BIN)
 
 rebuild: clean all
 
-.PHONY: clean rebuild
+.PHONY: all clean rebuild

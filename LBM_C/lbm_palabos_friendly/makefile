@@ -11,18 +11,17 @@ BINDIR=bin
 IMGDIR=images
 LIBDIR=../libs
 
-# Files
-SRC=$(wildcard $(SRCDIR)/*.c)
-OBJ=$(addprefix $(OBJDIR)/,$(SRC:.c=.o))
+# Source and object files
+SRCS=$(wildcard $(SRCDIR)/*.c)
+OBJS=$(addprefix $(OBJDIR)/,$(SRCS:.c=.o))
 
 # Flags, libraries and includes
 CFLAGS=-g -Wall -Wextra -pedantic -std=gnu99
 LIBNAM=pgm array
 LIBDEP=$(addprefix $(LIBDIR)/,$(LIBNAM))
-INC=$(addprefix -I,$(LIBDEP))
-LIB=$(addprefix -L,$(LIBDEP)) $(addprefix -l,$(LIBNAM))
+INCS=$(addprefix -I,$(LIBDEP))
+LIBS=$(addprefix -L,$(LIBDEP)) $(addprefix -l,$(LIBNAM))
 
-# Rules
 
 all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(BIN)
 
@@ -32,11 +31,14 @@ run: $(IMGDIR) all
 $(OBJDIR) $(BINDIR) $(IMGDIR): 
 	mkdir -p $@
 
-$(BINDIR)/$(BIN): $(OBJ)
-	$(CC) $(CFLAGS) $< -o $@ -Bdynamic $(LIB)
+$(BINDIR)/$(BIN): $(OBJS)
+	$(CC) $(CFLAGS) $< -o $@ -Bdynamic $(LIBS)
+
+-include $(OBJS:.o=.d)
 
 $(OBJDIR)/%.o : %.c
-	$(CC) $(CFLAGS) -o $@ -c $< $(INC)
+	echo $(OBJS:.o=.d)
+	$(CC) -MMD $(CFLAGS) -o $@ -c $< $(INCS)
 
 clean:
 	rm -rf $(OBJDIR) $(BINDIR) $(IMGDIR)

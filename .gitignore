@@ -26,6 +26,7 @@ bin/
 *.hex
 
 # Misc
+*.d
 *.xcodeproj
 *.pgm
 *.pptx

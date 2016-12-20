@@ -1,18 +1,37 @@
+# Compiler
 CC=gcc -fPIC
-FLAGS=-g -Wall -Wextra -pedantic -std=gnu99
-OUT=libpgm.a
+AR=ar
 
-all: $(OUT)
+# Binary target
+BIN=libpgm.a
 
-$(OUT): pgm.o
+# Directories
+OBJDIR=obj
+
+# Source and object files
+SRCS=$(wildcard *.c)
+OBJS=$(addprefix $(OBJDIR)/,$(SRCS:.c=.o))
+
+# Flags
+CFLAGS=-g -Wall -Wextra -pedantic -std=gnu99
+
+all: $(OBJDIR) $(BIN)
+
+$(OBJDIR) $(BINDIR) $(IMGDIR): 
+	mkdir -p $@
+
+$(BIN): $(OBJS)
 	$(AR) rcs $@ $^ 
 
-array.o : pgm.c pgm.h
-	$(CC) $(FLAGS) -o $@ -c $<
+-include $(OBJS:.o=.d)
+
+$(OBJDIR)/%.o : %.c
+	echo $(OBJS:.o=.d)
+	$(CC) -MMD $(CFLAGS) -o $@ -c $< $(INCS)
 
 clean:
-	rm -f *.o *.a
+	rm -rf $(OBJDIR) $(BIN)
 
 rebuild: clean all
 
-.PHONY: clean rebuild
+.PHONY: all clean rebuild
