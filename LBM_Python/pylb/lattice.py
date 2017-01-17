@@ -1,3 +1,4 @@
+# Author: Jonas Latt, jonas.latt@flowkit.com
 '''
 This module defines the structure of the most commonly used
 2D and 3D lattices.

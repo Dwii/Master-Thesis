@@ -1,3 +1,4 @@
+# Author: Jonas Latt, jonas.latt@flowkit.com
 import numpy as np
 from scipy import weave
 import cpp

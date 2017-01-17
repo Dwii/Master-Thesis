@@ -1,3 +1,4 @@
+# Author: Jonas Latt, jonas.latt@flowkit.com
 # Default parameters. You can change any parameter at command line with a
 # syntax like
 # python cylinder3d.py --Lattice3d=D3Q19

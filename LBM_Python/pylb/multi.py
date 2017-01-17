@@ -1,3 +1,4 @@
+# Author: Jonas Latt, jonas.latt@flowkit.com
 import multiprocessing as mp
 import lattice as mod_lattice
 import block

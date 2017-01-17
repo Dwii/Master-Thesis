@@ -1,3 +1,4 @@
+# Author: Jonas Latt, jonas.latt@flowkit.com
 import sys
 import getopt
 import json

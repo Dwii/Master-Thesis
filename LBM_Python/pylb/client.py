@@ -1,3 +1,4 @@
+# Author: Jonas Latt, jonas.latt@flowkit.com
 # The client is started on the computer which has access to the
 # screen. It simply forwards the output from the simulation code.
 # Example: on a Desktop computer, type

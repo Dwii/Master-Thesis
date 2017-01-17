@@ -1,3 +1,4 @@
+# Author: Jonas Latt, jonas.latt@flowkit.com
 import multiprocessing as mp
 import numpy as np
 import zmq

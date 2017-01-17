@@ -1,3 +1,4 @@
+# Author: Jonas Latt, jonas.latt@flowkit.com
 class Cpp2d:
     def __init__(self, lattice):
         self.lattice = lattice
