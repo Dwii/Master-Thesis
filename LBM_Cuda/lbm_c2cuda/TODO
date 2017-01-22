@@ -1,0 +1,14 @@
+TODO list:
+----------
+
+	- makefile: Understand and fix nvcc -M usage (auto-dependencies). It's not working ATM.
+
+	- makefile: Understand nvcc+gcc build process to use them together to include pgm library.
+
+	- Cuda: Implement a more clever block size/thread distribution of the kernels.
+
+	- Cuda: Reduce number of different kernels (if possible) and check if it speeds up.
+
+	- Cuda: Consider texture for constants (for obstacles in particular) and check if it speeds up.
+
+	- general architecture: Use dynamically sized arrays. Having to recompile each time NX/NY changes is bad...
