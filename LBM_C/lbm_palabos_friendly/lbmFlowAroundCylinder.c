@@ -142,8 +142,6 @@ int main(int argc, const char * argv[])
     initCol(COL2,  0);
     initCol(COL3, -1);
     initOpp(OPP);
-
-    (void) COL1;
     
     {
         double one = 1;
