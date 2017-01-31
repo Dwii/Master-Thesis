@@ -1,5 +1,7 @@
 PROJECTS=lbm_py lbm_palabos_friendly
 
+all:
+
 run: 
 ifeq ($(strip $(project)),)
 	@echo

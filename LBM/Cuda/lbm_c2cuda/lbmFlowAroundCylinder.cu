@@ -5,7 +5,8 @@
  * \date    22.01.2017
  */
 
-#include <libc.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdbool.h>
