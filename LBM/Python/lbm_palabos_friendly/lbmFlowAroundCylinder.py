@@ -10,11 +10,17 @@
 from numpy import *
 import matplotlib.pyplot as plt
 from matplotlib import cm
+import sys
+
+###### Outputs definitions #####################################################
+testmode = len(sys.argv)<3
+if not testmode:
+    outpath = sys.argv[2]
 
 ###### Flow definition #########################################################
-maxIter = 200000  # Total number of time iterations.
+maxIter = int(sys.argv[1])  # Total number of time iterations.
 Re = 220.0         # Reynolds number.
-nx, ny = 420, 180 # Numer of lattice nodes.
+nx, ny = 100,10#420, 180 # Numer of lattice nodes.
 ly = ny-1         # Height of the domain in lattice units.
 cx, cy, r = nx//4, ny//2, ny//9 # Coordinates of the cylinder.
 uLB     = 0.04                  # Velocity in lattice units.
@@ -23,9 +29,9 @@ omega = 1 / (3*nulb+0.5);    # Relaxation parameter.
 
 ###### Lattice Constants #######################################################
 
-v = array([[ 0,  0], [-1,  1], [-1,  0], [-1, -1], [ 0, -1],
-           [ 1, -1], [ 1,  0], [ 1,  1], [ 0,  1]])
-t = array([  4/9, 1/36, 1/9, 1/36, 1/9, 1/36,  1/9,  1/36, 1/9]) 
+v = array([[ 1,  1], [ 1,  0], [ 1, -1], [ 0,  1], [ 0,  0],
+           [ 0, -1], [-1,  1], [-1,  0], [-1, -1]])
+t = array([  1/36, 1/9, 1/36, 1/9, 4/9, 1/9, 1/36, 1/9, 1/36]) 
 
 ###### Automaticaly defined Constants ##########################################
 
@@ -113,7 +119,20 @@ for time in range(maxIter):
                             v[i,1], axis=1 )
  
     # Visualization of the velocity.
-    if (time%100==0):
+    if (time%100==0 and not testmode):
         plt.clf()
         plt.imshow(sqrt(u[0]**2+u[1]**2).transpose(), cmap=cm.Reds)
-        plt.savefig("vel.{0:03d}.png".format(time//100))
+        plt.savefig("{0}/vel.{1:03d}.png".format(outpath, time//100))
+
+if testmode:
+    for x in range(nx):
+        for y in range(ny):
+            for f in range(9):
+                print("{0:64.60f}".format(fin[f,x,y]))
+
+
+
+
+
+
+

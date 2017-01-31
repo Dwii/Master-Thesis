@@ -1,4 +1,4 @@
-PROJECTS=lbm_py2c lbm_palabos_friendly
+PROJECTS=lbm_py2c lbm_palabos_friendly lbm_cuda_ready
 
 all: libs $(PROJECTS)
 
@@ -12,6 +12,9 @@ else
 	make -C $(project) run
 endif
 
+test: all
+	@$(foreach project, $(PROJECTS), make -C $(project) test ITER=1;)
+
 libs: 
 	make -C libs
 
@@ -22,4 +25,4 @@ clean:
 	make -C libs clean
 	@$(foreach project, $(PROJECTS), make -C $(project) clean;)
 
-.PHONY: run libs clean $(PROJECTS)
+.PHONY: run test libs clean $(PROJECTS)

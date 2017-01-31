@@ -11,7 +11,6 @@
 #include <stdbool.h>
 #include <libgen.h>
 
-#define MAX_ITER 100//2000000     // Total number of time iterations
 #define RE       220.0       // Reynolds number
 #define NX       100//420         // Numer of lattice nodes (width)
 #define NY       10 //180         // Numer of lattice nodes (height)
@@ -21,9 +20,11 @@
 #define R        ((NY) / 9)  // Cylinder radius
 #define ULB      0.04        // Velocity in lattice units
 #define NULB     ((ULB) * (R) / (RE))   // Viscoscity in lattice units
-#define OMEGA    (1. / (3*(NULB)+0.5))  // Relaxation parameter
+#define OMEGA    ((double)1. / (3*(NULB)+0.5))  // Relaxation parameter
 
 #define SQUARE(a) ((a)*(a))
+
+typedef enum { OUT_FIN, OUT_IMG, OUT_UNK } out_mode;
 
 typedef struct {
     bool obstacles[NX][NY];  // Should reside in lbm_consts but is too big for constant memory
@@ -168,7 +169,6 @@ __global__ void lbm_right_wall(lbm_vars *d_vars)
     // Right wall: outflow condition.
     for (int i = 0; i < 3; i++) {
         int f = d_consts.col[2][i];
-      //  d_vars->fin[NX-1][y][8] = d_consts.col[2][0];//d_vars->fin[NX-2][y][f];
         d_vars->fin[NX-1][y][f] = d_vars->fin[NX-2][y][f];
     }
 }
@@ -250,8 +250,42 @@ __global__ void lbm_streaming(lbm_vars *d_vars)
 
 }
 
-int main(int argc, const char * argv[])
+void print_variables(lbm_vars *d_vars, lbm_vars *h_vars, double var[NX][NY][9]) {
+
+    HANDLE_ERROR(cudaMemcpy(h_vars, d_vars, sizeof(lbm_vars), cudaMemcpyDeviceToHost));
+
+    for (size_t x = 0; x < NX; x++) {
+        for (size_t y = 0; y < NY; y++) {
+            for (size_t f = 0; f < 9; ++f) {
+                printf("%64.60f\n", var[x][y][f]);
+            }
+        }
+    }
+}
+
+
+int main(int argc, char * const argv[])
 {
+    // Read arguments
+    out_mode out = OUT_UNK;
+    ssize_t max_iter = 0;
+    
+    while (optind < argc) {
+        switch (getopt(argc, argv, "p:fi:")) {
+            case 'f': { out = OUT_FIN; break; }
+            case 'i': { max_iter = strtol(optarg, NULL, 10); break; }
+            default : { goto usage; }
+        }
+    }
+    
+    // check that execution mode is set (output images or fin values)
+    if (out == OUT_UNK && max_iter < 1) {
+    usage:
+        fprintf(stderr, "usage: %s [-f] -i <iter> \n", basename((char*)argv[0]));
+        fprintf(stderr, "  -f : output populations values in stdout\n");
+        fprintf(stderr, "  -i : Total number of iterations\n");
+        return EXIT_FAILURE;
+    }
 
     lbm_consts* h_consts = (lbm_consts*)malloc(sizeof(lbm_consts));
     
@@ -279,28 +313,18 @@ int main(int argc, const char * argv[])
     lbm_vars *d_vars;
     HANDLE_ERROR(cudaMalloc(&d_vars, sizeof(lbm_vars)));
     HANDLE_ERROR(cudaMemcpy(d_vars, h_vars, sizeof(lbm_vars), cudaMemcpyHostToDevice));
-
-    for (int time = 0; time < MAX_ITER; time++) {
-        HANDLE_KERNEL_ERROR(lbm_right_wall<<<1,NY>>>(d_vars));
+    for (int time = 0; time < max_iter; time++) {
+        HANDLE_KERNEL_ERROR(         lbm_right_wall<<<1,   NY>>>(d_vars));        
         HANDLE_KERNEL_ERROR(lbm_macro_and_left_wall<<<1,NX*NY>>>(d_vars));
-        HANDLE_KERNEL_ERROR(lbm_density<<<1,NY>>>(d_vars));
-        HANDLE_KERNEL_ERROR(lbm_equilibrium_1<<<1,NX*NY>>>(d_vars));
-        HANDLE_KERNEL_ERROR(lbm_equilibrium_2<<<1,NY>>>(d_vars));
-        HANDLE_KERNEL_ERROR(lbm_collision<<<1,NX*NY>>>(d_vars));
-        HANDLE_KERNEL_ERROR(lbm_streaming<<<1,NX*NY>>>(d_vars));
+        HANDLE_KERNEL_ERROR(            lbm_density<<<1,   NY>>>(d_vars));
+        HANDLE_KERNEL_ERROR(      lbm_equilibrium_1<<<1,NX*NY>>>(d_vars));
+        HANDLE_KERNEL_ERROR(      lbm_equilibrium_2<<<1,   NY>>>(d_vars));
+        HANDLE_KERNEL_ERROR(          lbm_collision<<<1,NX*NY>>>(d_vars));
+        HANDLE_KERNEL_ERROR(          lbm_streaming<<<1,NX*NY>>>(d_vars));
     }
-    
-    HANDLE_ERROR(cudaMemcpy(h_vars, d_vars, sizeof(lbm_vars), cudaMemcpyDeviceToHost));
 
-    // Visualization of the velocity.
-    double vel[NX][NY];
-    for (size_t x = 0; x < NX; x++) {
-        for (size_t y = 0; y < NY; y++) {
-            vel[x][y] = sqrt( SQUARE(h_vars->u[x][y][0]) + SQUARE(h_vars->u[x][y][1]) );
-            int color =  255 * vel[x][y] * 10;
-            printf("%4d ", color);
-        }
-        printf("\n");
+    if (out == OUT_FIN) {
+        print_variables(d_vars, h_vars, h_vars->fin);
     }
 
     free(h_consts);

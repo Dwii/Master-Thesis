@@ -4,16 +4,22 @@ CC=gcc
 # Binary target
 BIN=lbmFlowAroundCylinder
 
+# Binary arguments
+ITER=200000
+
 # Directories
 SRCDIR=.
 OBJDIR=obj
 BINDIR=bin
-IMGDIR=images
+OUTDIR=out
 LIBDIR=../libs
+
+# Test output file
+TST=$(shell basename "$(abspath .)").out
 
 # Source and object files
 SRCS=$(wildcard $(SRCDIR)/*.c)
-OBJS=$(addprefix $(OBJDIR)/,$(SRCS:.c=.o))
+OBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.c=.o)))
 
 # Flags, libraries and includes
 CFLAGS=-g -Wall -Wextra -pedantic -std=gnu99
@@ -25,10 +31,13 @@ LIBS=$(addprefix -L,$(LIBDEP)) $(addprefix -l,$(LIBNAM))
 
 all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(BIN)
 
-run: $(IMGDIR) all 
-	$(BINDIR)/$(BIN) $(IMGDIR)
+run: all $(OUTDIR)
+	$(BINDIR)/$(BIN) -i $(ITER) -p $(OUTDIR)
 
-$(OBJDIR) $(BINDIR) $(IMGDIR): 
+test: all $(OUTDIR)
+	$(BINDIR)/$(BIN) -i $(ITER) -f  > $(OUTDIR)/$(TST) 
+
+$(OBJDIR) $(BINDIR) $(OUTDIR): 
 	mkdir -p $@
 
 $(BINDIR)/$(BIN): $(OBJS)
@@ -36,13 +45,12 @@ $(BINDIR)/$(BIN): $(OBJS)
 
 -include $(OBJS:.o=.d)
 
-$(OBJDIR)/%.o : %.c
-	echo $(OBJS:.o=.d)
+$(OBJS): $(SRCS)
 	$(CC) -MMD $(CFLAGS) -o $@ -c $< $(INCS)
 
 clean:
-	rm -rf $(OBJDIR) $(BINDIR) $(IMGDIR)
+	rm -rf $(OBJDIR) $(BINDIR) $(OUTDIR)
 
-rebuild: clean all
+rebuild: clean all 
 
-.PHONY: all run clean rebuild
+.PHONY: all run test clean rebuild
