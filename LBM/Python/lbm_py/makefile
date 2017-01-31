@@ -9,7 +9,7 @@ SRCDIR=.
 OUTDIR=out
 
 # Test output file
-TST=$(shell basename "$(abspath .)").out
+TST=test.out
 
 
 run: $(OUTDIR)

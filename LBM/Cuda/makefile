@@ -1,6 +1,6 @@
 PROJECTS=lbm_c2cuda
 
-all: libs $(PROJECTS)
+all: $(PROJECTS)
 
 run: all
 ifeq ($(strip $(project)),)
@@ -19,7 +19,6 @@ $(PROJECTS):
 	make -C $@
 
 clean:
-	make -C clean
 	@$(foreach project, $(PROJECTS), make -C $(project) clean;)
 
 .PHONY: run test clean $(PROJECTS)

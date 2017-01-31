@@ -15,7 +15,7 @@ OUTDIR=out
 LIBDIR=../libs
 
 # Test output file
-TST=$(shell basename "$(abspath .)").out
+TST=test.out
 
 # Source and object files
 SRCS=$(wildcard $(SRCDIR)/*.c)
