@@ -26,7 +26,6 @@ $(BIN): $(OBJS)
 -include $(OBJS:.o=.d)
 
 $(OBJDIR)/%.o : %.c
-	echo $(OBJS:.o=.d)
 	$(CC) -MMD $(CFLAGS) -o $@ -c $< $(INCS)
 
 clean:
