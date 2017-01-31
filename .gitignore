@@ -1,5 +1,7 @@
 # Directories
 bin/
+out/
+obj/
 
 # Object files
 *.o
