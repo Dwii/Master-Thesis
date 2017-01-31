@@ -1,11 +1,27 @@
+# usage: make [ test [ ITER=<total iterations> ] [ TST=<test filename> ] ]
+
 LANGS=Python C Cuda
 
+# Default variables values
+DEFAULT_ITER=1
+DEFAULT_TST=test.out
 
-TST=test.out
 all: $(LANGS)
 
-test: all
-	@$(foreach lang, $(LANGS), make -C $(lang) test;)
+vars: 
+# Set default ITER if not set (ensure that all test run are equivalent)
+ifeq ($(strip $(ITER)),)
+	$(eval MAKEFLAGS+=ITER=$(DEFAULT_ITER))
+endif
+# Set test output file name (ensure that test diff path are correct)
+ifeq ($(strip $(TST)),)
+	$(eval TST=$(DEFAULT_TST))
+	$(eval MAKEFLAGS+=TST=$(TST))
+endif
+
+test: vars all
+
+	@$(foreach lang, $(LANGS), make -C $(lang) test $(MAKEFLAGS);)
 
 	@printf "\n-------- Tests --------\n"
 	diff -q Python/lbm_py/out/$(TST) C/lbm_py2c/out/$(TST)
@@ -19,4 +35,4 @@ $(LANGS):
 clean:
 	@$(foreach lang, $(LANGS), make -C $(lang) clean;)
 
-.PHONY: test clean $(LANGS)
+.PHONY: all vars test $(LANGS) clean

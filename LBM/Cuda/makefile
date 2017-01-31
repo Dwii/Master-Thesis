@@ -1,19 +1,17 @@
 PROJECTS=lbm_c2cuda
 
+# Default variables values
+DEFAULT_ITER=1
+
 all: $(PROJECTS)
 
-run: all
-ifeq ($(strip $(project)),)
-	@echo
-	@echo "usage: make run project=<project name>"
-	@echo "project names: "
-	@$(foreach project, $(PROJECTS), echo " - $(project)";)
-else
-	make -C $(project) run
+vars:
+ifeq ($(strip $(ITER)),)
+	$(eval MAKEFLAGS+=ITER=$(DEFAULT_ITER))
 endif
 
-test: all
-	@$(foreach project, $(PROJECTS), make -C $(project) test ITER=1;)
+test: vars all
+	@$(foreach project, $(PROJECTS), make -C $(project) test $(MAKEFLAGS);)
 
 $(PROJECTS): 
 	make -C $@
@@ -21,4 +19,4 @@ $(PROJECTS):
 clean:
 	@$(foreach project, $(PROJECTS), make -C $(project) clean;)
 
-.PHONY: run test clean $(PROJECTS)
+.PHONY: all vars test $(PROJECTS) clean
