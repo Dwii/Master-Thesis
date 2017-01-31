@@ -21,13 +21,17 @@ TST=$(shell basename "$(abspath .)").out
 SRCS=$(wildcard $(SRCDIR)/*.c)
 OBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.c=.o)))
 
-# Flags, libraries and includes
+# Flags
 CFLAGS=-g -Wall -Wextra -pedantic -std=gnu99
+
+# Non-standard libraries
 LIBNAM=pgm array
 LIBDEP=$(addprefix $(LIBDIR)/,$(LIBNAM))
 INCS=$(addprefix -I,$(LIBDEP))
 LIBS=$(addprefix -L,$(LIBDEP)) $(addprefix -l,$(LIBNAM))
 
+# Standard libraries
+LIBS+=-lm
 
 all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(BIN)
 

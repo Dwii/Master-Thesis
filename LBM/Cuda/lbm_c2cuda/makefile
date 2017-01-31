@@ -24,6 +24,9 @@ OBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.cu=.o)))
 # Flags
 NVCC_FLAGS=-arch=sm_30
 
+# Libraries
+LIBS=-lm
+
 all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(BIN)
 	
 run: all 
@@ -36,7 +39,7 @@ $(OBJDIR) $(BINDIR) $(OUTDIR):
 	mkdir -p $@
 
 $(BINDIR)/$(BIN): $(OBJS)
-	$(NVCC) $(NVCC_FLAGS) $< -o $@
+	$(NVCC) $(NVCC_FLAGS) $< -o $@ $(LIBS)
 
 -include $(OBJS:.o=.d)
 
