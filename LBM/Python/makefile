@@ -11,9 +11,9 @@ ifeq ($(strip $(ITER)),)
 endif
 
 test: vars
-	$(foreach project, $(PROJECTS), make -C $(project) test $(MAKEFLAGS);)
+	$(foreach project, $(PROJECTS), $(MAKE) -C $(project) test $(MAKEFLAGS);)
 
 clean:
-	@$(foreach project, $(PROJECTS), make -C $(project) clean;)
+	@$(foreach project, $(PROJECTS), $(MAKE) -C $(project) clean;)
 
 .PHONY: all vars test clean

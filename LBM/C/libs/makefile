@@ -1,13 +1,13 @@
 all: array pgm
 
 array: 
-	make -C array
+	$(MAKE) -C array
 
 pgm: 
-	make -C pgm
+	$(MAKE) -C pgm
 
 clean:
-	make -C array clean
-	make -C pgm clean
+	$(MAKE) -C array clean
+	$(MAKE) -C pgm clean
 
 .PHONY: array pgm clean
