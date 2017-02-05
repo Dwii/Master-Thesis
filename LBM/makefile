@@ -24,7 +24,7 @@ endif
 
 test: vars all
 
-	@$(foreach lang, $(LANGS), $(MAKE) $(MAKEFLAGS) -C $(lang) test;)
+	@$(foreach lang, $(LANGS), $(MAKE) -C $(lang) test $(MAKEFLAGS);)
 
 	@printf "\n-------- Tests --------\n"
 	diff -q Python/lbm_py/out/$(TST) C/lbm_py2c/out/$(TST)
@@ -33,7 +33,7 @@ test: vars all
 	diff -q Python/lbm_palabos_friendly/out/$(TST) Cuda/lbm_c2cuda/out/$(TST)
 
 $(LANGS): 
-	$(MAKE) $(MAKEFLAGS) -C $@
+	$(MAKE) -C $@ $(MAKEFLAGS) 
 
 clean:
 	@$(foreach lang, $(LANGS), $(MAKE) -C $(lang) clean;)

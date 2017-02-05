@@ -14,7 +14,7 @@ ifeq ($(strip $(ITER)),)
 endif
 
 test: vars
-	$(foreach project, $(PROJECTS), $(MAKE) $(MAKEFLAGS) -C $(project) test;)
+	$(foreach project, $(PROJECTS), $(MAKE) -C $(project) test $(MAKEFLAGS);)
 
 clean:
 	@$(foreach project, $(PROJECTS), $(MAKE) -C $(project) clean;)

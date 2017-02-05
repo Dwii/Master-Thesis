@@ -14,13 +14,13 @@ ifeq ($(strip $(ITER)),)
 endif
 
 test: vars all
-	@$(foreach project, $(PROJECTS), $(MAKE) $(MAKEFLAGS) -C $(project) test;)
+	@$(foreach project, $(PROJECTS), $(MAKE) -C $(project) test $(MAKEFLAGS);)
 
 libs: 
 	$(MAKE) -C libs
 
 $(PROJECTS): 
-	$(MAKE) $(MAKEFLAGS) -C $@
+	$(MAKE) -C $@ $(MAKEFLAGS)
 
 clean:
 	$(MAKE) -C libs clean
