@@ -3,6 +3,9 @@ PROJECTS=lbm_c2cuda
 # Default variables values
 DEFAULT_ITER=1
 
+# Flags
+MAKEFLAGS=--no-print-directory
+
 all: $(PROJECTS)
 
 vars:
@@ -11,7 +14,7 @@ ifeq ($(strip $(ITER)),)
 endif
 
 test: vars all
-	@$(foreach project, $(PROJECTS), $(MAKE) -C $(project) test $(MAKEFLAGS);)
+	@$(foreach project, $(PROJECTS), $(MAKE) $(MAKEFLAGS) -C $(project) test;)
 
 $(PROJECTS): 
 	$(MAKE) -C $@
