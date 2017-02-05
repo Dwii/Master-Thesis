@@ -5,6 +5,8 @@
  * \date    21.11.2016
  */
 
+#define _GNU_SOURCE
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
