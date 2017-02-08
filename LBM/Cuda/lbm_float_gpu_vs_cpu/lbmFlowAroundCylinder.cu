@@ -1,6 +1,6 @@
 /*!
  * \file    lbmFlowAroundCylinder.cu
- * \brief   Cuda version based on lbm_palabos_friendly (standard C).
+ * \brief   GPU (Cuda) and CPU version running the same code but producing different output...
  * \author  Adrien Python
  * \date    22.01.2017
  */
@@ -44,14 +44,24 @@ typedef struct {
     double t[9];
 } lbm_consts;
 
-__constant__ lbm_consts d_consts;
+#ifdef COMPUTE_ON_CPU
+// Tweak the code to run on CPU
+#define cudaMalloc(dst_ptr, size)        do { *(dst_ptr) = (lbm_vars*)malloc(size); } while(0)
+#define cudaMemcpy(dst, src, size, mode) memcpy(dst, src, size)
+#define cudaMemcpyToSymbol(dst, src, size) memcpy(&dst, src, size)
+#define cudaFree(ptr) free(ptr)
 
-const ssize_t V[][9] = {
-    { 1, 1, 1, 0, 0, 0,-1,-1,-1 },
-    { 1, 0,-1, 1, 0,-1, 1, 0,-1 }
-};
-const double T[] = { 1./36, 1./9, 1./36, 1./9, 4./9, 1./9, 1./36, 1./9, 1./36 };
+#define HANDLE_ERROR(ans) ans
+#define HANDLE_KERNEL_ERROR(...) do { __VA_ARGS__; } while(0)
 
+#define fory(...) for (int y = 0; y < NY; ++y) { __VA_ARGS__; }
+#define forxy(...) fory(for (int x = 0; x < NX; ++x) { __VA_ARGS__; })
+
+#define RUN_KERNEL_1D(kernel, th1, ...) fory(kernel(__VA_ARGS__, y))
+#define RUN_KERNEL_2D(kernel, th1, th2, ...) forxy(kernel(__VA_ARGS__, x, y))
+
+#else
+// Code for GPU usage only
 #define HANDLE_ERROR(ans) (handleError((ans), __FILE__, __LINE__))
 inline void handleError(cudaError_t code, const char *file, int line)
 {
@@ -68,6 +78,24 @@ do {                                         \
     HANDLE_ERROR( cudaPeekAtLastError() );   \
     HANDLE_ERROR( cudaDeviceSynchronize() ); \
 } while(0)
+
+#define RUN_KERNEL_1D(kernel, th1, ...) HANDLE_KERNEL_ERROR( kernel<<<1, th1>>>(__VA_ARGS__) )
+#define RUN_KERNEL_2D(kernel, th1, th2, ...) HANDLE_KERNEL_ERROR( kernel<<<1, th1*th2>>>(__VA_ARGS__) )
+#endif
+
+// Constants
+
+#ifndef COMPUTE_ON_CPU
+__constant__ 
+#endif
+lbm_consts d_consts;
+
+const ssize_t V[][9] = {
+    { 1, 1, 1, 0, 0, 0,-1,-1,-1 },
+    { 1, 0,-1, 1, 0,-1, 1, 0,-1 }
+};
+const double T[] = { 1./36, 1./9, 1./36, 1./9, 4./9, 1./9, 1./36, 1./9, 1./36 };
+
 
 /**
  * Setup: cylindrical obstacle and velocity inlet with perturbation
@@ -137,17 +165,26 @@ static void initOpp(size_t* opp)
         }                                                                \
     } while(0)
 
-__host__ static void h_equilibrium(double* feq, double rho, double* u)
+#ifndef COMPUTE_ON_CPU
+__host__ 
+#endif
+static void h_equilibrium(double* feq, double rho, double* u)
 {
     EQUILIBRIUM_BODY(V, T);
 }
 
-__device__ static void d_equilibrium(double* feq, double rho, double* u)
+#ifndef COMPUTE_ON_CPU
+__device__ 
+#endif
+static void d_equilibrium(double* feq, double rho, double* u)
 {
     EQUILIBRIUM_BODY(d_consts.v, d_consts.t);
 }
 
-__device__ static void macroscopic(double* fin, double* rho, double* u)
+#ifndef COMPUTE_ON_CPU
+__device__ 
+#endif
+static void macroscopic(double* fin, double* rho, double* u)
 {
     
     *rho = u[0] = u[1] = 0;
@@ -163,9 +200,15 @@ __device__ static void macroscopic(double* fin, double* rho, double* u)
     u[1] /= *rho;
 }
 
+#ifndef COMPUTE_ON_CPU
 __global__ void lbm_right_wall(lbm_vars *d_vars)
+#else
+void lbm_right_wall(lbm_vars *d_vars, int y)
+#endif
 {
+#ifndef COMPUTE_ON_CPU
     int y = threadIdx.x / NX;
+#endif
 
     // Right wall: outflow condition.
     for (int i = 0; i < 3; i++) {
@@ -174,10 +217,16 @@ __global__ void lbm_right_wall(lbm_vars *d_vars)
     }
 }
 
+#ifndef COMPUTE_ON_CPU
 __global__ void lbm_macro_and_left_wall(lbm_vars *d_vars)
+#else
+void lbm_macro_and_left_wall(lbm_vars *d_vars, int x, int y)
+#endif
 {
+#ifndef COMPUTE_ON_CPU
     int y = threadIdx.x / NX;
     int x = threadIdx.x % NX;
+#endif
 
     // Compute macroscopic variables, density and velocity
     macroscopic(d_vars->fin[x][y], &d_vars->rho[x][y], d_vars->u[x][y]);
@@ -188,10 +237,16 @@ __global__ void lbm_macro_and_left_wall(lbm_vars *d_vars)
     }
  }
 
+#ifndef COMPUTE_ON_CPU
 __global__ void lbm_density(lbm_vars *d_vars)
+#else
+void lbm_density(lbm_vars *d_vars, int y)
+#endif
+
 {
+#ifndef COMPUTE_ON_CPU
     int y = threadIdx.x;
-  
+#endif
     // Calculate the density
     double s2 = 0, s3 = 0;
     for (size_t i = 0; i < 3; i++) {
@@ -201,18 +256,30 @@ __global__ void lbm_density(lbm_vars *d_vars)
     d_vars->rho[0][y] = 1./(1 - d_vars->u[0][y][0]) * (s2 + 2*s3);
 }
 
+#ifndef COMPUTE_ON_CPU
 __global__ void lbm_equilibrium_1(lbm_vars *d_vars)
+#else
+void lbm_equilibrium_1(lbm_vars *d_vars, int x, int y)
+#endif
 {
+#ifndef COMPUTE_ON_CPU
     int y = threadIdx.x / NX;
     int x = threadIdx.x % NX;
+#endif
    
     // Compute equilibrium
     d_equilibrium(d_vars->feq[x][y], d_vars->rho[x][y], d_vars->u[x][y]);
 }
 
+#ifndef COMPUTE_ON_CPU
 __global__ void lbm_equilibrium_2(lbm_vars *d_vars)
+#else 
+void lbm_equilibrium_2(lbm_vars *d_vars, int y)
+#endif
 {
+#ifndef COMPUTE_ON_CPU
     int y = threadIdx.x;
+#endif
 
     for (size_t i = 0, f = d_consts.col[0][i]; i < 3; f = d_consts.col[0][++i]) {
         d_vars->fin[0][y][f] = d_vars->feq[0][y][f] + d_vars->fin[0][y][d_consts.opp[f]] - d_vars->feq[0][y][d_consts.opp[f]];
@@ -220,10 +287,16 @@ __global__ void lbm_equilibrium_2(lbm_vars *d_vars)
 
 }
 
+#ifndef COMPUTE_ON_CPU
 __global__ void lbm_collision(lbm_vars *d_vars)
+#else
+void lbm_collision(lbm_vars *d_vars, int x, int y)
+#endif
 {
+#ifndef COMPUTE_ON_CPU
     int y = threadIdx.x / NX;
     int x = threadIdx.x % NX;
+#endif
     
     for (size_t f = 0; f < 9; f++) {
         if (d_vars->obstacles[x][y]) {
@@ -237,10 +310,16 @@ __global__ void lbm_collision(lbm_vars *d_vars)
 
 }
 
+#ifndef COMPUTE_ON_CPU
 __global__ void lbm_streaming(lbm_vars *d_vars)
+#else
+void lbm_streaming(lbm_vars *d_vars, int x, int y)
+#endif
 {
+#ifndef COMPUTE_ON_CPU
     int y = threadIdx.x / NX;
     int x = threadIdx.x % NX;
+#endif
 
     // Streaming step
     for (size_t f = 0; f < 9; f++) {
@@ -272,14 +351,14 @@ int main(int argc, char * const argv[])
     ssize_t max_iter = 0;
     
     while (optind < argc) {
-        switch (getopt(argc, argv, "p:fi:")) {
+        switch (getopt(argc, argv, "fi:")) {
             case 'f': { out = OUT_FIN; break; }
             case 'i': { max_iter = strtol(optarg, NULL, 10); break; }
             default : { goto usage; }
         }
     }
     
-    // check that execution mode is set (output images or fin values)
+    // check that execution mode is set
     if (out == OUT_UNK && max_iter < 1) {
     usage:
         fprintf(stderr, "usage: %s [-f] -i <iter> \n", basename((char*)argv[0]));
@@ -315,13 +394,13 @@ int main(int argc, char * const argv[])
     HANDLE_ERROR(cudaMalloc(&d_vars, sizeof(lbm_vars)));
     HANDLE_ERROR(cudaMemcpy(d_vars, h_vars, sizeof(lbm_vars), cudaMemcpyHostToDevice));
     for (int time = 0; time < max_iter; time++) {
-        HANDLE_KERNEL_ERROR(         lbm_right_wall<<<1,   NY>>>(d_vars));        
-        HANDLE_KERNEL_ERROR(lbm_macro_and_left_wall<<<1,NX*NY>>>(d_vars));
-        HANDLE_KERNEL_ERROR(            lbm_density<<<1,   NY>>>(d_vars));
-        HANDLE_KERNEL_ERROR(      lbm_equilibrium_1<<<1,NX*NY>>>(d_vars));
-        HANDLE_KERNEL_ERROR(      lbm_equilibrium_2<<<1,   NY>>>(d_vars));
-        HANDLE_KERNEL_ERROR(          lbm_collision<<<1,NX*NY>>>(d_vars));
-        HANDLE_KERNEL_ERROR(          lbm_streaming<<<1,NX*NY>>>(d_vars));
+        RUN_KERNEL_1D(lbm_right_wall,             NY, d_vars);        
+        RUN_KERNEL_2D(lbm_macro_and_left_wall, NX,NY, d_vars);
+        RUN_KERNEL_1D(lbm_density,                NY, d_vars);
+        RUN_KERNEL_2D(lbm_equilibrium_1,       NX,NY, d_vars);
+        RUN_KERNEL_1D(lbm_equilibrium_2,          NY, d_vars);
+        RUN_KERNEL_2D(lbm_collision,           NX,NY, d_vars);
+        RUN_KERNEL_2D(lbm_streaming,           NX,NY, d_vars);
     }
 
     if (out == OUT_FIN) {

@@ -31,6 +31,8 @@ test: vars all
 	diff -q Python/lbm_palabos_friendly/out/$(TST) C/lbm_palabos_friendly/out/$(TST)
 	diff -q Python/lbm_palabos_friendly/out/$(TST) C/lbm_cuda_ready/out/$(TST)
 	diff -q Python/lbm_palabos_friendly/out/$(TST) Cuda/lbm_c2cuda/out/$(TST)
+	diff -q Python/lbm_palabos_friendly/out/$(TST) Cuda/lbm_float_gpu_vs_cpu/out/$(TST)_cpu
+    -diff -q Python/lbm_palabos_friendly/out/$(TST) Cuda/lbm_float_gpu_vs_cpu/out/$(TST)_gpu
 
 $(LANGS): 
 	$(MAKE) -C $@ $(MAKEFLAGS) 
