@@ -17,7 +17,7 @@ BINDIR=bin
 OUTDIR=out
 
 # Test output file
-TST=test.out
+OUT=lbm.out
 
 # Source and object files
 SRCS=$(wildcard $(SRCDIR)/*.cu)
@@ -27,8 +27,6 @@ OBJS= $(GPUOBJS) $(CPUOBJS)
 # Flags
 NVCC_FLAGS=-Wno-deprecated-gpu-targets
 
-
-
 # Libraries
 LIBS=-lm
 
@@ -37,9 +35,9 @@ all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(GPUBIN) $(BINDIR)/$(CPUBIN)
 run: all 
 	$(BINDIR)/$(BIN) -i $(ITER)
 
-test: all $(OUTDIR) 
-	$(BINDIR)/$(GPUBIN) -i $(ITER) -f > $(OUTDIR)/$(TST)_gpu
-	$(BINDIR)/$(CPUBIN) -i $(ITER) -f > $(OUTDIR)/$(TST)_cpu
+output: all $(OUTDIR) 
+	$(BINDIR)/$(GPUBIN) -i $(ITER) -f > $(OUTDIR)/gpu_$(OUT)
+	$(BINDIR)/$(CPUBIN) -i $(ITER) -f > $(OUTDIR)/cpu_$(OUT)
 
 $(OBJDIR) $(BINDIR) $(OUTDIR): 
 	mkdir -p $@
@@ -63,4 +61,4 @@ clean:
 
 rebuild: clean all
 
-.PHONY: all run test clean rebuild
+.PHONY: all run output clean rebuild

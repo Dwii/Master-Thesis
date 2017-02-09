@@ -13,8 +13,8 @@ ifeq ($(strip $(ITER)),)
 	$(eval MAKEFLAGS+=ITER=$(DEFAULT_ITER))
 endif
 
-test: vars all
-	@$(foreach project, $(PROJECTS), $(MAKE) -C $(project) test $(MAKEFLAGS);)
+output: vars all
+	@$(foreach project, $(PROJECTS), $(MAKE) -C $(project) output $(MAKEFLAGS);)
 
 libs: 
 	$(MAKE) -C libs
@@ -26,4 +26,4 @@ clean:
 	$(MAKE) -C libs clean
 	@$(foreach project, $(PROJECTS), $(MAKE) -C $(project) clean;)
 
-.PHONY: all vars test libs $(PROJECTS) clean
+.PHONY: all vars output libs $(PROJECTS) clean

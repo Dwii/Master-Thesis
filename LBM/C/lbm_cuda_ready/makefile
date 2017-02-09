@@ -15,7 +15,7 @@ OUTDIR=out
 LIBDIR=../libs
 
 # Test output file
-TST=test.out
+OUT=lbm.out
 
 # Source and object files
 SRCS=$(wildcard $(SRCDIR)/*.c)
@@ -38,8 +38,8 @@ all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(BIN)
 run: all $(OUTDIR)
 	$(BINDIR)/$(BIN) -p $(OUTDIR) -i $(ITER)
 
-test: all $(OUTDIR) 
-	$(BINDIR)/$(BIN) -f > $(OUTDIR)/$(TST) -i $(ITER)
+output: all $(OUTDIR) 
+	$(BINDIR)/$(BIN) -i $(ITER) -f > $(OUTDIR)/$(OUT)
 
 $(OBJDIR) $(BINDIR) $(OUTDIR): 
 	mkdir -p $@
@@ -57,4 +57,4 @@ clean:
 
 rebuild: clean all
 
-.PHONY: all run test clean rebuild
+.PHONY: all run output clean rebuild

@@ -9,14 +9,14 @@ SRCDIR=.
 OUTDIR=out
 
 # Test output file
-TST=test.out
+OUT=lbm.out
 
 
 run: $(OUTDIR)
 	$(PY) $(SRCDIR)/lbmFlowAroundCylinder.py $(ITER) $(OUTDIR)
 
-test: $(OUTDIR) 
-	$(PY) $(SRCDIR)/lbmFlowAroundCylinder.py $(ITER) > $(OUTDIR)/$(TST)
+output: $(OUTDIR) 
+	$(PY) $(SRCDIR)/lbmFlowAroundCylinder.py $(ITER) > $(OUTDIR)/$(OUT)
 
 $(OUTDIR): 
 	mkdir -p $@
@@ -24,4 +24,4 @@ $(OUTDIR):
 clean:
 	rm -rf $(OUTDIR)
 
-.PHONY: run test clean
+.PHONY: run output clean

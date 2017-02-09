@@ -1,4 +1,4 @@
-# usage: $(MAKE) [ test [ ITER=<total iterations> ] [ TST=<test filename> ] ]
+# usage: $(MAKE) [ test [ ITER=<total iterations> ] [ OUT=<test filename> ] ]
 
 RED=\033[0;31m
 GRN=\033[0;32m
@@ -10,15 +10,18 @@ NC=\033[0m
 # Argument $2: First file
 # Argument $3: Second title 
 define compare
-	-@diff -q $(2) $(3) 2>&1 1>/dev/null; if [ $$? -eq 0 ] ; then echo "$(1) $(GRN)OK$(NC)" ; else  echo "$(1) $(RED)KO$(NC)"; fi
+	$(eval delta=$(shell python3 Tools/floats_delta.py $(2) $(3)))
+	$(eval ok_msg="$(1) $(GRN)OK$(NC)\n")
+	$(eval ko_msg="$(1) $(RED)KO$(NC) (delta: $(delta))\n")
+	-@diff -q $(2) $(3) 2>&1 1>/dev/null; if [ $$? -eq 0 ] ; then printf $(ok_msg) ; else printf $(ko_msg); fi
 endef
 
-
+# Code folders
 LANGS=Python C Cuda
 
 # Default variables values
 DEFAULT_ITER=1
-DEFAULT_TST=test.out
+DEFAULT_OUT=lbm.out
 
 # Flags
 MAKEFLAGS=--no-print-directory
@@ -31,23 +34,23 @@ ifeq ($(strip $(ITER)),)
 	$(eval MAKEFLAGS+=ITER=$(DEFAULT_ITER))
 endif
 # Set test output file name (ensure that test diff path are correct)
-ifeq ($(strip $(TST)),)
-	$(eval TST=$(DEFAULT_TST))
-	$(eval MAKEFLAGS+=TST=$(TST))
+ifeq ($(strip $(OUT)),)
+	$(eval OUT=$(DEFAULT_OUT))
+	$(eval MAKEFLAGS+=OUT=$(OUT))
 endif
 
-test: vars all
+output: vars
+	@$(foreach lang, $(LANGS), $(MAKE) -C $(lang) output $(MAKEFLAGS);)
 
-	@$(foreach lang, $(LANGS), $(MAKE) -C $(lang) test $(MAKEFLAGS);)
-
+test: vars output
 	@printf "\n----------- Tests with $(ITER) iterations ----------\n"
-	@$(call compare, Test lbm_py2c:                      , Python/lbm_py/out/$(TST),                 C/lbm_py2c/out/$(TST))
-	@$(call compare, Test lbm_palabos_friendly:          , Python/lbm_palabos_friendly/out/$(TST),   C/lbm_palabos_friendly/out/$(TST))
-	@$(call compare, Test lbm_cuda_ready:                , Python/lbm_palabos_friendly/out/$(TST),   C/lbm_cuda_ready/out/$(TST))
-	@$(call compare, Test lbm_c2cuda:                    , Python/lbm_palabos_friendly/out/$(TST),   Cuda/lbm_c2cuda/out/$(TST))
-	@$(call compare, Test lbm_float_gpu_vs_cpu (CPU):    , Python/lbm_palabos_friendly/out/$(TST),   Cuda/lbm_float_gpu_vs_cpu/out/$(TST)_cpu)
-	@$(call compare, Test lbm_float_gpu_vs_cpu (GPU):    , Python/lbm_palabos_friendly/out/$(TST),   Cuda/lbm_float_gpu_vs_cpu/out/$(TST)_gpu)
-	@$(call compare, Compare lbm_float_gpu_vs_cpu (both):, Cuda/lbm_float_gpu_vs_cpu/out/$(TST)_gpu, Cuda/lbm_float_gpu_vs_cpu/out/$(TST)_cpu)
+	@$(call compare, Test lbm_py2c:                      , Python/lbm_py/out/$(OUT),                 C/lbm_py2c/out/$(OUT))
+	@$(call compare, Test lbm_palabos_friendly:          , Python/lbm_palabos_friendly/out/$(OUT),   C/lbm_palabos_friendly/out/$(OUT))
+	@$(call compare, Test lbm_cuda_ready:                , Python/lbm_palabos_friendly/out/$(OUT),   C/lbm_cuda_ready/out/$(OUT))
+	@$(call compare, Test lbm_c2cuda:                    , Python/lbm_palabos_friendly/out/$(OUT),   Cuda/lbm_c2cuda/out/$(OUT))
+	@$(call compare, Test lbm_float_gpu_vs_cpu (CPU):    , Python/lbm_palabos_friendly/out/$(OUT),   Cuda/lbm_float_gpu_vs_cpu/out/cpu_$(OUT))
+	@$(call compare, Test lbm_float_gpu_vs_cpu (GPU):    , Python/lbm_palabos_friendly/out/$(OUT),   Cuda/lbm_float_gpu_vs_cpu/out/gpu_$(OUT))
+	@$(call compare, Compare lbm_float_gpu_vs_cpu (both):, Cuda/lbm_float_gpu_vs_cpu/out/gpu_$(OUT), Cuda/lbm_float_gpu_vs_cpu/out/cpu_$(OUT))
 
 $(LANGS): 
 	$(MAKE) -C $@ $(MAKEFLAGS) 
@@ -55,4 +58,4 @@ $(LANGS):
 clean:
 	@$(foreach lang, $(LANGS), $(MAKE) -C $(lang) clean;)
 
-.PHONY: all vars test $(LANGS) clean
+.PHONY: all vars output $(LANGS) clean
