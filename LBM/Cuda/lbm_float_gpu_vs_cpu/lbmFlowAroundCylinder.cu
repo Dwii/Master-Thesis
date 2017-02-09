@@ -207,7 +207,7 @@ void lbm_right_wall(lbm_vars *d_vars, int y)
 #endif
 {
 #ifndef COMPUTE_ON_CPU
-    int y = threadIdx.x / NX;
+    int y = threadIdx.x;
 #endif
 
     // Right wall: outflow condition.
@@ -242,7 +242,6 @@ __global__ void lbm_density(lbm_vars *d_vars)
 #else
 void lbm_density(lbm_vars *d_vars, int y)
 #endif
-
 {
 #ifndef COMPUTE_ON_CPU
     int y = threadIdx.x;
@@ -394,7 +393,7 @@ int main(int argc, char * const argv[])
     HANDLE_ERROR(cudaMalloc(&d_vars, sizeof(lbm_vars)));
     HANDLE_ERROR(cudaMemcpy(d_vars, h_vars, sizeof(lbm_vars), cudaMemcpyHostToDevice));
     for (int time = 0; time < max_iter; time++) {
-        RUN_KERNEL_1D(lbm_right_wall,             NY, d_vars);        
+        RUN_KERNEL_1D(lbm_right_wall,             NY, d_vars);
         RUN_KERNEL_2D(lbm_macro_and_left_wall, NX,NY, d_vars);
         RUN_KERNEL_1D(lbm_density,                NY, d_vars);
         RUN_KERNEL_2D(lbm_equilibrium_1,       NX,NY, d_vars);

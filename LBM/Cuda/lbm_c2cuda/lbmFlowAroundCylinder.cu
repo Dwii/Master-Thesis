@@ -165,7 +165,7 @@ __device__ static void macroscopic(double* fin, double* rho, double* u)
 
 __global__ void lbm_right_wall(lbm_vars *d_vars)
 {
-    int y = threadIdx.x / NX;
+    int y = threadIdx.x;
 
     // Right wall: outflow condition.
     for (int i = 0; i < 3; i++) {
