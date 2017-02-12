@@ -1,6 +1,6 @@
 /*!
  * \file    lbmFlowAroundCylinder.cu
- * \brief   GPU (Cuda) and CPU version running the same code but producing different output...
+ * \brief   GPU (Cuda) and CPU version running the same code for floating point computation debugging...
  * \author  Adrien Python
  * \date    22.01.2017
  */
@@ -24,6 +24,7 @@
 #define OMEGA    ((double)1. / (3*(NULB)+0.5))  // Relaxation parameter
 
 #define SQUARE(a) ((a)*(a))
+#define GPU_SQUARE(a) (__dmul_rn(a,a))
 
 typedef enum { OUT_FIN, OUT_IMG, OUT_UNK } out_mode;
 
@@ -165,6 +166,17 @@ static void initOpp(size_t* opp)
         }                                                                \
     } while(0)
 
+#define GPU_EQUILIBRIUM_BODY(v, t) \
+    do {                                                                                \
+        double usqr = __dmul_rn(3./2, __dadd_rn( GPU_SQUARE(u[0]), GPU_SQUARE(u[1]) )); \
+                                                                                        \
+        for (int f = 0; f < 9; f++) {                                                   \
+            double cu = 3 * ( v[0][f] * u[0] + v[1][f] * u[1] );                        \
+            feq[f] = rho * t[f] * ( 1 + cu + 0.5 * SQUARE(cu) - usqr );                 \
+        }                                                                               \
+    } while(0)
+
+
 #ifndef COMPUTE_ON_CPU
 __host__ 
 #endif
@@ -178,7 +190,11 @@ __device__
 #endif
 static void d_equilibrium(double* feq, double rho, double* u)
 {
+#ifdef COMPUTE_ON_CPU
     EQUILIBRIUM_BODY(d_consts.v, d_consts.t);
+#else
+    GPU_EQUILIBRIUM_BODY(d_consts.v, d_consts.t);
+#endif
 }
 
 #ifndef COMPUTE_ON_CPU
@@ -303,7 +319,13 @@ void lbm_collision(lbm_vars *d_vars, int x, int y)
             d_vars->fout[x][y][f] = d_vars->fin[x][y][d_consts.opp[f]];
         } else {
             // Collision step
+#ifdef COMPUTE_ON_CPU
             d_vars->fout[x][y][f] = d_vars->fin[x][y][f] - OMEGA * (d_vars->fin[x][y][f] - d_vars->feq[x][y][f]);
+#else
+//            d_vars->fout[x][y][f] = __fma_rn(-OMEGA, __dadd_rn(d_vars->fin[x][y][f], - d_vars->feq[x][y][f]), d_vars->fin[x][y][f]); // no change
+            d_vars->fout[x][y][f] = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(d_vars->fin[x][y][f], - d_vars->feq[x][y][f])), d_vars->fin[x][y][f]);
+#endif
+
         }
     }
 

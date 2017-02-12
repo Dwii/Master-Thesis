@@ -24,6 +24,7 @@
 #define OMEGA    ((double)1. / (3*(NULB)+0.5))  // Relaxation parameter
 
 #define SQUARE(a) ((a)*(a))
+#define GPU_SQUARE(a) (__dmul_rn(a,a))
 
 typedef enum { OUT_FIN, OUT_IMG, OUT_UNK } out_mode;
 
@@ -127,24 +128,28 @@ static void initOpp(size_t* opp)
     }
 }
 
-#define EQUILIBRIUM_BODY(v, t) \
-    do {                                                                 \
-        double usqr = 3./2 * ( SQUARE(u[0]) + SQUARE(u[1]) );            \
-                                                                         \
-        for (int f = 0; f < 9; f++) {                                    \
-            double cu = 3 * ( v[0][f] * u[0] + v[1][f] * u[1] );         \
-            feq[f] = rho * t[f] * ( 1 + cu + 0.5 * SQUARE(cu) - usqr );  \
-        }                                                                \
-    } while(0)
-
 __host__ static void h_equilibrium(double* feq, double rho, double* u)
 {
-    EQUILIBRIUM_BODY(V, T);
+    do {                                                                 
+        double usqr = 3./2 * ( SQUARE(u[0]) + SQUARE(u[1]) );
+
+        for (int f = 0; f < 9; f++) {
+            double cu = 3 * ( V[0][f] * u[0] + V[1][f] * u[1] );
+            feq[f] = rho * T[f] * ( 1 + cu + 0.5 * SQUARE(cu) - usqr );
+        }                                                                
+    } while(0);
 }
 
 __device__ static void d_equilibrium(double* feq, double rho, double* u)
 {
-    EQUILIBRIUM_BODY(d_consts.v, d_consts.t);
+    do {
+        double usqr = __dmul_rn(3./2, __dadd_rn( GPU_SQUARE(u[0]), GPU_SQUARE(u[1]) ));
+                                                                         
+        for (int f = 0; f < 9; f++) {
+            double cu = 3 * ( d_consts.v[0][f] * u[0] + d_consts.v[1][f] * u[1] );
+            feq[f] = rho * d_consts.t[f] * ( 1 + cu + 0.5 * SQUARE(cu) - usqr );
+        }                                                                
+    } while(0);
 }
 
 __device__ static void macroscopic(double* fin, double* rho, double* u)
@@ -231,7 +236,7 @@ __global__ void lbm_collision(lbm_vars *d_vars)
             d_vars->fout[x][y][f] = d_vars->fin[x][y][d_consts.opp[f]];
         } else {
             // Collision step
-            d_vars->fout[x][y][f] = d_vars->fin[x][y][f] - OMEGA * (d_vars->fin[x][y][f] - d_vars->feq[x][y][f]);
+            d_vars->fout[x][y][f] = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(d_vars->fin[x][y][f], - d_vars->feq[x][y][f])), d_vars->fin[x][y][f]);
         }
     }
 
