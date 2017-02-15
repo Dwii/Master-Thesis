@@ -9,6 +9,10 @@
 #ifndef PGM_H
 #define PGM_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 typedef struct pgm_image pgm_image;
 
 typedef struct {
@@ -143,5 +147,8 @@ void pgm_resize(pgm_image* pgm, size_t width, size_t height);
  */
 void pgm_get_info(pgm_image* pgm, pgm_info* info);
 
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif  /* PGMLIB_H */

@@ -13,6 +13,10 @@
 
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 /***************** Functions for arrays of a generic dimension ****************/
 
 /**
@@ -327,5 +331,9 @@ void array_roll2d_x_s(size_t size0, size_t size1, double array[size0][size1], ss
 void array_roll2d_s(size_t size0, size_t size1, double array[size0][size1], const ssize_t shift[2]);
 
 #endif /* ARRAY_STATIC_FUNCS */
+    
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif /* ARRAY_H */
