@@ -26,7 +26,7 @@
  * \param   args   callback function additional arguments
  * \return  indicates whether array_foreach should continue to iterate or not.
  */
-typedef bool (*array_foreach_callback)(size_t dim, void* data, const size_t index[dim], void* args);
+typedef bool (*array_foreach_callback)(size_t dim, void* data, const size_t* index, void* args);
 
 /**
  * \brief Callback function type for array_easy_print().
@@ -51,7 +51,7 @@ typedef void (*array_easy_print_callback)(void* data);
  * \param   v_size  data size (e.g. sizeof(int) for an array of int)
  * \return  created array
  */
-void* array_create(size_t dim, const size_t size[dim], size_t v_size);
+void* array_create(size_t dim, const size_t* size, size_t v_size);
 
 /*!
  * \brief  Destroy an N dimensional array.
@@ -64,7 +64,7 @@ void* array_create(size_t dim, const size_t size[dim], size_t v_size);
  * \param   array   array to free
  * \return  void
  */
-void array_destroy(size_t dim, const size_t size[dim], size_t v_size, void* array);
+void array_destroy(size_t dim, const size_t* size, size_t v_size, void* array);
 
 /*!
  * \brief  Build an N dimensional array mapping on a chunk of memory.
@@ -91,7 +91,7 @@ void array_destroy(size_t dim, const size_t size[dim], size_t v_size, void* arra
  * \endcode
  *
  */
-void* array_map(size_t dim, const size_t size[dim], size_t v_size, void* array);
+void* array_map(size_t dim, const size_t* size, size_t v_size, void* array);
 
 /*!
  * \brief  Destroy an N dimensional array mapping.
@@ -104,7 +104,7 @@ void* array_map(size_t dim, const size_t size[dim], size_t v_size, void* array);
  * \param   mapping  mapping to free
  * \return  void
  */
-void array_unmap(size_t dim, const size_t size[dim], size_t v_size, void* mapping);
+void array_unmap(size_t dim, const size_t* size, size_t v_size, void* mapping);
 
 /*!
  * \brief  Copy an array to an other of the same dimension and sizes.
@@ -116,7 +116,7 @@ void array_unmap(size_t dim, const size_t size[dim], size_t v_size, void* mappin
  * \param   to       destination array
  * \return  void
  */
-void array_copy(size_t dim, const size_t size[dim], size_t v_size, void* from, void* to);
+void array_copy(size_t dim, const size_t* size, size_t v_size, void* from, void* to);
 
 /*!
  * \brief  Copy the content of an array to another from and at specific indexes.
@@ -130,7 +130,7 @@ void array_copy(size_t dim, const size_t size[dim], size_t v_size, void* from, v
  * \return  void
  */
 void array_copy_at(size_t dim, size_t v_size, void* from, void* to,
-                   const size_t from_index[dim], const size_t to_index[dim]);
+                   const size_t* from_index, const size_t* to_index);
 
 /*!
  * \brief  Set the content of an array.
@@ -142,7 +142,7 @@ void array_copy_at(size_t dim, size_t v_size, void* from, void* to,
  * \param   data    data to write in the array
  * \return  void
  */
-void array_set(size_t dim, const size_t size[dim], size_t v_size, void* array, void* data);
+void array_set(size_t dim, const size_t* size, size_t v_size, void* array, void* data);
 
 /*!
  * \brief  Read the content of an array at the specified index.
@@ -155,7 +155,7 @@ void array_set(size_t dim, const size_t size[dim], size_t v_size, void* array, v
  * \param   index   position where to read
  * \return  void
  */
-void array_read_at(size_t dim, size_t v_size, void* array, void* data, const size_t index[dim]);
+void array_read_at(size_t dim, size_t v_size, void* array, void* data, const size_t* index);
 
 /*!
  * \brief  Write the content of an array at the specified index.
@@ -168,7 +168,7 @@ void array_read_at(size_t dim, size_t v_size, void* array, void* data, const siz
  * \param   index   position where to write
  * \return  void
  */
-void array_write_at(size_t dim, size_t v_size, void* array, void* data, const size_t index[dim]);
+void array_write_at(size_t dim, size_t v_size, void* array, void* data, const size_t* index);
 
 /*!
  * \brief  Roll an axis of an array (in place).
@@ -181,7 +181,7 @@ void array_write_at(size_t dim, size_t v_size, void* array, void* data, const si
  * \param   axis    axis to roll
  * \return  void
  */
-void array_roll_axis(size_t dim, const size_t size[dim], size_t v_size, void* array, ssize_t shift, size_t axis);
+void array_roll_axis(size_t dim, const size_t* size, size_t v_size, void* array, ssize_t shift, size_t axis);
 
 /*!
  * \brief  Roll an entire array (in place).
@@ -193,7 +193,7 @@ void array_roll_axis(size_t dim, const size_t size[dim], size_t v_size, void* ar
  * \param   shift   shift applied to the roll for each axis
  * \return  void
  */
-void array_roll(size_t dim, const size_t size[dim], size_t v_size, void* array, const ssize_t shift[dim]);
+void array_roll(size_t dim, const size_t* size, size_t v_size, void* array, const ssize_t* shift);
 
 /*!
  * \brief  Roll an axis of an array and store the result in another.
@@ -207,7 +207,7 @@ void array_roll(size_t dim, const size_t size[dim], size_t v_size, void* array, 
  * \param   axis    axis to roll
  * \return  void
  */
-void array_roll_axis_to (size_t dim, const size_t size[dim], size_t v_size, void* from, void* to, ssize_t shift, size_t axis);
+void array_roll_axis_to (size_t dim, const size_t* size, size_t v_size, void* from, void* to, ssize_t shift, size_t axis);
 
 /*!
  * \brief  Roll an entire array and store the result in another.
@@ -220,7 +220,7 @@ void array_roll_axis_to (size_t dim, const size_t size[dim], size_t v_size, void
  * \param   shift   shift applied to the roll
  * \return  void
  */
-void array_roll_to(size_t dim, const size_t size[dim], size_t v_size, void* from, void* to, const ssize_t shift[dim]);
+void array_roll_to(size_t dim, const size_t* size, size_t v_size, void* from, void* to, const ssize_t* shift);
 
 /*!
  * \brief  Call a callback function for each array cells.
@@ -237,7 +237,7 @@ void array_roll_to(size_t dim, const size_t size[dim], size_t v_size, void* from
  * \param   args        callback function additional arguments
  * \return  void
  */
-void array_foreach(size_t dim, const size_t size[dim], size_t v_size, void* array, ssize_t fixed_axis[dim], array_foreach_callback callback, void* args);
+void array_foreach(size_t dim, const size_t* size, size_t v_size, void* array, ssize_t* fixed_axis, array_foreach_callback callback, void* args);
 
 /*!
  * \brief  Easy priniting function for any array.
@@ -249,7 +249,7 @@ void array_foreach(size_t dim, const size_t size[dim], size_t v_size, void* arra
  * \param   print   function knowing how to print the array data
  * \return  void
  */
-void array_easy_print(size_t dim, const size_t size[dim], size_t v_size, void* array, array_easy_print_callback print);
+void array_easy_print(size_t dim, const size_t* size, size_t v_size, void* array, array_easy_print_callback print);
 
 /**************** Functions for arrays of a specific dimension ****************/
 
@@ -291,6 +291,8 @@ void array_roll2_to(size_t size0, size_t size1, size_t v_size, void* from, void*
  */
 void array_set3(size_t size0, size_t size1, size_t size2, size_t v_size, void* array, void* data);
 
+#ifdef ARRAY_STATIC_FUNCS
+
 /*!
  * \brief  Roll the y axis of a two-dimensional double static array (in place).
  *
@@ -323,5 +325,7 @@ void array_roll2d_x_s(size_t size0, size_t size1, double array[size0][size1], ss
  * \return  void
  */
 void array_roll2d_s(size_t size0, size_t size1, double array[size0][size1], const ssize_t shift[2]);
+
+#endif /* ARRAY_STATIC_FUNCS */
 
 #endif /* ARRAY_H */

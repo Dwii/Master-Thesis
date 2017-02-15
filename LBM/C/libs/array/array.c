@@ -22,7 +22,7 @@
  * \param   fixed_axis  fixed axis to skip (-1 mean no fixed axis)
  * \return  increment left when the max index is reached, 0 otherwise.
  */
-static inline size_t inc_index(size_t inc, size_t dim, const size_t size[dim], size_t index[dim], ssize_t fixed_axis)
+static inline size_t inc_index(size_t inc, size_t dim, const size_t* size, size_t index[dim], ssize_t fixed_axis)
 {
     (void) index;
     
@@ -73,7 +73,7 @@ static bool easy_print_wrapper(size_t dim, void* data, const size_t index[dim], 
  * \param   offset      mapping offset of the current index
  * \return  created array/mapping
  */
-static void* array_creator(size_t dim, const size_t size[dim], size_t v_size,
+static void* array_creator(size_t dim, const size_t* size, size_t v_size,
                            void* base_array, size_t offset)
 {
     void** array = NULL;
@@ -106,7 +106,7 @@ static void* array_creator(size_t dim, const size_t size[dim], size_t v_size,
  * \param   map     indicates whether array is a mapping or not
  * \return  void
  */
-static void array_destroyer(size_t dim, const size_t size[dim], size_t v_size, void* array, bool map)
+static void array_destroyer(size_t dim, const size_t* size, size_t v_size, void* array, bool map)
 {
     switch (dim) {
         case 0:
@@ -273,27 +273,27 @@ static bool axis_roll_handler(size_t dim, void* data, const size_t index[dim], v
     return true;
 }
 
-void* array_create(size_t dim, const size_t size[dim], size_t v_size)
+void* array_create(size_t dim, const size_t* size, size_t v_size)
 {
     return array_creator(dim, size, v_size, NULL, 0);
 }
 
-void array_destroy(size_t dim, const size_t size[dim], size_t v_size, void* array)
+void array_destroy(size_t dim, const size_t* size, size_t v_size, void* array)
 {
     array_destroyer(dim, size, v_size, array, false);
 }
 
-void* array_map(size_t dim, const size_t size[dim], size_t v_size, void* array)
+void* array_map(size_t dim, const size_t* size, size_t v_size, void* array)
 {
     return array_creator(dim, size, v_size, array, 0);
 }
 
-void array_unmap(size_t dim, const size_t size[dim], size_t v_size, void* array)
+void array_unmap(size_t dim, const size_t* size, size_t v_size, void* array)
 {
     array_destroyer(dim, size, v_size, array, true);
 }
 
-void array_copy(size_t dim, const size_t size[dim], size_t v_size, void* from, void* to)
+void array_copy(size_t dim, const size_t* size, size_t v_size, void* from, void* to)
 {
     switch (dim) {
         case 0:
@@ -316,7 +316,7 @@ void array_copy_at(size_t dim, size_t v_size, void* from, void* to,
     array_write_at(dim, v_size, to, data, to_index);
 }
 
-void array_set(size_t dim, const size_t size[dim], size_t v_size, void* array, void* data)
+void array_set(size_t dim, const size_t* size, size_t v_size, void* array, void* data)
 {
     void* args[2] = {&v_size, data};
     array_foreach(dim, size, v_size, array, NULL, set_handler, args);
@@ -332,7 +332,7 @@ void array_write_at(size_t dim, size_t v_size, void* array, void* data, const si
     memcpy(array_go_at(dim, v_size, array, index), data, v_size);
 }
 
-void array_roll_axis(size_t dim, const size_t size[dim], size_t v_size, void* array, ssize_t shift, size_t axis)
+void array_roll_axis(size_t dim, const size_t* size, size_t v_size, void* array, ssize_t shift, size_t axis)
 {
     shift = (size[axis] + shift % size[axis]) % size[axis];
     
@@ -349,14 +349,14 @@ void array_roll_axis(size_t dim, const size_t size[dim], size_t v_size, void* ar
     } while (++idx_init == (size[axis] + shift + 1) % 2);
 }
 
-void array_roll(size_t dim, const size_t size[dim], size_t v_size, void* array, const ssize_t shift[dim])
+void array_roll(size_t dim, const size_t* size, size_t v_size, void* array, const ssize_t* shift)
 {
     for (size_t axis = 0; axis < dim; axis++) {
         array_roll_axis(dim, size, v_size, array, shift[axis], axis);
     }
 }
 
-void array_roll_axis_to (size_t dim, const size_t size[dim], size_t v_size, void* from, void* to, ssize_t shift, size_t axis)
+void array_roll_axis_to (size_t dim, const size_t* size, size_t v_size, void* from, void* to, ssize_t shift, size_t axis)
 {
     size_t from_index[dim], to_index[dim];
     memset(from_index, 0, sizeof(from_index));
@@ -370,7 +370,7 @@ void array_roll_axis_to (size_t dim, const size_t size[dim], size_t v_size, void
     } while ( inc_index(1, dim, size, from_index, -1) == 0 );
 }
 
-void array_roll_to(size_t dim, const size_t size[dim], size_t v_size, void* from, void* to, const ssize_t shift[dim])
+void array_roll_to(size_t dim, const size_t* size, size_t v_size, void* from, void* to, const ssize_t* shift)
 {
     size_t from_index[dim], to_index[dim];
     memset(from_index, 0, sizeof(from_index));
@@ -380,8 +380,8 @@ void array_roll_to(size_t dim, const size_t size[dim], size_t v_size, void* from
     array_foreach(dim, size, v_size, from, NULL, roll_to_handler, &args);
 }
 
-void array_foreach(size_t dim, const size_t size[dim], size_t v_size, void* array,
-                    ssize_t fixed_axis[dim], array_foreach_callback fct, void* args)
+void array_foreach(size_t dim, const size_t* size, size_t v_size, void* array,
+                    ssize_t* fixed_axis, array_foreach_callback fct, void* args)
 {
     size_t index[dim];
     memset(index, 0, sizeof(index));
@@ -389,7 +389,7 @@ void array_foreach(size_t dim, const size_t size[dim], size_t v_size, void* arra
     array_iterator(dim, dim, size, v_size, array, index, fixed_axis, fct, args);
 }
 
-void array_easy_print(size_t dim, const size_t size[dim], size_t v_size, void* array, array_easy_print_callback print)
+void array_easy_print(size_t dim, const size_t* size, size_t v_size, void* array, array_easy_print_callback print)
 {
     easy_print_wrapper_args args = {size, 0, print};
     array_foreach(dim, size, v_size, array, NULL, easy_print_wrapper, &args);
