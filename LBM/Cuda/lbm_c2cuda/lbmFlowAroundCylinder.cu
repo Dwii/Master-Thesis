@@ -26,6 +26,10 @@
 #define SQUARE(a) ((a)*(a))
 #define GPU_SQUARE(a) (__dmul_rn(a,a))
 
+#define NB_THREADS 100
+
+#define INDEX_2D_FROM_1D(x, y, i) (y) = (i)/(NX), (x) = (i)%(NX)
+
 typedef enum { OUT_FIN, OUT_IMG, OUT_UNK } out_mode;
 
 typedef struct {
@@ -153,8 +157,7 @@ __device__ static void d_equilibrium(double* feq, double rho, double* u)
 }
 
 __device__ static void macroscopic(double* fin, double* rho, double* u)
-{
-    
+{   
     *rho = u[0] = u[1] = 0;
 
     for (int f = 0; f < 9; f++) {
@@ -170,90 +173,111 @@ __device__ static void macroscopic(double* fin, double* rho, double* u)
 
 __global__ void lbm_right_wall(lbm_vars *d_vars)
 {
-    int y = threadIdx.x;
-
-    // Right wall: outflow condition.
-    for (int i = 0; i < 3; i++) {
-        int f = d_consts.col[2][i];
-        d_vars->fin[NX-1][y][f] = d_vars->fin[NX-2][y][f]; // TODO Test: retirer condition bord
+    int x, y;
+    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i++) {
+        INDEX_2D_FROM_1D(x, y, i);
+        
+        if ( x == 0) {
+            // Right wall: outflow condition.
+            for (int i = 0; i < 3; i++) {
+                int f = d_consts.col[2][i];
+                d_vars->fin[NX-1][y][f] = d_vars->fin[NX-2][y][f];
+            }
+        }
     }
 }
 
 __global__ void lbm_macro_and_left_wall(lbm_vars *d_vars)
 {
-    int y = threadIdx.x / NX;
-    int x = threadIdx.x % NX;
+    int x, y;
+    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i++) {
+        INDEX_2D_FROM_1D(x, y, i);
 
-    // Compute macroscopic variables, density and velocity
-    macroscopic(d_vars->fin[x][y], &d_vars->rho[x][y], d_vars->u[x][y]);
-    
-    // Left wall: inflow condition
-    for (size_t d = 0; d < 2; d++) {
-        d_vars->u[0][y][d] = d_vars->vel[0][y][d]; // TODO: collision!
-    }
+        // Compute macroscopic variables, density and velocity
+        macroscopic(d_vars->fin[x][y], &d_vars->rho[x][y], d_vars->u[x][y]);
+        
+        // Left wall: inflow condition
+        for (size_t d = 0; d < 2; d++) {
+            d_vars->u[0][y][d] = d_vars->vel[0][y][d]; // TODO: collision!
+        }   
+    }  
  }
 
 __global__ void lbm_density(lbm_vars *d_vars)
 {
-    int y = threadIdx.x;
-  
-    // Calculate the density
-    double s2 = 0, s3 = 0;
-    for (size_t i = 0; i < 3; i++) {
-        s2 += d_vars->fin[0][y][d_consts.col[1][i]];
-        s3 += d_vars->fin[0][y][d_consts.col[2][i]];
+    int x, y;
+    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i++) {
+        INDEX_2D_FROM_1D(x, y, i);
+   
+        if (x == 0) {
+            // Calculate the density
+            double s2 = 0, s3 = 0;
+            for (size_t i = 0; i < 3; i++) {
+                s2 += d_vars->fin[0][y][d_consts.col[1][i]];
+                s3 += d_vars->fin[0][y][d_consts.col[2][i]];
+            }
+            d_vars->rho[0][y] = 1./(1 - d_vars->u[0][y][0]) * (s2 + 2*s3);
+        }
     }
-    d_vars->rho[0][y] = 1./(1 - d_vars->u[0][y][0]) * (s2 + 2*s3);
 }
 
 __global__ void lbm_equilibrium_1(lbm_vars *d_vars)
 {
-    int y = threadIdx.x / NX;
-    int x = threadIdx.x % NX;
+    int x, y;
+    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i++) {
+        INDEX_2D_FROM_1D(x, y, i);
    
-    // Compute equilibrium
-    d_equilibrium(d_vars->feq[x][y], d_vars->rho[x][y], d_vars->u[x][y]);
+        // Compute equilibrium
+        d_equilibrium(d_vars->feq[x][y], d_vars->rho[x][y], d_vars->u[x][y]);
+    }
 }
 
 __global__ void lbm_equilibrium_2(lbm_vars *d_vars)
 {
-    int y = threadIdx.x;
-
-    for (size_t i = 0, f = d_consts.col[0][i]; i < 3; f = d_consts.col[0][++i]) {
-        d_vars->fin[0][y][f] = d_vars->feq[0][y][f] + d_vars->fin[0][y][d_consts.opp[f]] - d_vars->feq[0][y][d_consts.opp[f]];
+    int x, y;
+    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i++) {
+        INDEX_2D_FROM_1D(x, y, i);
+   
+        if (x == 0) {
+            for (size_t i = 0, f = d_consts.col[0][i]; i < 3; f = d_consts.col[0][++i]) {
+                d_vars->fin[0][y][f] = d_vars->feq[0][y][f] + d_vars->fin[0][y][d_consts.opp[f]] - d_vars->feq[0][y][d_consts.opp[f]];
+            }
+        }
     }
-
 }
 
 __global__ void lbm_collision(lbm_vars *d_vars)
 {
-    int y = threadIdx.x / NX;
-    int x = threadIdx.x % NX;
-    
-    for (size_t f = 0; f < 9; f++) {
-        if (d_vars->obstacles[x][y]) {
-            // Bounce-back condition for obstacle
-            d_vars->fout[x][y][f] = d_vars->fin[x][y][d_consts.opp[f]];
-        } else {
-            // Collision step
-            d_vars->fout[x][y][f] = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(d_vars->fin[x][y][f], - d_vars->feq[x][y][f])), d_vars->fin[x][y][f]);
+    int x, y;
+    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i++) {
+        INDEX_2D_FROM_1D(x, y, i);
+   
+        for (size_t f = 0; f < 9; f++) {
+            if (d_vars->obstacles[x][y]) {
+                // Bounce-back condition for obstacle
+                d_vars->fout[x][y][f] = d_vars->fin[x][y][d_consts.opp[f]];
+            } else {
+                // Collision step
+                d_vars->fout[x][y][f] = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(d_vars->fin[x][y][f], - d_vars->feq[x][y][f])), d_vars->fin[x][y][f]);
+            }
         }
     }
-
 }
 
 __global__ void lbm_streaming(lbm_vars *d_vars)
 {
-    int y = threadIdx.x / NX;
-    int x = threadIdx.x % NX;
+    int x, y;
+    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i++) {
+        INDEX_2D_FROM_1D(x, y, i);
 
-    // Streaming step
-    for (size_t f = 0; f < 9; f++) {
-        size_t x_dst = (x + NX + d_consts.v[0][f]) % NX;
-        size_t y_dst = (y + NY + d_consts.v[1][f]) % NY;
-        d_vars->fin[x_dst][y_dst][f] = d_vars->fout[x][y][f];
+        // Streaming step
+        for (size_t f = 0; f < 9; f++) {
+            size_t x_dst = (x + NX + d_consts.v[0][f]) % NX;
+            size_t y_dst = (y + NY + d_consts.v[1][f]) % NY;
+            d_vars->fin[x_dst][y_dst][f] = d_vars->fout[x][y][f];
+        }
+   
     }
-
 }
 
 void print_variables(lbm_vars *d_vars, lbm_vars *h_vars, double var[NX][NY][9]) {
@@ -269,6 +293,24 @@ void print_variables(lbm_vars *d_vars, lbm_vars *h_vars, double var[NX][NY][9]) 
     }
 }
 
+int getThreads(int width, int height) {
+    int dev, threads;
+    cudaDeviceProp prop;
+    HANDLE_ERROR( cudaGetDevice(&dev) );
+    HANDLE_ERROR( cudaGetDeviceProperties(&prop, dev) );
+
+    int maxThreads = min (prop.maxThreadsDim[0], prop.maxThreadsPerBlock);
+#ifdef NB_THREADS
+    threads = NB_THREADS;
+#else
+    threads = prop.maxThreadsDim[0];
+#endif
+
+    if (threads > maxThreads)
+        threads = maxThreads;
+
+    return min(threads, width*height);
+}
 
 int main(int argc, char * const argv[])
 {
@@ -319,14 +361,19 @@ int main(int argc, char * const argv[])
     lbm_vars *d_vars;
     HANDLE_ERROR(cudaMalloc(&d_vars, sizeof(lbm_vars)));
     HANDLE_ERROR(cudaMemcpy(d_vars, h_vars, sizeof(lbm_vars), cudaMemcpyHostToDevice));
+
+
+    dim3 dimBlock(1);
+    dim3 dimGrid(getThreads(NX, NY));
+
     for (int time = 0; time < max_iter; time++) {
-        HANDLE_KERNEL_ERROR(         lbm_right_wall<<<1,   NY>>>(d_vars));        
-        HANDLE_KERNEL_ERROR(lbm_macro_and_left_wall<<<1,NX*NY>>>(d_vars));
-        HANDLE_KERNEL_ERROR(            lbm_density<<<1,   NY>>>(d_vars));
-        HANDLE_KERNEL_ERROR(      lbm_equilibrium_1<<<1,NX*NY>>>(d_vars));
-        HANDLE_KERNEL_ERROR(      lbm_equilibrium_2<<<1,   NY>>>(d_vars));
-        HANDLE_KERNEL_ERROR(          lbm_collision<<<1,NX*NY>>>(d_vars));
-        HANDLE_KERNEL_ERROR(          lbm_streaming<<<1,NX*NY>>>(d_vars));
+        HANDLE_KERNEL_ERROR(lbm_right_wall         <<<dimBlock, dimGrid>>>(d_vars));        
+        HANDLE_KERNEL_ERROR(lbm_macro_and_left_wall<<<dimBlock, dimGrid>>>(d_vars));
+        HANDLE_KERNEL_ERROR(lbm_density            <<<dimBlock, dimGrid>>>(d_vars));
+        HANDLE_KERNEL_ERROR(lbm_equilibrium_1      <<<dimBlock, dimGrid>>>(d_vars));
+        HANDLE_KERNEL_ERROR(lbm_equilibrium_2      <<<dimBlock, dimGrid>>>(d_vars));
+        HANDLE_KERNEL_ERROR(lbm_collision          <<<dimBlock, dimGrid>>>(d_vars));
+        HANDLE_KERNEL_ERROR(lbm_streaming          <<<dimBlock, dimGrid>>>(d_vars));
     }
 
     if (out == OUT_FIN) {
