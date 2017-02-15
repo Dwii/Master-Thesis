@@ -154,8 +154,8 @@ int main(int argc, char * const argv[])
     if (out == OUT_UNK && max_iter < 1) {
     usage:
         fprintf(stderr, "usage: %s (-p <path> | -f) -i <iter> \n", basename((char*)argv[0]));
-        fprintf(stderr, "  -f : output pictures in <path> directory\n");
-        fprintf(stderr, "  -t : output populations values in stdout\n");
+        fprintf(stderr, "  -p : output pictures in <path> directory\n");
+        fprintf(stderr, "  -f : output populations values in stdout\n");
         fprintf(stderr, "  -i : Total number of iterations\n");
         return EXIT_FAILURE;
     }
