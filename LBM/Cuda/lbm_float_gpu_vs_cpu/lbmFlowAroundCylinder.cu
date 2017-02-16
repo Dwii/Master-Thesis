@@ -67,8 +67,7 @@ typedef struct {
 #define HANDLE_ERROR(ans) (handleError((ans), __FILE__, __LINE__))
 inline void handleError(cudaError_t code, const char *file, int line)
 {
-   if (code != cudaSuccess) 
-   {
+   if (code != cudaSuccess) {
       fprintf(stderr,"CUDA assert: %s %s %d\n", cudaGetErrorString(code), file, line);
       exit(EXIT_FAILURE);
    }
@@ -430,7 +429,7 @@ int main(int argc, char * const argv[])
         RUN_KERNEL_2D(lbm_collision,           NX,NY, d_vars);
         RUN_KERNEL_2D(lbm_streaming,           NX,NY, d_vars);
 
-                // Visualization of the velocity.
+        // Visualization of the velocity.
         if (time % 100 == 0 && out == OUT_IMG) {
             HANDLE_ERROR(cudaMemcpy(h_vars, d_vars, sizeof(lbm_vars), cudaMemcpyDeviceToHost));
 

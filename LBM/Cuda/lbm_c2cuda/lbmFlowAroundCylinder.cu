@@ -61,8 +61,7 @@ const double T[] = { 1./36, 1./9, 1./36, 1./9, 4./9, 1./9, 1./36, 1./9, 1./36 };
 #define HANDLE_ERROR(ans) (handleError((ans), __FILE__, __LINE__))
 inline void handleError(cudaError_t code, const char *file, int line)
 {
-   if (code != cudaSuccess) 
-   {
+   if (code != cudaSuccess) {
       fprintf(stderr,"CUDA assert: %s %s %d\n", cudaGetErrorString(code), file, line);
       exit(EXIT_FAILURE);
    }
@@ -303,7 +302,7 @@ int getThreads(int width, int height) {
     HANDLE_ERROR( cudaGetDevice(&dev) );
     HANDLE_ERROR( cudaGetDeviceProperties(&prop, dev) );
 
-    int maxThreads = min (prop.maxThreadsDim[0], prop.maxThreadsPerBlock);
+    int maxThreads = min(prop.maxThreadsDim[0], prop.maxThreadsPerBlock);
 #ifdef NB_THREADS
     threads = NB_THREADS;
 #else
