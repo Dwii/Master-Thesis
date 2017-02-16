@@ -20,7 +20,7 @@ if not testmode:
 ###### Flow definition #########################################################
 maxIter = int(sys.argv[1])  # Total number of time iterations.
 Re = 220.0         # Reynolds number.
-nx, ny = 100,10#420, 180 # Numer of lattice nodes.
+nx, ny = 420, 180 # Numer of lattice nodes.
 ly = ny-1         # Height of the domain in lattice units.
 cx, cy, r = nx//4, ny//2, ny//9 # Coordinates of the cylinder.
 uLB     = 0.04                  # Velocity in lattice units.

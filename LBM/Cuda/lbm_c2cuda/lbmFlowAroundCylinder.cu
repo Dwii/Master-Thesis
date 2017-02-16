@@ -14,8 +14,8 @@
 #include <pgm.h>
 
 #define RE       220.0       // Reynolds number
-#define NX       100//420         // Numer of lattice nodes (width)
-#define NY       10 //180         // Numer of lattice nodes (height)
+#define NX       420         // Numer of lattice nodes (width)
+#define NY       180         // Numer of lattice nodes (height)
 #define LY       ((NY) - 1)  // Height of the domain in lattice units
 #define CX       ((NX) / 4)  // X coordinates of the cylinder
 #define CY       ((NY) / 2)  // Y coordinates of the cylinder

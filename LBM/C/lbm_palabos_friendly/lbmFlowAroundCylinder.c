@@ -17,10 +17,10 @@
 #include <array.h>
 
 #ifndef NX
-#define NX       100//420         // Numer of lattice nodes (width)
+#define NX       420         // Numer of lattice nodes (width)
 #endif
 #ifndef NY
-#define NY       10//180         // Numer of lattice nodes (height)
+#define NY       180         // Numer of lattice nodes (height)
 #endif
 #define RE       220.0       // Reynolds number
 #define LY       ((NY) - 1)  // Height of the domain in lattice units
