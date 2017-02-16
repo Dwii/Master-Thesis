@@ -388,11 +388,10 @@ int main(int argc, char * const argv[])
         if (time % 100 == 0 && out == OUT_IMG) {
             HANDLE_ERROR(cudaMemcpy(h_vars, d_vars, sizeof(lbm_vars), cudaMemcpyDeviceToHost));
 
-            double vel[NX][NY];
             for (size_t x = 0; x < NX; x++) {
                 for (size_t y = 0; y < NY; y++) {
-                    vel[x][y] = sqrt( SQUARE(h_vars->u[x][y][0]) + SQUARE(h_vars->u[x][y][1]) );
-                    int color =  255 * vel[x][y] * 10;
+                    double vel = sqrt( SQUARE(h_vars->u[x][y][0]) + SQUARE(h_vars->u[x][y][1]) );
+                    int color =  255 * vel * 10;
                     pgm_set_pixel(pgm, x, y, color);
                 }
             }

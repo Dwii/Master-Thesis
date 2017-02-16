@@ -295,11 +295,10 @@ int main(int argc, char * const argv[])
         
         // Visualization of the velocity.
         if (time % 100 == 0 && out == OUT_IMG) {
-            double vel[NX][NY];
             for (size_t x = 0; x < NX; x++) {
                 for (size_t y = 0; y < NY; y++) {
-                    vel[x][y] = sqrt( SQUARE(u[0][x][y]) + SQUARE(u[1][x][y]) );
-                    int color =  fmin(255, 255 * vel[x][y] * 10);
+                    double vel = sqrt( SQUARE(u[0][x][y]) + SQUARE(u[1][x][y]) );
+                    int color =  fmin(255, 255 * vel * 10);
                     pgm_set_pixel(pgm, x, y, color);
                 }
             }
