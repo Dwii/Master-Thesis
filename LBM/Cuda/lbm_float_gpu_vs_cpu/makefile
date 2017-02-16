@@ -15,6 +15,7 @@ SRCDIR=.
 OBJDIR=obj
 BINDIR=bin
 OUTDIR=out
+LIBDIR=../../C/libs
 
 # Test output file
 OUT=lbm.out
@@ -27,13 +28,19 @@ OBJS= $(GPUOBJS) $(CPUOBJS)
 # Flags
 NVCC_FLAGS=-Wno-deprecated-gpu-targets
 
-# Libraries
-LIBS=-lm
+# Non-standard libraries
+LIBNAM=pgm array
+LIBDEP=$(addprefix $(LIBDIR)/,$(LIBNAM))
+INCS=$(addprefix -I,$(LIBDEP))
+LIBS=$(addprefix -L,$(LIBDEP)) $(addprefix -l,$(LIBNAM))
+
+# Standard libraries
+LIBS+=-lm
 
 all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(GPUBIN) $(BINDIR)/$(CPUBIN)
 
-run: all 
-	$(BINDIR)/$(BIN) -i $(ITER)
+run: all $(OUTDIR) 
+	$(BINDIR)/$(GPUBIN) -p $(OUTDIR) -i $(ITER)
 
 output: all $(OUTDIR) 
 	$(BINDIR)/$(GPUBIN) -i $(ITER) -f > $(OUTDIR)/gpu_$(OUT)
@@ -53,8 +60,8 @@ $(BINDIR)/$(CPUBIN): $(CPUOBJS)
 $(GPUOBJS): NVCC_XPU_FLAG=-DCOMPUTE_ON_GPU
 $(CPUOBJS): NVCC_XPU_FLAG=-DCOMPUTE_ON_CPU
 $(OBJS): $(SRCS)
-	$(NVCC) -M $(NVCC_FLAGS) $(NVCC_XPU_FLAG) $< -odir $(OBJDIR) > $(@:.o=.d)
-	$(NVCC) $(NVCC_FLAGS) $(NVCC_XPU_FLAG) -o $@ -c $<
+	$(NVCC) -M $(NVCC_FLAGS) $(NVCC_XPU_FLAG) $< -odir $(OBJDIR) $(INCS) > $(@:.o=.d)
+	$(NVCC) $(NVCC_FLAGS) $(NVCC_XPU_FLAG) -o $@ -c $< $(INCS)
 
 clean:
 	rm -rf $(OBJDIR) $(BINDIR) $(OUTDIR)

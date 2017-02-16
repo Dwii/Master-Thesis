@@ -13,6 +13,7 @@ SRCDIR=.
 OBJDIR=obj
 BINDIR=bin
 OUTDIR=out
+LIBDIR=../../C/libs
 
 # Test output file
 OUT=lbm.out
@@ -24,13 +25,19 @@ OBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.cu=.o)))
 # Flags
 NVCC_FLAGS=-Wno-deprecated-gpu-targets
 
-# Libraries
-LIBS=-lm
+# Non-standard libraries
+LIBNAM=pgm array
+LIBDEP=$(addprefix $(LIBDIR)/,$(LIBNAM))
+INCS=$(addprefix -I,$(LIBDEP))
+LIBS=$(addprefix -L,$(LIBDEP)) $(addprefix -l,$(LIBNAM))
+
+# Standard libraries
+LIBS+=-lm
 
 all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(BIN)
 	
-run: all 
-	$(BINDIR)/$(BIN) -i $(ITER)
+run: all $(OUTDIR) 
+	$(BINDIR)/$(BIN) -p $(OUTDIR) -i $(ITER)
 
 output: all $(OUTDIR) 
 	$(BINDIR)/$(BIN) -i $(ITER) -f > $(OUTDIR)/$(OUT) 
@@ -44,8 +51,8 @@ $(BINDIR)/$(BIN): $(OBJS)
 -include $(OBJS:.o=.d)
 
 $(OBJS): $(SRCS)
-	$(NVCC) -M $(NVCC_FLAGS) $< -odir $(OBJDIR) > $(@:.o=.d)
-	$(NVCC) $(NVCC_FLAGS) -o $@ -c $<
+	$(NVCC) -M $(NVCC_FLAGS) $< -odir $(OBJDIR) $(INCS) > $(@:.o=.d) 
+	$(NVCC) $(NVCC_FLAGS) -o $@ -c $< $(INCS)
 
 clean:
 	rm -rf $(OBJDIR) $(BINDIR) $(OUTDIR)

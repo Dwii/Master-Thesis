@@ -11,6 +11,7 @@
 #include <math.h>
 #include <stdbool.h>
 #include <libgen.h>
+#include <pgm.h>
 
 #define RE       220.0       // Reynolds number
 #define NX       100//420         // Numer of lattice nodes (width)
@@ -173,8 +174,8 @@ __device__ static void macroscopic(double* fin, double* rho, double* u)
 
 __global__ void lbm_right_wall(lbm_vars *d_vars)
 {
-    int x, y;
-    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i++) {
+    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i += blockDim.x * gridDim.x) {
+        int x, y;
         INDEX_2D_FROM_1D(x, y, i);
         
         if ( x == 0) {
@@ -189,24 +190,26 @@ __global__ void lbm_right_wall(lbm_vars *d_vars)
 
 __global__ void lbm_macro_and_left_wall(lbm_vars *d_vars)
 {
-    int x, y;
-    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i++) {
+    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i += blockDim.x * gridDim.x) {
+        int x, y;
         INDEX_2D_FROM_1D(x, y, i);
 
         // Compute macroscopic variables, density and velocity
         macroscopic(d_vars->fin[x][y], &d_vars->rho[x][y], d_vars->u[x][y]);
         
         // Left wall: inflow condition
-        for (size_t d = 0; d < 2; d++) {
-            d_vars->u[0][y][d] = d_vars->vel[0][y][d]; // TODO: collision!
-        }   
+        if (x == 0) {
+            for (size_t d = 0; d < 2; d++) {
+                d_vars->u[0][y][d] = d_vars->vel[0][y][d]; // TODO: collision!
+            }   
+        }
     }  
  }
 
 __global__ void lbm_density(lbm_vars *d_vars)
 {
-    int x, y;
-    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i++) {
+    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i += blockDim.x * gridDim.x) {
+        int x, y;
         INDEX_2D_FROM_1D(x, y, i);
    
         if (x == 0) {
@@ -223,8 +226,8 @@ __global__ void lbm_density(lbm_vars *d_vars)
 
 __global__ void lbm_equilibrium_1(lbm_vars *d_vars)
 {
-    int x, y;
-    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i++) {
+    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i += blockDim.x * gridDim.x) {
+        int x, y;
         INDEX_2D_FROM_1D(x, y, i);
    
         // Compute equilibrium
@@ -234,8 +237,8 @@ __global__ void lbm_equilibrium_1(lbm_vars *d_vars)
 
 __global__ void lbm_equilibrium_2(lbm_vars *d_vars)
 {
-    int x, y;
-    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i++) {
+    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i += blockDim.x * gridDim.x) {
+        int x, y;
         INDEX_2D_FROM_1D(x, y, i);
    
         if (x == 0) {
@@ -248,8 +251,8 @@ __global__ void lbm_equilibrium_2(lbm_vars *d_vars)
 
 __global__ void lbm_collision(lbm_vars *d_vars)
 {
-    int x, y;
-    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i++) {
+    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i += blockDim.x * gridDim.x) {
+        int x, y;
         INDEX_2D_FROM_1D(x, y, i);
    
         for (size_t f = 0; f < 9; f++) {
@@ -266,8 +269,9 @@ __global__ void lbm_collision(lbm_vars *d_vars)
 
 __global__ void lbm_streaming(lbm_vars *d_vars)
 {
-    int x, y;
-    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i++) {
+
+    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i += blockDim.x * gridDim.x) {
+        int x, y;
         INDEX_2D_FROM_1D(x, y, i);
 
         // Streaming step
@@ -314,12 +318,15 @@ int getThreads(int width, int height) {
 
 int main(int argc, char * const argv[])
 {
+
     // Read arguments
+    char* img_path = NULL;
     out_mode out = OUT_UNK;
     ssize_t max_iter = 0;
     
     while (optind < argc) {
         switch (getopt(argc, argv, "p:fi:")) {
+            case 'p': { out = OUT_IMG; img_path = optarg; break; }
             case 'f': { out = OUT_FIN; break; }
             case 'i': { max_iter = strtol(optarg, NULL, 10); break; }
             default : { goto usage; }
@@ -329,7 +336,8 @@ int main(int argc, char * const argv[])
     // check that execution mode is set (output images or fin values)
     if (out == OUT_UNK && max_iter < 1) {
     usage:
-        fprintf(stderr, "usage: %s [-f] -i <iter> \n", basename((char*)argv[0]));
+        fprintf(stderr, "usage: %s (-p <path> | -f) -i <iter> \n", basename((char*)argv[0]));
+        fprintf(stderr, "  -p : output pictures in <path> directory\n");
         fprintf(stderr, "  -f : output populations values in stdout\n");
         fprintf(stderr, "  -i : Total number of iterations\n");
         return EXIT_FAILURE;
@@ -362,9 +370,10 @@ int main(int argc, char * const argv[])
     HANDLE_ERROR(cudaMalloc(&d_vars, sizeof(lbm_vars)));
     HANDLE_ERROR(cudaMemcpy(d_vars, h_vars, sizeof(lbm_vars), cudaMemcpyHostToDevice));
 
-
     dim3 dimBlock(1);
     dim3 dimGrid(getThreads(NX, NY));
+
+    pgm_image* pgm = pgm_create(NX, NY);
 
     for (int time = 0; time < max_iter; time++) {
         HANDLE_KERNEL_ERROR(lbm_right_wall         <<<dimBlock, dimGrid>>>(d_vars));        
@@ -374,12 +383,32 @@ int main(int argc, char * const argv[])
         HANDLE_KERNEL_ERROR(lbm_equilibrium_2      <<<dimBlock, dimGrid>>>(d_vars));
         HANDLE_KERNEL_ERROR(lbm_collision          <<<dimBlock, dimGrid>>>(d_vars));
         HANDLE_KERNEL_ERROR(lbm_streaming          <<<dimBlock, dimGrid>>>(d_vars));
+
+        // Visualization of the velocity.
+        if (time % 100 == 0 && out == OUT_IMG) {
+            HANDLE_ERROR(cudaMemcpy(h_vars, d_vars, sizeof(lbm_vars), cudaMemcpyDeviceToHost));
+
+            double vel[NX][NY];
+            for (size_t x = 0; x < NX; x++) {
+                for (size_t y = 0; y < NY; y++) {
+                    vel[x][y] = sqrt( SQUARE(h_vars->u[x][y][0]) + SQUARE(h_vars->u[x][y][1]) );
+                    int color =  255 * vel[x][y] * 10;
+                    pgm_set_pixel(pgm, x, y, color);
+                }
+            }
+            // build image file path and create it
+            char* filename;
+            asprintf(&filename, "%s/vel_%d.pgm", img_path, time/100);
+            pgm_write(pgm, filename);
+            free(filename);
+        }
     }
 
     if (out == OUT_FIN) {
         print_variables(d_vars, h_vars, h_vars->fin);
     }
 
+    pgm_destroy(pgm);
     free(h_consts);
     free(h_vars);
     HANDLE_ERROR(cudaFree(d_vars));

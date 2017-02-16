@@ -11,6 +11,7 @@
 #include <math.h>
 #include <stdbool.h>
 #include <libgen.h>
+#include <pgm.h>
 
 #define RE       220.0       // Reynolds number
 #define NX       100//420         // Numer of lattice nodes (width)
@@ -368,21 +369,24 @@ void print_variables(lbm_vars *d_vars, lbm_vars *h_vars, double var[NX][NY][9]) 
 int main(int argc, char * const argv[])
 {
     // Read arguments
+    char* img_path = NULL;
     out_mode out = OUT_UNK;
     ssize_t max_iter = 0;
     
     while (optind < argc) {
-        switch (getopt(argc, argv, "fi:")) {
+        switch (getopt(argc, argv, "p:fi:")) {
+            case 'p': { out = OUT_IMG; img_path = optarg; break; }
             case 'f': { out = OUT_FIN; break; }
             case 'i': { max_iter = strtol(optarg, NULL, 10); break; }
             default : { goto usage; }
         }
     }
     
-    // check that execution mode is set
+    // check that execution mode is set (output images or fin values)
     if (out == OUT_UNK && max_iter < 1) {
     usage:
-        fprintf(stderr, "usage: %s [-f] -i <iter> \n", basename((char*)argv[0]));
+        fprintf(stderr, "usage: %s (-p <path> | -f) -i <iter> \n", basename((char*)argv[0]));
+        fprintf(stderr, "  -p : output pictures in <path> directory\n");
         fprintf(stderr, "  -f : output populations values in stdout\n");
         fprintf(stderr, "  -i : Total number of iterations\n");
         return EXIT_FAILURE;
@@ -414,6 +418,9 @@ int main(int argc, char * const argv[])
     lbm_vars *d_vars;
     HANDLE_ERROR(cudaMalloc(&d_vars, sizeof(lbm_vars)));
     HANDLE_ERROR(cudaMemcpy(d_vars, h_vars, sizeof(lbm_vars), cudaMemcpyHostToDevice));
+
+    pgm_image* pgm = pgm_create(NX, NY);
+
     for (int time = 0; time < max_iter; time++) {
         RUN_KERNEL_1D(lbm_right_wall,             NY, d_vars);
         RUN_KERNEL_2D(lbm_macro_and_left_wall, NX,NY, d_vars);
@@ -422,12 +429,32 @@ int main(int argc, char * const argv[])
         RUN_KERNEL_1D(lbm_equilibrium_2,          NY, d_vars);
         RUN_KERNEL_2D(lbm_collision,           NX,NY, d_vars);
         RUN_KERNEL_2D(lbm_streaming,           NX,NY, d_vars);
+
+                // Visualization of the velocity.
+        if (time % 100 == 0 && out == OUT_IMG) {
+            HANDLE_ERROR(cudaMemcpy(h_vars, d_vars, sizeof(lbm_vars), cudaMemcpyDeviceToHost));
+
+            double vel[NX][NY];
+            for (size_t x = 0; x < NX; x++) {
+                for (size_t y = 0; y < NY; y++) {
+                    vel[x][y] = sqrt( SQUARE(h_vars->u[x][y][0]) + SQUARE(h_vars->u[x][y][1]) );
+                    int color =  255 * vel[x][y] * 10;
+                    pgm_set_pixel(pgm, x, y, color);
+                }
+            }
+            // build image file path and create it
+            char* filename;
+            asprintf(&filename, "%s/vel_%d.pgm", img_path, time/100);
+            pgm_write(pgm, filename);
+            free(filename);
+        }
     }
 
     if (out == OUT_FIN) {
         print_variables(d_vars, h_vars, h_vars->fin);
     }
 
+    pgm_destroy(pgm);
     free(h_consts);
     free(h_vars);
     HANDLE_ERROR(cudaFree(d_vars));
