@@ -24,11 +24,10 @@
 #define NULB     ((ULB) * (R) / (RE))   // Viscoscity in lattice units
 #define OMEGA    ((double)1. / (3*(NULB)+0.5))  // Relaxation parameter
 
-#define SQUARE(a) ((a)*(a))
-#define GPU_SQUARE(a) (__dmul_rn(a,a))
-
 #define NB_THREADS 100
 
+#define SQUARE(a) ((a)*(a))
+#define GPU_SQUARE(a) (__dmul_rn(a,a))
 #define INDEX_2D_FROM_1D(x, y, i) (y) = (i)/(NX), (x) = (i)%(NX)
 
 typedef enum { OUT_FIN, OUT_IMG, OUT_UNK } out_mode;
@@ -173,10 +172,10 @@ __device__ static void macroscopic(double* fin, double* rho, double* u)
 
 __global__ void lbm_right_wall(lbm_vars *d_vars)
 {
-    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i += blockDim.x * gridDim.x) {
+    for (int idx = threadIdx.x + blockIdx.x * blockDim.x; idx < NX*NY; idx += blockDim.x * gridDim.x) {
         int x, y;
-        INDEX_2D_FROM_1D(x, y, i);
-        
+        INDEX_2D_FROM_1D(x, y, idx);
+
         if ( x == 0) {
             // Right wall: outflow condition.
             for (int i = 0; i < 3; i++) {
@@ -189,9 +188,9 @@ __global__ void lbm_right_wall(lbm_vars *d_vars)
 
 __global__ void lbm_macro_and_left_wall(lbm_vars *d_vars)
 {
-    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i += blockDim.x * gridDim.x) {
+    for (int idx = threadIdx.x + blockIdx.x * blockDim.x; idx < NX*NY; idx += blockDim.x * gridDim.x) {
         int x, y;
-        INDEX_2D_FROM_1D(x, y, i);
+        INDEX_2D_FROM_1D(x, y, idx);
 
         // Compute macroscopic variables, density and velocity
         macroscopic(d_vars->fin[x][y], &d_vars->rho[x][y], d_vars->u[x][y]);
@@ -207,10 +206,10 @@ __global__ void lbm_macro_and_left_wall(lbm_vars *d_vars)
 
 __global__ void lbm_density(lbm_vars *d_vars)
 {
-    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i += blockDim.x * gridDim.x) {
+    for (int idx = threadIdx.x + blockIdx.x * blockDim.x; idx < NX*NY; idx += blockDim.x * gridDim.x) {
         int x, y;
-        INDEX_2D_FROM_1D(x, y, i);
-   
+        INDEX_2D_FROM_1D(x, y, idx);
+
         if (x == 0) {
             // Calculate the density
             double s2 = 0, s3 = 0;
@@ -225,10 +224,10 @@ __global__ void lbm_density(lbm_vars *d_vars)
 
 __global__ void lbm_equilibrium_1(lbm_vars *d_vars)
 {
-    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i += blockDim.x * gridDim.x) {
+    for (int idx = threadIdx.x + blockIdx.x * blockDim.x; idx < NX*NY; idx += blockDim.x * gridDim.x) {
         int x, y;
-        INDEX_2D_FROM_1D(x, y, i);
-   
+        INDEX_2D_FROM_1D(x, y, idx);
+
         // Compute equilibrium
         d_equilibrium(d_vars->feq[x][y], d_vars->rho[x][y], d_vars->u[x][y]);
     }
@@ -236,10 +235,10 @@ __global__ void lbm_equilibrium_1(lbm_vars *d_vars)
 
 __global__ void lbm_equilibrium_2(lbm_vars *d_vars)
 {
-    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i += blockDim.x * gridDim.x) {
+    for (int idx = threadIdx.x + blockIdx.x * blockDim.x; idx < NX*NY; idx += blockDim.x * gridDim.x) {
         int x, y;
-        INDEX_2D_FROM_1D(x, y, i);
-   
+        INDEX_2D_FROM_1D(x, y, idx);
+
         if (x == 0) {
             for (size_t i = 0, f = d_consts.col[0][i]; i < 3; f = d_consts.col[0][++i]) {
                 d_vars->fin[0][y][f] = d_vars->feq[0][y][f] + d_vars->fin[0][y][d_consts.opp[f]] - d_vars->feq[0][y][d_consts.opp[f]];
@@ -250,10 +249,10 @@ __global__ void lbm_equilibrium_2(lbm_vars *d_vars)
 
 __global__ void lbm_collision(lbm_vars *d_vars)
 {
-    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i += blockDim.x * gridDim.x) {
+    for (int idx = threadIdx.x + blockIdx.x * blockDim.x; idx < NX*NY; idx += blockDim.x * gridDim.x) {
         int x, y;
-        INDEX_2D_FROM_1D(x, y, i);
-   
+        INDEX_2D_FROM_1D(x, y, idx);
+
         for (size_t f = 0; f < 9; f++) {
             if (d_vars->obstacles[x][y]) {
                 // Bounce-back condition for obstacle
@@ -269,9 +268,9 @@ __global__ void lbm_collision(lbm_vars *d_vars)
 __global__ void lbm_streaming(lbm_vars *d_vars)
 {
 
-    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < NX*NY; i += blockDim.x * gridDim.x) {
+    for (int idx = threadIdx.x + blockIdx.x * blockDim.x; idx < NX*NY; idx += blockDim.x * gridDim.x) {
         int x, y;
-        INDEX_2D_FROM_1D(x, y, i);
+        INDEX_2D_FROM_1D(x, y, idx);
 
         // Streaming step
         for (size_t f = 0; f < 9; f++) {
