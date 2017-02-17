@@ -108,7 +108,7 @@ static void initObstacles(lbm_vars* vars)
 {
     for (int x = 0; x < NX; x++) {
         for (int y = 0; y < NY; y++) {
-            vars->obstacles[x][y] = SQUARE(x-CX) + SQUARE(y-CY) < SQUARE(R);
+            vars->obstacles[x][y] = false;
         }
     }
 }
@@ -135,6 +135,7 @@ static void initRho(lbm_vars* vars)
             vars->rho[x][y] = 1.0;
         }
     }
+    vars->rho[NX/2][NY/2] = 2.0;   
 }
 
 static void initCol(size_t* col, ssize_t v0)
@@ -296,9 +297,11 @@ __global__ void lbm_streaming(lbm_vars *d_vars)
 
     // Streaming step
     for (size_t f = 0; f < 9; f++) {
-        size_t x_dst = (x + NX + d_consts.v[0][f]) % NX;
-        size_t y_dst = (y + NY + d_consts.v[1][f]) % NY;
-        d_vars->fin[x_dst][y_dst][f] = d_vars->fout[x][y][f];
+        ssize_t x_dst = x + d_consts.v[0][f];
+        ssize_t y_dst = y + d_consts.v[1][f];
+        if (0 <= x_dst && x_dst < NX && 0 <= y_dst && y_dst < NY) {
+            d_vars->fin[x_dst][y_dst][f] = d_vars->fout[x][y][f];
+        }
     }
 
 #ifndef COMPUTE_ON_CPU
