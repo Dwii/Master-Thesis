@@ -25,7 +25,7 @@
 #define OMEGA    ((double)1. / (3*(NULB)+0.5))  // Relaxation parameter
 
 #define NB_BLOCKS    1
-#define NB_THREADS 100
+//#define NB_THREADS 100
 
 #define SQUARE(a) ((a)*(a))
 #define GPU_SQUARE(a) (__dmul_rn(a,a))
