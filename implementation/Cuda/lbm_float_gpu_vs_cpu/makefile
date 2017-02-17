@@ -17,7 +17,6 @@ NVCC=nvcc
 # Binary target
 GPUBIN=lbmFlowAroundCylinder_gpu
 CPUBIN=lbmFlowAroundCylinder_cpu
-BINS=
 
 # Binary arguments
 ITER=200000

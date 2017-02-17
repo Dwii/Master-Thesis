@@ -47,7 +47,7 @@ typedef struct {
 
 #ifdef COMPUTE_ON_CPU
 // Tweak the code to run on CPU
-#define cudaMalloc(dst_ptr, size)        do { *(dst_ptr) = (lbm_vars*)malloc(size); } while(0)
+#define cudaMalloc(dst_ptr, size) do { *(dst_ptr) = (lbm_vars*)malloc(size); } while(0)
 #define cudaMemcpy(dst, src, size, mode) memcpy(dst, src, size)
 #define cudaMemcpyToSymbol(dst, src, size) memcpy(&dst, src, size)
 #define cudaFree(ptr) free(ptr)
