@@ -24,6 +24,7 @@
 #define NULB     ((ULB) * (R) / (RE))   // Viscoscity in lattice units
 #define OMEGA    ((double)1. / (3*(NULB)+0.5))  // Relaxation parameter
 
+#define NB_BLOCKS    1
 #define NB_THREADS 100
 
 #define SQUARE(a) ((a)*(a))
@@ -62,8 +63,7 @@ typedef struct {
 #define fory(...) for (int y = 0; y < NY; ++y) { __VA_ARGS__; }
 #define forxy(...) fory(for (int x = 0; x < NX; ++x) { __VA_ARGS__; })
 
-#define RUN_KERNEL_1D(kernel, th1, ...) fory(kernel(__VA_ARGS__, y))
-#define RUN_KERNEL_2D(kernel, th1, th2, ...) forxy(kernel(__VA_ARGS__, x, y))
+#define RUN_KERNEL(kernel, th1, th2, ...) forxy(kernel(__VA_ARGS__, x, y))
 
 #else
 // Code for GPU usage only
@@ -83,8 +83,7 @@ do {                                         \
     HANDLE_ERROR( cudaDeviceSynchronize() ); \
 } while(0)
 
-#define RUN_KERNEL_1D(kernel, th1, ...) HANDLE_KERNEL_ERROR( kernel<<<dimBlock, dimGrid>>>(__VA_ARGS__) )
-#define RUN_KERNEL_2D(kernel, th1, th2, ...) HANDLE_KERNEL_ERROR( kernel<<<dimBlock, dimGrid>>>(__VA_ARGS__) )
+#define RUN_KERNEL(kernel, th1, th2, ...) HANDLE_KERNEL_ERROR( kernel<<<dimBlock, dimGrid>>>(__VA_ARGS__) )
 #endif
 
 // Constants
@@ -220,129 +219,50 @@ static void macroscopic(double* fin, double* rho, double* u)
 }
 
 #ifdef COMPUTE_ON_CPU
-void lbm_right_wall(lbm_vars *d_vars, int y) 
+void lbm_computation(lbm_vars *d_vars, int x, int y) 
 {
 #else
-__global__ void lbm_right_wall(lbm_vars *d_vars)
+__global__ void lbm_computation(lbm_vars *d_vars)
 {
     for (int idx = threadIdx.x + blockIdx.x * blockDim.x; idx < NX*NY; idx += blockDim.x * gridDim.x) {
         int x, y;
         INDEX_2D_FROM_1D(x, y, idx);
-        if (x == 0) {
 #endif
 
     // Right wall: outflow condition.
-    for (int i = 0; i < 3; i++) {
-        int f = d_consts.col[2][i];
-        d_vars->fin[NX-1][y][f] = d_vars->fin[NX-2][y][f];
-    }
-
-#ifndef COMPUTE_ON_CPU
+    if (x == NX-1) {
+        for (int i = 0; i < 3; i++) {
+            int f = d_consts.col[2][i];
+            d_vars->fin[NX-1][y][f] = d_vars->fin[NX-2][y][f];
         }
     }
-#endif
-}
-
-#ifdef COMPUTE_ON_CPU
-void lbm_macro_and_left_wall(lbm_vars *d_vars, int x, int y) 
-{
-#else
-__global__ void lbm_macro_and_left_wall(lbm_vars *d_vars) 
-{
-    for (int idx = threadIdx.x + blockIdx.x * blockDim.x; idx < NX*NY; idx += blockDim.x * gridDim.x) {
-        int x, y;
-        INDEX_2D_FROM_1D(x, y, idx);
-#endif
 
     // Compute macroscopic variables, density and velocity
     macroscopic(d_vars->fin[x][y], &d_vars->rho[x][y], d_vars->u[x][y]);
     
-    // Left wall: inflow condition
     if (x == 0) {
+        // Left wall: inflow condition
         for (size_t d = 0; d < 2; d++) {
             d_vars->u[0][y][d] = d_vars->vel[0][y][d]; // TODO: collision!
         }        
-    }
 
-#ifndef COMPUTE_ON_CPU
+        // Calculate the density
+        double s2 = 0, s3 = 0;
+        for (size_t i = 0; i < 3; i++) {
+            s2 += d_vars->fin[0][y][d_consts.col[1][i]];
+            s3 += d_vars->fin[0][y][d_consts.col[2][i]];
+        }
+        d_vars->rho[0][y] = 1./(1 - d_vars->u[0][y][0]) * (s2 + 2*s3);
     }
-#endif
-}
-
-#ifdef COMPUTE_ON_CPU
-void lbm_density(lbm_vars *d_vars, int y)
-{
-#else
-__global__ void lbm_density(lbm_vars *d_vars)
-{
-    for (int idx = threadIdx.x + blockIdx.x * blockDim.x; idx < NX*NY; idx += blockDim.x * gridDim.x) {
-        int x, y;
-        INDEX_2D_FROM_1D(x, y, idx);
-        if (x == 0) {
-#endif
-    // Calculate the density
-    double s2 = 0, s3 = 0;
-    for (size_t i = 0; i < 3; i++) {
-        s2 += d_vars->fin[0][y][d_consts.col[1][i]];
-        s3 += d_vars->fin[0][y][d_consts.col[2][i]];
-    }
-    d_vars->rho[0][y] = 1./(1 - d_vars->u[0][y][0]) * (s2 + 2*s3);
-
-#ifndef COMPUTE_ON_CPU
-        }   
-    }
-#endif
-}
-
-#ifdef COMPUTE_ON_CPU
-void lbm_equilibrium_1(lbm_vars *d_vars, int x, int y)
-{
-#else
-__global__ void lbm_equilibrium_1(lbm_vars *d_vars)
-{
-    for (int idx = threadIdx.x + blockIdx.x * blockDim.x; idx < NX*NY; idx += blockDim.x * gridDim.x) {
-        int x, y;
-        INDEX_2D_FROM_1D(x, y, idx);
-#endif
    
     // Compute equilibrium
     d_equilibrium(d_vars->feq[x][y], d_vars->rho[x][y], d_vars->u[x][y]);
 
-#ifndef COMPUTE_ON_CPU
-    }
-#endif
-}
-
-#ifdef COMPUTE_ON_CPU
-void lbm_equilibrium_2(lbm_vars *d_vars, int y)
-{
-#else 
-__global__ void lbm_equilibrium_2(lbm_vars *d_vars)
-{
-    for (int idx = threadIdx.x + blockIdx.x * blockDim.x; idx < NX*NY; idx += blockDim.x * gridDim.x) {
-        int x, y;
-        INDEX_2D_FROM_1D(x, y, idx);
-        if (x == 0) {
-#endif
-    for (size_t i = 0, f = d_consts.col[0][i]; i < 3; f = d_consts.col[0][++i]) {
-        d_vars->fin[0][y][f] = d_vars->feq[0][y][f] + d_vars->fin[0][y][d_consts.opp[f]] - d_vars->feq[0][y][d_consts.opp[f]];
-    }
-#ifndef COMPUTE_ON_CPU
+    if (x == 0) {
+        for (size_t i = 0, f = d_consts.col[0][i]; i < 3; f = d_consts.col[0][++i]) {
+            d_vars->fin[0][y][f] = d_vars->feq[0][y][f] + d_vars->fin[0][y][d_consts.opp[f]] - d_vars->feq[0][y][d_consts.opp[f]];
         }
     }
-#endif
-}
-
-#ifdef COMPUTE_ON_CPU
-void lbm_collision(lbm_vars *d_vars, int x, int y)
-{
-#else
-__global__ void lbm_collision(lbm_vars *d_vars)
-{
-    for (int idx = threadIdx.x + blockIdx.x * blockDim.x; idx < NX*NY; idx += blockDim.x * gridDim.x) {
-        int x, y;
-        INDEX_2D_FROM_1D(x, y, idx);
-#endif
     
     for (size_t f = 0; f < 9; f++) {
         if (d_vars->obstacles[x][y]) {
@@ -353,10 +273,8 @@ __global__ void lbm_collision(lbm_vars *d_vars)
 #ifdef COMPUTE_ON_CPU
             d_vars->fout[x][y][f] = d_vars->fin[x][y][f] - OMEGA * (d_vars->fin[x][y][f] - d_vars->feq[x][y][f]);
 #else
-//            d_vars->fout[x][y][f] = __fma_rn(-OMEGA, __dadd_rn(d_vars->fin[x][y][f], - d_vars->feq[x][y][f]), d_vars->fin[x][y][f]); // no change
             d_vars->fout[x][y][f] = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(d_vars->fin[x][y][f], - d_vars->feq[x][y][f])), d_vars->fin[x][y][f]);
 #endif
-
         }
     }
 
@@ -476,18 +394,13 @@ int main(int argc, char * const argv[])
     pgm_image* pgm = pgm_create(NX, NY);
 
 #ifndef COMPUTE_ON_CPU
-    dim3 dimBlock(1);
+    dim3 dimBlock(NB_BLOCKS);
     dim3 dimGrid(getThreads(NX, NY));
 #endif
 
     for (int time = 0; time < max_iter; time++) {
-        RUN_KERNEL_1D(lbm_right_wall,             NY, d_vars);
-        RUN_KERNEL_2D(lbm_macro_and_left_wall, NX,NY, d_vars);
-        RUN_KERNEL_1D(lbm_density,                NY, d_vars);
-        RUN_KERNEL_2D(lbm_equilibrium_1,       NX,NY, d_vars);
-        RUN_KERNEL_1D(lbm_equilibrium_2,          NY, d_vars);
-        RUN_KERNEL_2D(lbm_collision,           NX,NY, d_vars);
-        RUN_KERNEL_2D(lbm_streaming,           NX,NY, d_vars);
+        RUN_KERNEL(lbm_computation, NX, NY, d_vars);
+        RUN_KERNEL(lbm_streaming,   NX, NY, d_vars);
 
         // Visualization of the velocity.
         if (time % 100 == 0 && out == OUT_IMG) {
