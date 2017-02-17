@@ -45,13 +45,14 @@ output: vars
 	@$(foreach lang, $(LANGS), $(MAKE) -C $(lang) output $(MAKEFLAGS);)
 
 print_test: vars
-	@$(call compare, Test lbm_py2c:                      , Python/lbm_py/out/$(OUT),                 C/lbm_py2c/out/$(OUT),                    C/lbm_py2c/out/$(OUT).timing,                  )
-	@$(call compare, Test lbm_palabos_friendly:          , Python/lbm_palabos_friendly/out/$(OUT),   C/lbm_palabos_friendly/out/$(OUT),        C/lbm_palabos_friendly/out/$(OUT).timing,      )
-	@$(call compare, Test lbm_cuda_ready:                , Python/lbm_palabos_friendly/out/$(OUT),   C/lbm_cuda_ready/out/$(OUT),              C/lbm_cuda_ready/out/$(OUT).timing,            )
-	@$(call compare, Test lbm_c2cuda:                    , Python/lbm_palabos_friendly/out/$(OUT),   Cuda/lbm_c2cuda/out/$(OUT),               Cuda/lbm_c2cuda/out/$(OUT).timing,             )
-	@$(call compare, Test lbm_float_gpu_vs_cpu (CPU):    , Python/lbm_palabos_friendly/out/$(OUT),   Cuda/lbm_float_gpu_vs_cpu/out/cpu_$(OUT), Cuda/lbm_float_gpu_vs_cpu/out/cpu_$(OUT).timing)
-	@$(call compare, Test lbm_float_gpu_vs_cpu (GPU):    , Python/lbm_palabos_friendly/out/$(OUT),   Cuda/lbm_float_gpu_vs_cpu/out/gpu_$(OUT), Cuda/lbm_float_gpu_vs_cpu/out/gpu_$(OUT).timing)
-	@$(call compare, Compare lbm_float_gpu_vs_cpu (both):, Cuda/lbm_float_gpu_vs_cpu/out/gpu_$(OUT), Cuda/lbm_float_gpu_vs_cpu/out/cpu_$(OUT))
+	@$(call compare, Test lbm_py2c:                       , Python/lbm_py/out/$(OUT),                  C/lbm_py2c/out/$(OUT),                    C/lbm_py2c/out/$(OUT).timing,                  )
+	@$(call compare, Test lbm_palabos_friendly:           , Python/lbm_palabos_friendly/out/$(OUT),    C/lbm_palabos_friendly/out/$(OUT),        C/lbm_palabos_friendly/out/$(OUT).timing,      )
+	@$(call compare, Test lbm_cuda_ready:                 , Python/lbm_palabos_friendly/out/$(OUT),    C/lbm_cuda_ready/out/$(OUT),              C/lbm_cuda_ready/out/$(OUT).timing,            )
+	@$(call compare, Test lbm_c2cuda:                     , Python/lbm_palabos_friendly/out/$(OUT),    Cuda/lbm_c2cuda/out/$(OUT),               Cuda/lbm_c2cuda/out/$(OUT).timing,             )
+	@$(call compare, Test lbm_float_gpu_vs_cpu (CPU):     , Python/lbm_palabos_friendly/out/$(OUT),    Cuda/lbm_float_gpu_vs_cpu/out/cpu_$(OUT), Cuda/lbm_float_gpu_vs_cpu/out/cpu_$(OUT).timing)
+	@$(call compare, Test lbm_float_gpu_vs_cpu (GPU):     , Python/lbm_palabos_friendly/out/$(OUT),    Cuda/lbm_float_gpu_vs_cpu/out/gpu_$(OUT), Cuda/lbm_float_gpu_vs_cpu/out/gpu_$(OUT).timing)
+	@$(call compare, Compare lbm_float_gpu_vs_cpu (both): , Cuda/lbm_float_gpu_vs_cpu/out/gpu_$(OUT),  Cuda/lbm_float_gpu_vs_cpu/out/cpu_$(OUT))
+	@$(call compare, Compare lbm_simple_gpu_vs_cpu (both):, Cuda/lbm_simple_gpu_vs_cpu/out/gpu_$(OUT), Cuda/lbm_simple_gpu_vs_cpu/out/cpu_$(OUT))
 
 test: vars output print_test
 
