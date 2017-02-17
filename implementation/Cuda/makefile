@@ -1,4 +1,4 @@
-PROJECTS=lbm_float_gpu_vs_cpu lbm_c2cuda lbm_simple
+PROJECTS=lbm_float_gpu_vs_cpu lbm_c2cuda lbm_simple_gpu_vs_cpu
 
 # Default variables values
 DEFAULT_ITER=1
