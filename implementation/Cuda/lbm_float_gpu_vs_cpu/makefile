@@ -1,3 +1,15 @@
+# Function:    timing
+# Description: Measure the execution time of a command a put it in a file
+# Argument $1: Command (in a string) to execute and time
+# Argument $2: File where the timing should be stored
+define timing
+	@start=$$(date +%s); \
+	eval $(1); \
+	end=$$(date +%s); \
+	T=$$(($$end-$$start)); \
+	printf "%02d:%02d:%02d" "$$((T/3600%24))" "$$((T/60%60))" "$$((T%60))" > $(2);
+endef
+
 # Compiler
 CC=gcc
 NVCC=nvcc
@@ -43,8 +55,8 @@ run: all $(OUTDIR)
 	$(BINDIR)/$(GPUBIN) -p $(OUTDIR) -i $(ITER)
 
 output: all $(OUTDIR) 
-	$(BINDIR)/$(GPUBIN) -i $(ITER) -f > $(OUTDIR)/gpu_$(OUT)
-	$(BINDIR)/$(CPUBIN) -i $(ITER) -f > $(OUTDIR)/cpu_$(OUT)
+	$(call timing, "$(BINDIR)/$(GPUBIN) -i $(ITER) -f > $(OUTDIR)/gpu_$(OUT)", $(OUTDIR)/gpu_$(OUT).timing)
+	$(call timing, "$(BINDIR)/$(CPUBIN) -i $(ITER) -f > $(OUTDIR)/cpu_$(OUT)", $(OUTDIR)/cpu_$(OUT).timing)
 
 $(OBJDIR) $(BINDIR) $(OUTDIR): 
 	mkdir -p $@
