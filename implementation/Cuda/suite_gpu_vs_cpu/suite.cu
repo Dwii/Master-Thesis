@@ -46,6 +46,17 @@ do {                                         \
 #define RUN_KERNEL(kernel, ...) HANDLE_KERNEL_ERROR( kernel<<<1, 1>>>(__VA_ARGS__) )
 #endif
 
+#ifndef COMPUTE_ON_CPU
+__device__
+#endif
+double powd(double x, double y)
+{
+    double result = 1;
+    for (int i = 0; i < y; ++i) {
+        result *= x;
+    }
+    return result;
+}
 
 #ifdef COMPUTE_ON_CPU
 void suite(double* d_result, long* d_n, size_t* d_i)
@@ -53,7 +64,7 @@ void suite(double* d_result, long* d_n, size_t* d_i)
 __global__ void suite(double* d_result, long* d_n, size_t* d_i)
 #endif
 {
-    *d_result += 1.0 / pow(*d_n, *d_i);
+    *d_result += 1.0 / powd(*d_n, *d_i);
 }
 
 int main(int argc, char * const argv[])
