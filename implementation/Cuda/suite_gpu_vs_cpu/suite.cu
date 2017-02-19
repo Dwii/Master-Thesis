@@ -95,9 +95,9 @@ int main(int argc, char * const argv[])
     HANDLE_ERROR(cudaMemcpy(&result, d_result, sizeof(double), cudaMemcpyDeviceToHost));
 
 #ifdef COMPUTE_ON_CPU
-    printf("on cpu, with 0<i<%d: Σ(1/%lu^i) = %64.60f\n", max_i, n, result);
+    printf("on cpu, with 0<i<%d: Σ(1/%lu^i) = %.60f\n", max_i, n, result);
 #else
-    printf("on gpu, with 0<i<%d: Σ(1/%lu^i) = %64.60f\n", max_i, n, result);
+    printf("on gpu, with 0<i<%d: Σ(1/%lu^i) = %.60f\n", max_i, n, result);
 #endif
 
     HANDLE_ERROR(cudaFree(d_result));
