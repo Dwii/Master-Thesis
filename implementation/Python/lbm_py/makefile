@@ -1,8 +1,7 @@
+include ../../lbm_common.mk
+
 # Compiler
 PY=python3
-
-# Script arguments
-ITER=200000
 
 # Directories
 SRCDIR=.
@@ -15,10 +14,10 @@ OUT=lbm.out
 run: $(OUTDIR)
 	$(PY) $(SRCDIR)/lbmFlowAroundCylinder.py $(ITER) $(OUTDIR)
 
-output: $(OUTDIR) 
-	$(PY) $(SRCDIR)/lbmFlowAroundCylinder.py $(ITER) > $(OUTDIR)/$(OUT)
+output: $(OUTDIR)
+	$(call timing, "$(PY) $(SRCDIR)/lbmFlowAroundCylinder.py $(ITER) > $(OUTDIR)/$(OUT)", $(OUTDIR)/$(OUT).timing)
 
-$(OUTDIR): 
+$(OUTDIR):
 	mkdir -p $@
 
 clean:

@@ -1,14 +1,4 @@
-# Function:    timing
-# Description: Measure the execution time of a command a put it in a file
-# Argument $1: Command (in a string) to execute and time
-# Argument $2: File where the timing should be stored
-define timing
-	@start=$$(date +%s); \
-	eval $(1); \
-	end=$$(date +%s); \
-	T=$$(($$end-$$start)); \
-	printf "%02d:%02d:%02d" "$$((T/3600%24))" "$$((T/60%60))" "$$((T%60))" > $(2);
-endef
+include ../../lbm_common.mk
 
 # Compiler
 CC=gcc
@@ -19,6 +9,8 @@ BIN=lbmFlowAroundCylinder
 
 # Binary arguments
 ITER=200000
+NB_BLOCKS=1
+NB_THREADS=0
 
 # Directories
 SRCDIR=.
@@ -49,10 +41,10 @@ LIBS+=-lm
 all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(BIN)
 	
 run: all $(OUTDIR) 
-	$(BINDIR)/$(BIN) -p $(OUTDIR) -i $(ITER)
+	$(BINDIR)/$(BIN) -p $(OUTDIR) -i $(ITER) -B $(NB_BLOCKS) -T $(NB_THREADS)
 
 output: all $(OUTDIR)
-	$(call timing, "$(BINDIR)/$(BIN) -i $(ITER) -f > $(OUTDIR)/$(OUT)", $(OUTDIR)/$(OUT).timing)
+	$(call timing, "$(BINDIR)/$(BIN) -i $(ITER) -f -B $(NB_BLOCKS) -T $(NB_THREADS) > $(OUTDIR)/$(OUT)", $(OUTDIR)/$(OUT).timing)
 
 $(OBJDIR) $(BINDIR) $(OUTDIR): 
 	mkdir -p $@
