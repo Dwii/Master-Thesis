@@ -8,7 +8,6 @@ NVCC=nvcc
 BIN=lbmFlowAroundCylinder
 
 # Binary arguments
-ITER=200000
 NB_BLOCKS=1
 NB_THREADS=0
 
