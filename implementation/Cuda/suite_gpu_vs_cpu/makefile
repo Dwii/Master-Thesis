@@ -22,7 +22,7 @@ GPUOBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.cu=_gpu.o)))
 CPUOBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.cu=_cpu.o)))
 OBJS= $(GPUOBJS) $(CPUOBJS)
 # Flags
-NVCC_FLAGS=-Wno-deprecated-gpu-targets
+NVCC_FLAGS=-Wno-deprecated-gpu-targets -O3
 
 # libraries
 LIBS=-lm

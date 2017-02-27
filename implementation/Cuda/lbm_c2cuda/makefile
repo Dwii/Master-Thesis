@@ -27,7 +27,7 @@ SRCS=$(wildcard $(SRCDIR)/*.cu)
 OBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.cu=.o)))
 
 # Flags
-NVCC_FLAGS=-Wno-deprecated-gpu-targets
+NVCC_FLAGS=-Wno-deprecated-gpu-targets -O3
 
 # Non-standard libraries
 LIBNAM=pgm array

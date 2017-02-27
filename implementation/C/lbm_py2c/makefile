@@ -21,7 +21,7 @@ SRCS=$(wildcard $(SRCDIR)/*.c)
 OBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.c=.o)))
 
 # Flags
-CFLAGS=-g -Wall -Wextra -pedantic -std=gnu99
+CFLAGS=-g -Wall -Wextra -pedantic -std=gnu99 -O3
 
 # Non-standard libraries
 LIBNAM=pgm array
