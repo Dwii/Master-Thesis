@@ -28,7 +28,7 @@
 
 #define SQUARE(a) ((a)*(a))
 
-typedef enum { OUT_FIN, OUT_IMG, OUT_UNK } out_mode;
+typedef enum { OUT_NONE, OUT_FIN, OUT_IMG } out_mode;
 
 typedef struct {
     double u[NX][NY][2];
@@ -141,32 +141,72 @@ static void initOpp(size_t* opp)
 }
 
 
+static inline void output_variables(char* filename, lbm_vars* vars)
+{
+    FILE* file = fopen(filename, "w");
+    for (size_t x = 0; x < NX; x++) {
+        for (size_t y = 0; y < NY; y++) {
+            for (size_t f = 0; f < 9; ++f) {
+                fprintf(file, "%64.60f\n", vars->fin[x][y][f]);
+            }
+        }
+    }
+    fclose(file);
+}
 
+void output_image(char* filename, lbm_vars* vars) 
+{
+    pgm_image* pgm = pgm_create(NX, NY);
+    
+    for (size_t x = 0; x < NX; x++) {
+        for (size_t y = 0; y < NY; y++) {
+            double vel = sqrt( SQUARE(vars->u[x][y][0]) + SQUARE(vars->u[x][y][1]) );
+            int color =  255 * vel * 10;
+            pgm_set_pixel(pgm, x, y, color);
+        }
+    }
+
+    pgm_write(pgm, filename);
+    pgm_destroy(pgm);
+}
 
 int main(int argc, char * const argv[])
 {
+    // Init options to default values
+    const char* out_path = ".";
+    const char* out_pref = "lbm";
+    out_mode out = OUT_NONE;
+    ssize_t max_iter = 0;
+    size_t out_interval = 0;
+
     // Read arguments
-    char* img_path = NULL;
-    out_mode out = OUT_UNK;
-    int max_iter = 0;
-    
     while (optind < argc) {
-        switch (getopt(argc, argv, "p:fi:")) {
-            case 'p': { out = OUT_IMG; img_path = optarg; break; }
+        switch (getopt(argc, argv, "pfi:I:o:O:")) {
+            case 'p': { out = OUT_IMG; break; }
             case 'f': { out = OUT_FIN; break; }
             case 'i': { max_iter = strtol(optarg, NULL, 10); break; }
+            case 'I': { out_interval = strtol(optarg, NULL, 10); break; }
+            case 'o': { out_path = optarg; break; }
+            case 'O': { out_pref = optarg; break; }
             default : { goto usage; }
         }
     }
     
     // check that execution mode is set (output images or fin values)
-    if (out == OUT_UNK && max_iter < 1) {
+    if (max_iter < 1) {
     usage:
-        fprintf(stderr, "usage: %s (-p <path> | -f) -i <iter> \n", basename((char*)argv[0]));
-        fprintf(stderr, "  -p : output pictures in <path> directory\n");
-        fprintf(stderr, "  -f : output populations values in stdout\n");
-        fprintf(stderr, "  -i : Total number of iterations\n");
+        fprintf(stderr, "usage: %s (-p | -f) -i <iter> [-I <out_interval>] [-o <out_dir>] [-O <out_prefix>]\n", basename((char*)argv[0]));
+        fprintf(stderr, "  -p : output pictures\n");
+        fprintf(stderr, "  -f : output populations\n");
+        fprintf(stderr, "  -i : number of iterations\n");
+        fprintf(stderr, "  -I : output interval; (0 if only the last iteration output in required)\n");
+        fprintf(stderr, "  -o : output file directory\n");
+        fprintf(stderr, "  -O : output filename prefix\n");
         return EXIT_FAILURE;
+    }
+
+    if (out == OUT_NONE) {
+        fprintf(stderr, "No output mode specified.\n");
     }
 
     lbm_consts* consts = (lbm_consts*)malloc(sizeof(lbm_consts));
@@ -191,7 +231,7 @@ int main(int argc, char * const argv[])
 
     pgm_image* pgm = pgm_create(NX, NY);
     
-    for (int time = 0; time < max_iter; time++) {
+    for (int iter = 1; iter <= max_iter; iter++) {
         
         // Right wall: outflow condition.
         for (int i = 0; i < 3; i++) {
@@ -252,33 +292,24 @@ int main(int argc, char * const argv[])
             }
         }
         
-        // Visualization of the velocity.
-        if (time % 100 == 0 && out == OUT_IMG) {
-            for (size_t x = 0; x < NX; x++) {
-                for (size_t y = 0; y < NY; y++) {
-                    double vel = sqrt( SQUARE(vars->u[x][y][0]) + SQUARE(vars->u[x][y][1]) );
-                    int color =  255 * vel * 10;
-                    pgm_set_pixel(pgm, x, y, color);
-                }
-            }
-            // build image file path and create it
+        if ( (!out_interval && iter == max_iter) || (out_interval && iter % out_interval == 0) ) {
+
             char* filename;
-            asprintf(&filename, "%s/vel_%d.pgm", img_path, time/100);
-            pgm_write(pgm, filename);
-            free(filename);
+
+            if ( out == OUT_IMG ) {
+                asprintf(&filename, "%s/%s%d.pgm", out_path, out_pref, iter);
+                output_image(filename, vars);
+                free(filename);
+            }
+
+            if (out == OUT_FIN) {
+                asprintf(&filename, "%s/%s%d.out", out_path, out_pref, iter);
+                output_variables(filename, vars);
+                free(filename);
+            }
         }
     }
     
-
-    if (out == OUT_FIN) {
-        for (size_t x = 0; x < NX; x++) {
-            for (size_t y = 0; y < NY; y++) {
-                for (size_t f = 0; f < 9; ++f) {
-                    printf("%64.60f\n", vars->fin[x][y][f]);
-                }
-            }
-        }
-    }
     
     pgm_destroy(pgm);
     free(consts);

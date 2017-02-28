@@ -15,14 +15,18 @@ BINDIR=bin
 OUTDIR=out
 LIBDIR=../../C/libs
 
-# Test output file
-OUT=lbm.out
+# Binary default arguments
+OUTPRE=lbm_
+
+DEFAULT_IMG_INTERVAL=100
+DEFAULT_OUT_INTERVAL=0
 
 # Source and object files
 SRCS=$(wildcard $(SRCDIR)/*.cu)
 GPUOBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.cu=_gpu.o)))
 CPUOBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.cu=_cpu.o)))
 OBJS= $(GPUOBJS) $(CPUOBJS)
+
 # Flags
 NVCC_FLAGS=-Wno-deprecated-gpu-targets -O3
 
@@ -37,12 +41,22 @@ LIBS+=-lm
 
 all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(GPUBIN) $(BINDIR)/$(CPUBIN)
 
-run: all $(OUTDIR) 
-	$(BINDIR)/$(GPUBIN) -p $(OUTDIR) -i $(ITER)
+run: images
+
+images: all $(OUTDIR)
+ifeq ($(strip $(INTERVAL)),)
+	$(eval INTERVAL=$(DEFAULT_IMG_INTERVAL))
+endif
+	$(BINDIR)/$(GPUBIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) 
 
 output: all $(OUTDIR) 
-	$(call timing, "$(BINDIR)/$(GPUBIN) -i $(ITER) -f > $(OUTDIR)/gpu_$(OUT)", $(OUTDIR)/gpu_$(OUT).timing)
-	$(call timing, "$(BINDIR)/$(CPUBIN) -i $(ITER) -f > $(OUTDIR)/cpu_$(OUT)", $(OUTDIR)/cpu_$(OUT).timing)
+ifeq ($(strip $(INTERVAL)),)
+	$(eval INTERVAL=$(DEFAULT_OUT_INTERVAL))
+endif
+	$(eval GPUPRE=gpu_$(OUTPRE))
+	$(eval CPUPRE=cpu_$(OUTPRE))
+	$(call timing, "$(BINDIR)/$(GPUBIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(GPUPRE)", $(OUTDIR)/$(GPUPRE)$(ITER).timing)
+	$(call timing, "$(BINDIR)/$(CPUBIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(CPUPRE)", $(OUTDIR)/$(CPUPRE)$(ITER).timing)
 
 $(OBJDIR) $(BINDIR) $(OUTDIR): 
 	mkdir -p $@
@@ -66,4 +80,4 @@ clean:
 
 rebuild: clean all
 
-.PHONY: all run output clean rebuild
+.PHONY: all run images output clean rebuild

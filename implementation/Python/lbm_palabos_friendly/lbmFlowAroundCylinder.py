@@ -13,12 +13,13 @@ from matplotlib import cm
 import sys
 
 ###### Outputs definitions #####################################################
-testmode = len(sys.argv)<3
-if not testmode:
-    outpath = sys.argv[2]
+out = sys.argv[1]
+outInterval = int(sys.argv[3])
+outDir  = sys.argv[4]
+outPre  = sys.argv[5]
 
 ###### Flow definition #########################################################
-maxIter = int(sys.argv[1])  # Total number of time iterations.
+maxIter = int(sys.argv[2])  # Total number of time iterations.
 Re = 220.0         # Reynolds number.
 nx, ny = 420, 180 # Numer of lattice nodes.
 ly = ny-1         # Height of the domain in lattice units.
@@ -89,7 +90,7 @@ vel = fromfunction(inivel, (2,nx,ny))
 fin = equilibrium(1, vel)
 
 ###### Main time loop ##########################################################
-for time in range(maxIter):
+for iter in range(1, maxIter+1):
     # Right wall: outflow condition.
     fin[col3,-1,:] = fin[col3,-2,:] 
 
@@ -118,21 +119,15 @@ for time in range(maxIter):
                             roll(fout[i,:,:], v[i,0], axis=0),
                             v[i,1], axis=1 )
  
-    # Visualization of the velocity.
-    if (time%100==0 and not testmode):
-        plt.clf()
-        plt.imshow(sqrt(u[0]**2+u[1]**2).transpose(), cmap=cm.Reds)
-        plt.savefig("{0}/vel.{1:03d}.png".format(outpath, time//100))
-
-if testmode:
-    for x in range(nx):
-        for y in range(ny):
-            for f in range(9):
-                print("{0:64.60f}".format(fin[f,x,y]))
-
-
-
-
-
-
-
+    if (outInterval==0 and iter == maxIter) or (outInterval>0 and iter % outInterval == 0):
+        # Visualization of the velocity.
+        if out == 'IMG':
+            plt.clf()
+            plt.imshow(sqrt(u[0]**2+u[1]**2).transpose(), cmap=cm.Reds)
+            plt.savefig("{0}/{1}{2}.png".format(outDir, outPre, iter))
+        if out == 'OUT':
+            file = open("{0}/{1}{2}.out".format(outDir, outPre, iter), 'w')
+            for x in range(nx):
+                for y in range(ny):
+                    for f in range(9):
+                        file.write("{0:64.60f}\n".format(fin[f,x,y]))

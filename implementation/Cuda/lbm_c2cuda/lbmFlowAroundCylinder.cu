@@ -31,7 +31,7 @@
 #define GPU_SQUARE(a) (__dmul_rn(a,a))
 #define INDEX_2D_FROM_1D(x, y, i) (y) = (i)/(NX), (x) = (i)%(NX)
 
-typedef enum { OUT_FIN, OUT_IMG, OUT_UNK } out_mode;
+typedef enum { OUT_NONE, OUT_FIN, OUT_IMG } out_mode;
 
 typedef struct {
     bool obstacles[NX][NY];  // Should reside in lbm_consts but is too big for constant memory
@@ -240,17 +240,33 @@ __global__ void lbm_streaming(lbm_vars *d_vars)
     }
 }
 
-void print_variables(lbm_vars *d_vars, lbm_vars *h_vars, double var[NX][NY][9]) {
-
-    HANDLE_ERROR(cudaMemcpy(h_vars, d_vars, sizeof(lbm_vars), cudaMemcpyDeviceToHost));
-
+void output_variables(char* filename, double var[NX][NY][9]) 
+{
+    FILE* file = fopen(filename, "w");
     for (size_t x = 0; x < NX; x++) {
         for (size_t y = 0; y < NY; y++) {
             for (size_t f = 0; f < 9; ++f) {
-                printf("%64.60f\n", var[x][y][f]);
+                fprintf(file, "%64.60f\n", var[x][y][f]);
             }
         }
     }
+    fclose(file);
+}
+
+void output_image(char* filename, double u[NX][NY][2]) 
+{
+    pgm_image* pgm = pgm_create(NX, NY);
+
+    for (size_t x = 0; x < NX; x++) {
+        for (size_t y = 0; y < NY; y++) {
+            double vel = sqrt( SQUARE(u[x][y][0]) + SQUARE(u[x][y][1]) );
+            int color =  255 * min(vel * 10, 1.0);
+            pgm_set_pixel(pgm, x, y, color);
+        }
+    }
+
+    pgm_write(pgm, filename);
+    pgm_destroy(pgm);
 }
 
 int getThreads(int width, int height) {
@@ -274,29 +290,41 @@ int getThreads(int width, int height) {
 
 int main(int argc, char * const argv[])
 {
+    // Init options to default values
+    const char* out_path = ".";
+    const char* out_pref = "lbm";
+    out_mode out = OUT_NONE;
+    ssize_t max_iter = 0;
+    size_t out_interval = 0;
 
     // Read arguments
-    char* img_path = NULL;
-    out_mode out = OUT_UNK;
-    ssize_t max_iter = 0;
-    
     while (optind < argc) {
-        switch (getopt(argc, argv, "p:fi:")) {
-            case 'p': { out = OUT_IMG; img_path = optarg; break; }
+        switch (getopt(argc, argv, "pfi:I:o:O:")) {
+            case 'p': { out = OUT_IMG; break; }
             case 'f': { out = OUT_FIN; break; }
             case 'i': { max_iter = strtol(optarg, NULL, 10); break; }
+            case 'I': { out_interval = strtol(optarg, NULL, 10); break; }
+            case 'o': { out_path = optarg; break; }
+            case 'O': { out_pref = optarg; break; }
             default : { goto usage; }
         }
     }
     
     // check that execution mode is set (output images or fin values)
-    if (out == OUT_UNK && max_iter < 1) {
+    if (max_iter < 1) {
     usage:
-        fprintf(stderr, "usage: %s (-p <path> | -f) -i <iter> \n", basename((char*)argv[0]));
-        fprintf(stderr, "  -p : output pictures in <path> directory\n");
-        fprintf(stderr, "  -f : output populations values in stdout\n");
-        fprintf(stderr, "  -i : Total number of iterations\n");
+        fprintf(stderr, "usage: %s (-p | -f) -i <iter> [-I <out_interval>] [-o <out_dir>] [-O <out_prefix>]\n", basename((char*)argv[0]));
+        fprintf(stderr, "  -p : output pictures\n");
+        fprintf(stderr, "  -f : output populations\n");
+        fprintf(stderr, "  -i : number of iterations\n");
+        fprintf(stderr, "  -I : output interval; (0 if only the last iteration output in required)\n");
+        fprintf(stderr, "  -o : output file directory\n");
+        fprintf(stderr, "  -O : output filename prefix\n");
         return EXIT_FAILURE;
+    }
+
+    if (out == OUT_NONE) {
+        fprintf(stderr, "No output mode specified.\n");
     }
 
     lbm_consts* h_consts = (lbm_consts*)malloc(sizeof(lbm_consts));
@@ -329,37 +357,31 @@ int main(int argc, char * const argv[])
     dim3 dimBlock(NB_BLOCKS);
     dim3 dimGrid(getThreads(NX, NY));
 
-    pgm_image* pgm = pgm_create(NX, NY);
-
-    for (int time = 0; time < max_iter; time++) {
+    for (int iter = 1; iter <= max_iter; iter++) {
         
         HANDLE_KERNEL_ERROR(lbm_computation<<<dimBlock, dimGrid>>>(d_vars));
         HANDLE_KERNEL_ERROR(lbm_streaming  <<<dimBlock, dimGrid>>>(d_vars));
 
-        // Visualization of the velocity.
-        if (time % 100 == 0 && out == OUT_IMG) {
+        if ( (!out_interval && iter == max_iter) || (out_interval && iter % out_interval == 0) ) {
+
             HANDLE_ERROR(cudaMemcpy(h_vars, d_vars, sizeof(lbm_vars), cudaMemcpyDeviceToHost));
 
-            for (size_t x = 0; x < NX; x++) {
-                for (size_t y = 0; y < NY; y++) {
-                    double vel = sqrt( SQUARE(h_vars->u[x][y][0]) + SQUARE(h_vars->u[x][y][1]) );
-                    int color =  255 * vel * 10;
-                    pgm_set_pixel(pgm, x, y, color);
-                }
-            }
-            // build image file path and create it
             char* filename;
-            asprintf(&filename, "%s/vel_%d.pgm", img_path, time/100);
-            pgm_write(pgm, filename);
-            free(filename);
+
+            if ( out == OUT_IMG ) {
+                asprintf(&filename, "%s/%s%d.pgm", out_path, out_pref, iter);
+                output_image(filename, h_vars->u);
+                free(filename);
+            }
+
+            if (out == OUT_FIN) {
+                asprintf(&filename, "%s/%s%d.out", out_path, out_pref, iter);
+                output_variables(filename, h_vars->fin);
+                free(filename);
+            }
         }
     }
 
-    if (out == OUT_FIN) {
-        print_variables(d_vars, h_vars, h_vars->fin);
-    }
-
-    pgm_destroy(pgm);
     free(h_consts);
     free(h_vars);
     HANDLE_ERROR(cudaFree(d_vars));

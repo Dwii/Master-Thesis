@@ -18,8 +18,11 @@ BINDIR=bin
 OUTDIR=out
 LIBDIR=../../C/libs
 
-# Test output file
-OUT=lbm.out
+# Binary default arguments
+OUTPRE=lbm_
+
+DEFAULT_IMG_INTERVAL=100
+DEFAULT_OUT_INTERVAL=0
 
 # Source and object files
 SRCS=$(wildcard $(SRCDIR)/*.cu)
@@ -39,11 +42,19 @@ LIBS+=-lm
 
 all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(BIN)
 	
-run: all $(OUTDIR) 
-	$(BINDIR)/$(BIN) -p $(OUTDIR) -i $(ITER) -B $(NB_BLOCKS) -T $(NB_THREADS)
+run: images
 
-output: all $(OUTDIR)
-	$(call timing, "$(BINDIR)/$(BIN) -i $(ITER) -f -B $(NB_BLOCKS) -T $(NB_THREADS) > $(OUTDIR)/$(OUT)", $(OUTDIR)/$(OUT).timing)
+images: all $(OUTDIR)
+ifeq ($(strip $(INTERVAL)),)
+	$(eval INTERVAL=$(DEFAULT_IMG_INTERVAL))
+endif
+	$(BINDIR)/$(BIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) 
+
+output: all $(OUTDIR) 
+ifeq ($(strip $(INTERVAL)),)
+	$(eval INTERVAL=$(DEFAULT_OUT_INTERVAL))
+endif
+	$(call timing, "$(BINDIR)/$(BIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE)", $(OUTDIR)/$(OUTPRE)$(ITER).timing)
 
 $(OBJDIR) $(BINDIR) $(OUTDIR): 
 	mkdir -p $@
@@ -62,4 +73,4 @@ clean:
 
 rebuild: clean all
 
-.PHONY: all run output clean rebuild
+.PHONY: all run images output clean rebuild

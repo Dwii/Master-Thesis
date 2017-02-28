@@ -7,15 +7,27 @@ PY=python3
 SRCDIR=.
 OUTDIR=out
 
-# Test output file
-OUT=lbm.out
+SCRIPT=lbmFlowAroundCylinder.py
 
+# Script default arguments
+OUTPRE=lbm_
 
-run: $(OUTDIR)
-	$(PY) $(SRCDIR)/lbmFlowAroundCylinder.py $(ITER) $(OUTDIR)
+DEFAULT_IMG_INTERVAL=100
+DEFAULT_OUT_INTERVAL=0
 
-output: $(OUTDIR)
-	$(call timing, "$(PY) $(SRCDIR)/lbmFlowAroundCylinder.py $(ITER) > $(OUTDIR)/$(OUT)", $(OUTDIR)/$(OUT).timing)
+run: images
+
+images: $(OUTDIR)
+ifeq ($(strip $(INTERVAL)),)
+	$(eval INTERVAL=$(DEFAULT_IMG_INTERVAL))
+endif
+	$(PY) $(SRCDIR)/$(SCRIPT) IMG $(ITER) $(INTERVAL) $(OUTDIR) $(OUTPRE)
+
+output: $(OUTDIR) 
+ifeq ($(strip $(INTERVAL)),)
+	$(eval INTERVAL=$(DEFAULT_OUT_INTERVAL))
+endif
+	$(call timing, "$(PY) $(SRCDIR)/$(SCRIPT) OUT $(ITER) $(INTERVAL) $(OUTDIR) $(OUTPRE)", $(OUTDIR)/$(OUTPRE)$(ITER).timing)
 
 $(OUTDIR):
 	mkdir -p $@
@@ -23,4 +35,4 @@ $(OUTDIR):
 clean:
 	rm -rf $(OUTDIR)
 
-.PHONY: run output clean
+.PHONY: run images output clean
