@@ -1,5 +1,5 @@
 /*!
- * \file    lbmFlowAroundCylinder_buggy.cu
+ * \file    lbmFlowAroundCylinder.cu
  * \brief   GPU (Cuda) and CPU version running the same code but producing different output...
  *          Especialy display a strange case for ITER=2.
  * \author  Adrien Python
@@ -29,6 +29,7 @@
 typedef enum { OUT_FIN, OUT_IMG, OUT_UNK } out_mode;
 
 typedef struct {
+    int iteration;
     bool obstacles[NX][NY];  // Should reside in lbm_consts but is too big for constant memory
     double u[NX][NY][2];
     double feq[NX][NY][9];
@@ -303,24 +304,33 @@ void lbm_collision(lbm_vars *d_vars, int x, int y)
             // Bounce-back condition for obstacle
             d_vars->fout[x][y][f] = d_vars->fin[x][y][d_consts.opp[f]];
         } else {
+            double omega = OMEGA;
             // Collision step
-            d_vars->fout[x][y][f] = d_vars->fin[x][y][f] - OMEGA * (d_vars->fin[x][y][f] - d_vars->feq[x][y][f]);
+            d_vars->fout[x][y][f] = d_vars->fin[x][y][f] - omega * (d_vars->fin[x][y][f] - d_vars->feq[x][y][f]);
 
-            double f1 = OMEGA * (d_vars->fin[x][y][f] - d_vars->feq[x][y][f]);
+            double ftmp = OMEGA * (d_vars->fin[x][y][f] - d_vars->feq[x][y][f]);
 
-            if (x==0 && y==5 && (f==2||f==6)) {
+            // On the second iteration, these index have different computation results
+            if (d_vars->iteration == 1 && x==0 && y==5 && (f==2||f==6)) {
 // This line produce a strange behaviour (at least with ITER=2):
 //  - Commented:   The results between GPU and CPU are different.
 //  - Uncommented: The results are the same.
-//                printf("\tfin - OMEGA*(fin - feq) = :%64.100f\n", d_vars->fin[x][y][f] - f1);
-                printf("%d,%d,%d:\n", x,y,f);
-                printf("\tfin = %64.100f\n", d_vars->fin[x][y][f]);
-                printf("\tfeq = %64.100f\n", d_vars->feq[x][y][f]);
+//                printf("\tfin - OMEGA*(fin - feq) = :%64.100f\n", d_vars->fin[x][y][f] - ftmp);
+
+                printf("%d,%d,%lu:\n", x,y,f);
+                printf("\tfin  = %64.100f (%lu)\n", d_vars->fin[x][y][f], *((long*)(&d_vars->fin[x][y][f])));
+                printf("\tfeq  = %64.100f (%lu)\n", d_vars->feq[x][y][f], *((long*)(&d_vars->feq[x][y][f])));
+                printf("\tfout = %64.100f (%lu)\n", d_vars->fout[x][y][f], *((long*)(&d_vars->fout[x][y][f])));
+
+// fout have the same result on both CPU and GPU if the computation is split:
+// Uncomment to see that results are different in that configuration.
+/*
+                printf("\n\tSplit computation results:\n");
                 printf("\tfin - feq = %64.100f\n", (d_vars->fin[x][y][f] - d_vars->feq[x][y][f]));
-                double f1 = OMEGA * (d_vars->fin[x][y][f] - d_vars->feq[x][y][f]);
-                printf("\tOMEGA*(fin - feq) = %64.100f\n", f1);
-                printf("\tfin - OMEGA*(fin - feq) = %64.100f\n", d_vars->fin[x][y][f] - f1);
-                printf("\tfout                    = %64.100f\n", d_vars->fout[x][y][f]);
+                double ftmp = OMEGA * (d_vars->fin[x][y][f] - d_vars->feq[x][y][f]);
+                printf("\tftmp = OMEGA*(fin - feq) = %64.100f\n", ftmp);
+                printf("\tfout = fin - ftmp = %64.100f\n", d_vars->fin[x][y][f] - ftmp);
+*/
             }
 
         }
@@ -344,41 +354,29 @@ void lbm_streaming(lbm_vars *d_vars, int x, int y)
         size_t y_dst = (y + NY + d_consts.v[1][f]) % NY;
         d_vars->fin[x_dst][y_dst][f] = d_vars->fout[x][y][f];
     }
-}
 
-void print_variables(lbm_vars *d_vars, lbm_vars *h_vars, double var[NX][NY][9]) {
-
-    HANDLE_ERROR(cudaMemcpy(h_vars, d_vars, sizeof(lbm_vars), cudaMemcpyDeviceToHost));
-
-    for (size_t x = 0; x < NX; x++) {
-        for (size_t y = 0; y < NY; y++) {
-            for (size_t f = 0; f < 9; ++f) {
-                printf("%64.100f\n", var[x][y][f]);
-            }
-        }
+    // Count iterations
+    if (x == 0 && y == 0) {
+        d_vars->iteration++;
     }
 }
-
 
 int main(int argc, char * const argv[])
 {
     // Read arguments
-    out_mode out = OUT_UNK;
     ssize_t max_iter = 0;
     
     while (optind < argc) {
-        switch (getopt(argc, argv, "fi:")) {
-            case 'f': { out = OUT_FIN; break; }
+        switch (getopt(argc, argv, "i:")) {
             case 'i': { max_iter = strtol(optarg, NULL, 10); break; }
             default : { goto usage; }
         }
     }
     
     // check that execution mode is set
-    if (out == OUT_UNK && max_iter < 1) {
+    if (max_iter < 1) {
     usage:
-        fprintf(stderr, "usage: %s [-f] -i <iter> \n", basename((char*)argv[0]));
-        fprintf(stderr, "  -f : output populations values in stdout\n");
+        fprintf(stderr, "usage: %s -i <iter> \n", basename((char*)argv[0]));
         fprintf(stderr, "  -i : Total number of iterations\n");
         return EXIT_FAILURE;
     }
@@ -395,6 +393,7 @@ int main(int argc, char * const argv[])
     HANDLE_ERROR(cudaMemcpyToSymbol(d_consts, h_consts, sizeof(lbm_consts)));
         
     lbm_vars *h_vars = (lbm_vars*)malloc(sizeof(lbm_vars));
+    h_vars->iteration = 0;
     initObstacles(h_vars);
     initVelocity(h_vars);
     initRho(h_vars);
@@ -405,7 +404,7 @@ int main(int argc, char * const argv[])
             h_equilibrium(h_vars->fin[x][y], h_vars->rho[x][y], h_vars->vel[x][y]);
         }
     }
-    
+   
     lbm_vars *d_vars;
     HANDLE_ERROR(cudaMalloc(&d_vars, sizeof(lbm_vars)));
     HANDLE_ERROR(cudaMemcpy(d_vars, h_vars, sizeof(lbm_vars), cudaMemcpyHostToDevice));
