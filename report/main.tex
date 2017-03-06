@@ -1,0 +1,226 @@
+\documentclass[12pt,a4paper]{report}
+\usepackage{listings}
+
+% Compatibilité Antidote
+\usepackage[T1]{fontenc}
+%\usepackage{lmodern}
+
+\usepackage[utf8]{inputenc}
+\usepackage[francais]{babel}
+\usepackage[colorlinks, linkcolor=blue]{hyperref}
+\usepackage[all]{hypcap} % link lead on the top of the figure pictures
+\usepackage{graphicx}
+\usepackage[printonlyused,smaller]{acronym} %footnote,withpage
+\usepackage{xcolor}
+\usepackage{fancyvrb}
+\usepackage{color}
+\usepackage[margin=2.5cm]{geometry}
+%\usepackage{fullpage}
+\usepackage{makeidx}
+\usepackage{pdfpages}
+\usepackage{enumerate}
+\usepackage{float}
+
+\usepackage{array}
+\newcolumntype{M}[1]{>{\arraybackslash}m{#1}}
+\newcolumntype{N}{@{}m{0pt}@{}}
+
+
+\usepackage{multirow}
+\usepackage{multicol}
+\hypersetup{citecolor = blue, urlcolor = blue, linkcolor= blue} %pdfstartpage=4}
+
+\usepackage{tocbibind} % Table des matière dans la table des matières
+
+\usepackage[babel=true]{csquotes} % csquotes va utiliser la langue définie dans babel
+\usepackage{cite}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+
+\usepackage{subfigure}
+\usepackage[export]{adjustbox}
+
+
+%\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+\renewcommand{\chaptermark}[1]{%
+  \ifnum\value{chapter}>0
+    \markboth{Chapitre \thechapter{}~: #1}{}%
+  \else
+    \markboth{#1}{}%
+  \fi
+}
+
+\fancyhead{} % clear all header fields
+\fancyhead[RO,LE]{ %
+	\ifnum\value{chapter}>0 \nouppercase{\leftmark}\fi
+}
+\fancyfoot{} % clear all footer fields
+\fancyfoot[L]{\footnotesize\textsc{A. Python}}
+\fancyfoot[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+
+\fancypagestyle{plain}{ %
+	\pagestyle{fancy}	
+}
+
+%\patchcmd{\chapter}{\thispagestyle{plain}}{\thispagestyle{fancy}}{}{}
+
+
+% % % Définition de symboles et commandes % % %
+
+\usepackage{xspace}
+\newcommand{\formatac}[1]{%
+\bgroup\renewcommand\acsfont{\textbf}%
+\relax#1\relax\egroup\xspace}
+
+% Texte entouré d'un rond
+\newcommand{\rond}[1]{\textcircled{\scriptsize{#1}}}
+
+% Référence à un élément (numéro et page)
+\newcommand{\voir}[2]{(voir~#1 \ref{#2}, p.~\pageref{#2})}
+\newcommand{\fnvoir}[2]{\footnote{#1 \ref{#2}, p.~\pageref{#2}}}
+
+\newcommand{\fnurl}[2]{%
+  \href{#2}{#1}\footnote{\url{#2}}%
+}
+
+% guillemets à la française (eg=entre guillemets)
+\newcommand{\eg}[1]{\og{}#1\fg{}}
+
+% Configuration du paquet listing
+\lstset{
+	language=C,
+	extendedchars=true
+	breaklines = true
+	breakautoindent=true
+	numbers = left
+	stepnumber = 1
+	numberstyle = \footnotesize
+	keywordstyle=\color{blue}\bfseries\emph
+	captionpos = b
+	lstset{frame = tlrb}
+	fancyvrb=false,
+	basicstyle=\ttfamily\scriptsize,
+	stringstyle=\ttfamily\color{green!50!black},
+	directivestyle=\color{brown},
+	keywordstyle=\color{blue}\bfseries,
+	commentstyle=\color{red!50!black}\itshape,
+	showspaces=false,
+	showstringspaces=true,
+	fontadjust=true,
+	keepspaces=true,
+%	flexiblecolumns=true % la propriété tabsize n'est pas respectée avec ce parapetre
+	tabsize=2,
+%	showtabs=true,
+	frame=single,
+	numbers=left, numberstyle=\tiny, firstnumber=1, stepnumber=1,
+	numbersep=5pt,
+	breaklines=true,
+	escapeinside={(*@}{@*)},
+	literate=%
+		{ç}{{\c c}}1
+		{Ç}{{\c C}}1
+		{æ}{{\ae}}1
+		{Æ}{{\AE}}1
+		{œ}{{\oe}}1
+		{Œ}{{\OE}}1
+		{Å}{{\AA}}1
+		{Å}{{\AA}}1
+		{Â}{{\^A}}1
+		{Ê}{{\^E}}1
+		{Î}{{\^I}}1
+		{Ô}{{\^O}}1
+		{Û}{{\^U}}1
+		{â}{{\^a}}1
+		{ê}{{\^e}}1
+		{î}{{\^i}}1
+		{ô}{{\^o}}1
+		{û}{{\^u}}1
+		{á}{{\'a}}1
+		{í}{{\'i}}1
+		{é}{{\'e}}1
+		{ý}{{\'y}}1
+		{ú}{{\'u}}1
+		{ó}{{\'o}}1
+		{ě}{{\v{e}}}1
+		{š}{{\v{s}}}1
+		{č}{{\v{c}}}1
+		{ř}{{\v{r}}}1
+		{ž}{{\v{z}}}1
+		{ď}{{\v{d}}}1
+		{ť}{{\v{t}}}1
+		{ň}{{\v{n}}}1                
+		{ů}{{\r{u}}}1
+		{Á}{{\'A}}1
+		{Í}{{\'I}}1
+		{É}{{\'E}}1
+		{Ý}{{\'Y}}1
+		{Ú}{{\'U}}1
+		{Ó}{{\'O}}1
+		{Ě}{{\v{E}}}1
+		{Š}{{\v{S}}}1
+		{Č}{{\v{C}}}1
+		{Ř}{{\v{R}}}1
+		{Ž}{{\v{Z}}}1
+		{Ď}{{\v{D}}}1
+		{Ť}{{\v{T}}}1
+		{Ň}{{\v{N}}}1                
+		{Ů}{{\r{U}}}1    
+}
+
+%\usepackage{dirtree}
+\usepackage{amsmath}
+\usepackage{mathtools} % \shortintertext for comments in align
+\usepackage{amssymb}
+\usepackage{relsize}
+\usepackage{calc}
+
+%\makeindex
+\begin{document}
+\input{title.tex}
+
+\pagenumbering{Roman}
+
+\tableofcontents
+
+\cleardoublepage
+% \phantomsection
+%\addcontentsline{toc}{chapter}{\listfigurename}
+\listoffigures
+
+
+\chapter*{Acronymes}
+
+\begin{acronym}[1122222]
+%\acro{}{\href{}{}}
+\acro{URL}{\href{http://fr.wikipedia.org/wiki/Uniform_Resource_Locator}{Uniform Resource Locator}}
+\acro{LBM}{\href{https://fr.wikipedia.org/wiki/Méthode_de_Boltzmann_sur_réseau}{Lattice Bolzmann Method}}
+\acro{CPU}{\href{https://fr.wikipedia.org/wiki/Processeur}{Central Processing Unit}}
+\acro{GPU}{\href{https://fr.wikipedia.org/wiki/Processeur_graphique}{Graphics Processing Unit}}
+\acro{FMA}{\href{http://docs.nvidia.com/cuda/floating-point/\#fused-multiply-add-fma}{Fused Multiply-Add}}
+\end{acronym}
+
+\chapter*{Avant-propos}
+\addcontentsline{toc}{chapter}{Avant-propos}
+\input{avant_propos.tex}
+
+\chapter{Introduction}
+\pagenumbering{arabic}
+\input{introduction.tex}
+
+\chapter{Calculs sur nombres flottants}\label{title-floats}
+\input{floats.tex}
+
+\chapter{État de l'art}\label{title-sota}
+\input{sota.tex}
+
+\chapter{Conclusion}\label{title-conclusion}
+\input{conclusion.tex}
+
+\bibliography{main}
+\bibliographystyle{plain}
+
+\end{document}
