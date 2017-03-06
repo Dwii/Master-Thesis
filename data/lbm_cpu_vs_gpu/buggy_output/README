@@ -1,0 +1,3 @@
+Output of lbm_buggy_gpu_vs_cpu for ITER=2, and without split computation.
+
+Show a slight difference between the fout value between GPU and CPU computations (with integer representation of the double value).
