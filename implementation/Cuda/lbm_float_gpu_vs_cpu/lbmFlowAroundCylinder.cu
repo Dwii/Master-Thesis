@@ -192,7 +192,7 @@ __device__
 #endif
 static void d_equilibrium(double* feq, double rho, double* u)
 {
-#ifdef COMPUTE_ON_CPU
+#if defined(COMPUTE_ON_CPU) || ! defined(USE_GPU_OPERATORS)
     EQUILIBRIUM_BODY(d_consts.v, d_consts.t);
 #else
     GPU_EQUILIBRIUM_BODY(d_consts.v, d_consts.t);
@@ -270,7 +270,7 @@ __global__ void lbm_computation(lbm_vars *d_vars)
             d_vars->fout[x][y][f] = d_vars->fin[x][y][d_consts.opp[f]];
         } else {
             // Collision step
-#ifdef COMPUTE_ON_CPU
+#if defined(COMPUTE_ON_CPU) || ! defined(USE_GPU_OPERATORS)
             d_vars->fout[x][y][f] = d_vars->fin[x][y][f] - OMEGA * (d_vars->fin[x][y][f] - d_vars->feq[x][y][f]);
 #else
             d_vars->fout[x][y][f] = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(d_vars->fin[x][y][f], - d_vars->feq[x][y][f])), d_vars->fin[x][y][f]);
@@ -393,6 +393,10 @@ int main(int argc, char * const argv[])
         fprintf(stderr, "No output mode specified.\n");
     }
 
+#if defined(COMPUTE_ON_GPU) && !defined(USE_GPU_OPERATORS)
+    fprintf(stderr, "Warning, this program version do not use GPU operators. Results may differ from the CPU version of the program.\n");
+#endif
+
     lbm_consts* h_consts = (lbm_consts*)malloc(sizeof(lbm_consts));
     
     initCol(h_consts->col[0],  1);
@@ -428,7 +432,7 @@ int main(int argc, char * const argv[])
     for (int iter = 1; iter <= max_iter; iter++) {
         RUN_KERNEL(lbm_computation, NX, NY, d_vars);
         RUN_KERNEL(lbm_streaming,   NX, NY, d_vars);
-
+        
         if ( (!out_interval && iter == max_iter) || (out_interval && iter % out_interval == 0) ) {
 
             HANDLE_ERROR(cudaMemcpy(h_vars, d_vars, sizeof(lbm_vars), cudaMemcpyDeviceToHost));
