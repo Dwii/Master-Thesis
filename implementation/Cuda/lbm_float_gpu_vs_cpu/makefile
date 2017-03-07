@@ -1,5 +1,14 @@
 include ../../lbm_common.mk
 
+define wait_output
+	@ \
+	while [[ ! -s $(1) || $$(cat $(1) | wc -c) -ne $(2) ]]; do \
+		test -z $$end && printf "wait for $(1)"; end="\n"; printf "."; sleep 2 ; \
+	done; \
+	printf "$$end"
+endef
+
+
 # Compiler
 CC=gcc
 NVCC=nvcc
@@ -44,6 +53,13 @@ LIBS=$(addprefix -L,$(LIBDEP)) $(addprefix -l,$(LIBNAM))
 # Standard libraries
 LIBS+=-lm
 
+# Deltas vars
+DLT_SCRIPT=$(TOOLDIR)/floats_delta.py
+DLT_FILE=$(OUTDIR)/deltas.csv
+DLT_ITERS=$(if $(subst 0,,$(INTERVAL)), $(shell seq $(INTERVAL) $(INTERVAL) $(ITER)), $(ITER))
+OUT_SIZE=44226000 
+# OUT_SIZE = NX * NY * F * Print digits (64+the dot) = 420*180*9*65
+
 all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(GPUBIN) $(BINDIR)/$(CPUBIN)
 
 run: images
@@ -52,35 +68,35 @@ images: all $(OUTDIR)
 ifeq ($(strip $(INTERVAL)),)
 	$(eval INTERVAL=$(DEFAULT_IMG_INTERVAL))
 endif
-	$(BINDIR)/$(GPUBIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) 
+	$(BINDIR)/$(CPUBIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) 
 
 output: all $(OUTDIR)
 ifeq ($(strip $(INTERVAL)),)
 	$(eval INTERVAL=$(DEFAULT_OUT_INTERVAL))
 endif
-	$(call timing, "$(BINDIR)/$(GPUBIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(GPUPRE)", $(OUTDIR)/$(GPUPRE)$(ITER).timing)
+	$(MAKE) outcpu outgpu -j 2 INTERVAL=$(INTERVAL)
+
+outcpu: 
 	$(call timing, "$(BINDIR)/$(CPUBIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(CPUPRE)", $(OUTDIR)/$(CPUPRE)$(ITER).timing)
 
-# OUT_SIZE = NX * NY * F * Print digits (64+the dot) = 420*180*9*65
-deltas: OUT_SIZE=44226000 
+outgpu: 
+	$(call timing, "$(BINDIR)/$(GPUBIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(GPUPRE)", $(OUTDIR)/$(GPUPRE)$(ITER).timing)
+
 deltas: all $(OUTDIR)
 ifeq ($(strip $(INTERVAL)),)
-	$(eval INTERVAL=$(DEFAULT_DLT_INTERVAL))
+	$(eval INTERVAL=1)
 endif
-	$(BINDIR)/$(GPUBIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(GPUPRE) &
-	$(BINDIR)/$(CPUBIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(CPUPRE) &
+	$(MAKE) outcpu outgpu $(DLT_FILE) -j 3 INTERVAL=$(INTERVAL)
 
-	for iter in $$(seq $(INTERVAL) $(INTERVAL) $(ITER)) ; do                                                                                       \
-		gpu_out=$(OUTDIR)/$(GPUPRE)$$iter.out ;                                                                                                    \
-		cpu_out=$(OUTDIR)/$(CPUPRE)$$iter.out ;                                                                                                    \
-		while [[ ! -s $$gpu_out || ! -s $$cpu_out || $$(cat $$gpu_out | wc -c) -ne $(OUT_SIZE) || $$(cat $$cpu_out | wc -c) -ne $(OUT_SIZE) ]]; do \
-			echo "wait for $$gpu_out and $$cpu_out" ;                                                                                              \
-			sleep 2 ;                                                                                                                              \
-		done;                                                                                                                                      \
-		delta=$$(python3 $(TOOLDIR)/floats_delta.py $$gpu_out $$cpu_out) ;                                                                         \
-		printf "$$iter;$$delta\n" >> $(OUTDIR)/deltas.csv ;                                                                                        \
-		rm $$gpu_out $$cpu_out ;                                                                                                                   \
-	done
+$(DLT_FILE): $(DLT_ITERS)
+
+$(DLT_ITERS): GPUOUT=$(OUTDIR)/$(GPUPRE)$@.out
+$(DLT_ITERS): CPUOUT=$(OUTDIR)/$(CPUPRE)$@.out
+$(DLT_ITERS): 
+	$(call wait_output,$(GPUOUT),$(OUT_SIZE))
+	$(call wait_output,$(CPUOUT),$(OUT_SIZE))
+	@printf "$@;%s\n" $$(python3 $(DLT_SCRIPT) $(GPUOUT) $(CPUOUT)) >> $(DLT_FILE)
+	@rm $(GPUOUT) $(CPUOUT)
 
 $(OBJDIR) $(BINDIR) $(OUTDIR): 
 	mkdir -p $@
@@ -104,4 +120,4 @@ clean:
 
 rebuild: clean all
 
-.PHONY: all run images deltas output clean rebuild
+.PHONY: all run images output outcpu outgpu deltas $(DLT_FILE) $(DLT_ITERS) clean rebuild 
