@@ -21,6 +21,7 @@ SRCS=$(wildcard $(SRCDIR)/*.cu)
 GPUOBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.cu=_gpu.o)))
 CPUOBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.cu=_cpu.o)))
 OBJS= $(GPUOBJS) $(CPUOBJS)
+
 # Flags
 NVCC_FLAGS=-Wno-deprecated-gpu-targets -O3
 
@@ -32,7 +33,6 @@ all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(GPUBIN) $(BINDIR)/$(CPUBIN)
 run: all $(OUTDIR) 
 	@$(BINDIR)/$(GPUBIN) $(N) $(MAX_I)
 	@$(BINDIR)/$(CPUBIN) $(N) $(MAX_I)
-
 
 $(OBJDIR) $(BINDIR) $(OUTDIR): 
 	mkdir -p $@
