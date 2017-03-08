@@ -1,13 +1,5 @@
 include ../../lbm_common.mk
-
-define wait_output
-	@ \
-	while [[ ! -s $(1) || $$(cat $(1) | wc -c) -ne $(2) ]]; do \
-		test -z $$end && printf "wait for $(1)"; end="\n"; printf "."; sleep 2 ; \
-	done; \
-	printf "$$end"
-endef
-
+include ../lbm_gpu_vs_cpu_common.mk
 
 # Compiler
 CC=gcc
@@ -23,7 +15,6 @@ OBJDIR=obj
 BINDIR=bin
 OUTDIR=out
 LIBDIR=../../C/libs
-TOOLDIR=../../Tools
 
 # Binary default arguments
 OUTPRE=lbm_
@@ -54,7 +45,6 @@ LIBS=$(addprefix -L,$(LIBDEP)) $(addprefix -l,$(LIBNAM))
 LIBS+=-lm
 
 # Deltas vars
-DLT_SCRIPT=$(TOOLDIR)/floats_delta.py
 DLT_FILE=$(OUTDIR)/deltas.csv
 DLT_ITERS=$(if $(subst 0,,$(INTERVAL)), $(shell seq $(INTERVAL) $(INTERVAL) $(ITER)), $(ITER))
 OUT_SIZE=44226000 
@@ -95,8 +85,8 @@ $(DLT_ITERS): CPUOUT=$(OUTDIR)/$(CPUPRE)$@.out
 $(DLT_ITERS): 
 	$(call wait_output,$(GPUOUT),$(OUT_SIZE))
 	$(call wait_output,$(CPUOUT),$(OUT_SIZE))
-	@printf "$@;%s\n" $$(python3 $(DLT_SCRIPT) $(GPUOUT) $(CPUOUT)) >> $(DLT_FILE)
-	@rm $(GPUOUT) $(CPUOUT)
+	printf "$@;%s\n" $$($(DLT_SCRIPT_SHELL) $(DLT_SCRIPT) $(GPUOUT) $(CPUOUT)) >> $(DLT_FILE)
+	rm $(GPUOUT) $(CPUOUT)
 
 $(OBJDIR) $(BINDIR) $(OUTDIR): 
 	mkdir -p $@
