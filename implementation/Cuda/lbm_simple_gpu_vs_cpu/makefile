@@ -74,9 +74,12 @@ deltas: all $(OUTDIR)
 ifeq ($(strip $(INTERVAL)),)
 	$(eval INTERVAL=1)
 endif
-	$(MAKE) outcpu outgpu $(DLT_FILE) -j 3 INTERVAL=$(INTERVAL)
+	$(MAKE) outcpu outgpu outdlt -j 3 INTERVAL=$(INTERVAL)
 
-$(DLT_FILE): $(DLT_ITERS)
+outdlt: $(DLT_FILE) $(DLT_ITERS)
+
+$(DLT_FILE): 
+	printf "" > $@
 
 $(DLT_ITERS): GPUOUT=$(OUTDIR)/$(GPUPRE)$@.out
 $(DLT_ITERS): CPUOUT=$(OUTDIR)/$(CPUPRE)$@.out
