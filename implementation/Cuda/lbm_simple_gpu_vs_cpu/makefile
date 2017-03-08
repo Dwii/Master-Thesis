@@ -1,4 +1,5 @@
 include ../../lbm_common.mk
+include ../lbm_gpu_vs_cpu_common.mk
 
 # Compiler
 CC=gcc
@@ -17,6 +18,8 @@ LIBDIR=../../C/libs
 
 # Binary default arguments
 OUTPRE=lbm_
+GPUPRE=gpu_$(OUTPRE)
+CPUPRE=cpu_$(OUTPRE)
 
 DEFAULT_IMG_INTERVAL=100
 DEFAULT_OUT_INTERVAL=0
@@ -39,6 +42,12 @@ LIBS=$(addprefix -L,$(LIBDEP)) $(addprefix -l,$(LIBNAM))
 # Standard libraries
 LIBS+=-lm
 
+# Deltas vars
+DLT_FILE=$(OUTDIR)/deltas.csv
+DLT_ITERS=$(if $(subst 0,,$(INTERVAL)), $(shell seq $(INTERVAL) $(INTERVAL) $(ITER)), $(ITER))
+OUT_SIZE=44226000 
+# OUT_SIZE = NX * NY * F * Print digits (64+the dot) = 420*180*9*65
+
 all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(GPUBIN) $(BINDIR)/$(CPUBIN)
 
 run: images
@@ -47,16 +56,35 @@ images: all $(OUTDIR)
 ifeq ($(strip $(INTERVAL)),)
 	$(eval INTERVAL=$(DEFAULT_IMG_INTERVAL))
 endif
-	$(BINDIR)/$(GPUBIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) 
+	$(BINDIR)/$(CPUBIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) 
 
 output: all $(OUTDIR) 
 ifeq ($(strip $(INTERVAL)),)
 	$(eval INTERVAL=$(DEFAULT_OUT_INTERVAL))
 endif
-	$(eval GPUPRE=gpu_$(OUTPRE))
-	$(eval CPUPRE=cpu_$(OUTPRE))
-	$(call timing, "$(BINDIR)/$(GPUBIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(GPUPRE)", $(OUTDIR)/$(GPUPRE)$(ITER).timing)
+	$(MAKE) outcpu outgpu -j 2 INTERVAL=$(INTERVAL)
+
+outcpu: 
 	$(call timing, "$(BINDIR)/$(CPUBIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(CPUPRE)", $(OUTDIR)/$(CPUPRE)$(ITER).timing)
+
+outgpu: 
+	$(call timing, "$(BINDIR)/$(GPUBIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(GPUPRE)", $(OUTDIR)/$(GPUPRE)$(ITER).timing)
+
+deltas: all $(OUTDIR)
+ifeq ($(strip $(INTERVAL)),)
+	$(eval INTERVAL=1)
+endif
+	$(MAKE) outcpu outgpu $(DLT_FILE) -j 3 INTERVAL=$(INTERVAL)
+
+$(DLT_FILE): $(DLT_ITERS)
+
+$(DLT_ITERS): GPUOUT=$(OUTDIR)/$(GPUPRE)$@.out
+$(DLT_ITERS): CPUOUT=$(OUTDIR)/$(CPUPRE)$@.out
+$(DLT_ITERS): 
+	$(call wait_output,$(GPUOUT),$(OUT_SIZE))
+	$(call wait_output,$(CPUOUT),$(OUT_SIZE))
+	printf "$@;%s\n" $$($(DLT_SCRIPT_SHELL) $(DLT_SCRIPT) $(GPUOUT) $(CPUOUT)) >> $(DLT_FILE)
+	rm $(GPUOUT) $(CPUOUT)
 
 $(OBJDIR) $(BINDIR) $(OUTDIR): 
 	mkdir -p $@
@@ -80,4 +108,4 @@ clean:
 
 rebuild: clean all
 
-.PHONY: all run images output clean rebuild
+.PHONY: all run images output outcpu outgpu deltas $(DLT_FILE) $(DLT_ITERS) clean rebuild 
