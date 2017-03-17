@@ -43,7 +43,7 @@ images: all $(OUTDIR)
 ifeq ($(strip $(INTERVAL)),)
 	$(eval INTERVAL=$(DEFAULT_IMG_INTERVAL))
 endif
-	$(BINDIR)/$(GPUBIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) 
+	$(BINDIR)/$(BIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) 
 
 output: all $(OUTDIR) 
 ifeq ($(strip $(INTERVAL)),)
