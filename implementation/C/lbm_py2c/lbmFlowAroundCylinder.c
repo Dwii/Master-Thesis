@@ -172,23 +172,17 @@ static inline void output_variables(char* filename, size_t dim, const size_t ind
     fclose(file);
 }
 
-static bool set_pixel(size_t dim, void* data, const size_t index[dim], void* args)
-{
-    (void) dim;
-
-    double* u = (double*)data;
-    double vel = sqrt( SQUARE(u[0]) + SQUARE(u[1]) );
-    int color =  255 * fmin(vel * 10, 1.0);
-    pgm_set_pixel((pgm_image*)args, index[0], index[1], color);
-
-    return true;
-}
-
-void output_image(char* filename, size_t dim, const size_t index[dim], double*** u) 
+void output_image(char* filename, double*** u) 
 {
     pgm_image* pgm = pgm_create(NX, NY);
-
-    array_foreach(dim, index, sizeof(double*), u, NULL, set_pixel, pgm);
+    
+    for (size_t x = 0; x < NX; x++) {
+        for (size_t y = 0; y < NY; y++) {
+            double vel = sqrt( SQUARE(u[0][x][y]) + SQUARE(u[1][x][y]) );
+            int color =  255 * vel * 10;
+            pgm_set_pixel(pgm, x, y, color);
+        }
+    }
 
     pgm_write(pgm, filename);
     pgm_destroy(pgm);
@@ -333,7 +327,7 @@ int main(int argc, char * const argv[])
 
             if ( out == OUT_IMG ) {
                 asprintf(&filename, "%s/%s%d.pgm", out_path, out_pref, iter);
-                output_image(filename, 3, A_SIZE2, u);
+                output_image(filename, u);
                 free(filename);
             }
 
