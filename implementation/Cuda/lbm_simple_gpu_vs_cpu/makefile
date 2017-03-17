@@ -53,15 +53,11 @@ all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(GPUBIN) $(BINDIR)/$(CPUBIN)
 run: images
 
 images: all $(OUTDIR)
-ifeq ($(strip $(INTERVAL)),)
-	$(eval INTERVAL=$(DEFAULT_IMG_INTERVAL))
-endif
+	$(eval INTERVAL ?= $(DEFAULT_IMG_INTERVAL))
 	$(BINDIR)/$(CPUBIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) 
 
 output: all $(OUTDIR) 
-ifeq ($(strip $(INTERVAL)),)
-	$(eval INTERVAL=$(DEFAULT_OUT_INTERVAL))
-endif
+	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
 	$(MAKE) outcpu outgpu -j 2 INTERVAL=$(INTERVAL)
 
 outcpu: 
@@ -71,9 +67,7 @@ outgpu:
 	$(call timing, "$(BINDIR)/$(GPUBIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(GPUPRE)", $(OUTDIR)/$(GPUPRE)$(ITER).timing)
 
 deltas: all $(OUTDIR)
-ifeq ($(strip $(INTERVAL)),)
-	$(eval INTERVAL=1)
-endif
+	$(eval INTERVAL ?= 1)
 	$(MAKE) outcpu outgpu outdlt -j 3 INTERVAL=$(INTERVAL)
 
 outdlt: $(DLT_FILE) $(DLT_ITERS)

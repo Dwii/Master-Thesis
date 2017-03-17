@@ -45,15 +45,11 @@ all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(BIN)
 run: images
 
 images: all $(OUTDIR)
-ifeq ($(strip $(INTERVAL)),)
-	$(eval INTERVAL=$(DEFAULT_IMG_INTERVAL))
-endif
+	$(eval INTERVAL ?= $(DEFAULT_IMG_INTERVAL))
 	$(BINDIR)/$(BIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) 
 
 output: all $(OUTDIR) 
-ifeq ($(strip $(INTERVAL)),)
-	$(eval INTERVAL=$(DEFAULT_OUT_INTERVAL))
-endif
+	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
 	$(call timing, "$(BINDIR)/$(BIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE)", $(OUTDIR)/$(OUTPRE)$(ITER).timing)
 
 $(OBJDIR) $(BINDIR) $(OUTDIR): 
