@@ -36,7 +36,6 @@ typedef enum { OUT_NONE, OUT_FIN, OUT_IMG } out_mode;
 typedef struct {
     bool obstacles[NX][NY];  // Should reside in lbm_consts but is too big for constant memory
     double u[NX][NY][2];
-    double feq[NX][NY][9];
     double fin[NX][NY][9];
     double fout[NX][NY][9];
     double rho[NX][NY];
@@ -199,12 +198,13 @@ __global__ void lbm_computation(lbm_vars *d_vars)
             d_vars->rho[0][y] = 1./(1 - d_vars->u[0][y][0]) * (s2 + 2*s3);
         }
 
+        double feq[9];
         // Compute equilibrium
-        d_equilibrium(d_vars->feq[x][y], d_vars->rho[x][y], d_vars->u[x][y]);
+        d_equilibrium(feq, d_vars->rho[x][y], d_vars->u[x][y]);
 
         if (x == 0) {
             for (size_t i = 0, f = d_consts.col[0][i]; i < 3; f = d_consts.col[0][++i]) {
-                d_vars->fin[0][y][f] = d_vars->feq[0][y][f] + d_vars->fin[0][y][d_consts.opp[f]] - d_vars->feq[0][y][d_consts.opp[f]];
+            	d_vars->fin[0][y][f] = feq[f] + d_vars->fin[0][y][d_consts.opp[f]] - feq[d_consts.opp[f]];
             }
         }
 
@@ -214,7 +214,7 @@ __global__ void lbm_computation(lbm_vars *d_vars)
                 d_vars->fout[x][y][f] = d_vars->fin[x][y][d_consts.opp[f]];
             } else {
                 // Collision step
-                d_vars->fout[x][y][f] = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(d_vars->fin[x][y][f], - d_vars->feq[x][y][f])), d_vars->fin[x][y][f]);
+                d_vars->fout[x][y][f] = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(d_vars->fin[x][y][f], - feq[f])), d_vars->fin[x][y][f]);
             }
         }
     }
