@@ -134,26 +134,22 @@ static void initOpp(size_t* opp)
 
 __host__ static void h_equilibrium(double* feq, double rho, double* u)
 {
-    do {                                                                 
-        double usqr = 3./2 * ( SQUARE(u[0]) + SQUARE(u[1]) );
+    double usqr = 3./2 * ( SQUARE(u[0]) + SQUARE(u[1]) );
 
-        for (int f = 0; f < 9; f++) {
-            double cu = 3 * ( V[0][f] * u[0] + V[1][f] * u[1] );
-            feq[f] = rho * T[f] * ( 1 + cu + 0.5 * SQUARE(cu) - usqr );
-        }                                                                
-    } while(0);
+    for (int f = 0; f < 9; f++) {
+        double cu = 3 * ( V[0][f] * u[0] + V[1][f] * u[1] );
+        feq[f] = rho * T[f] * ( 1 + cu + 0.5 * SQUARE(cu) - usqr );
+    }                                                                
 }
 
 __device__ static void d_equilibrium(double* feq, double rho, double* u)
 {
-    do {
-        double usqr = __dmul_rn(3./2, __dadd_rn( GPU_SQUARE(u[0]), GPU_SQUARE(u[1]) ));
-                                                                         
-        for (int f = 0; f < 9; f++) {
-            double cu = 3 * ( d_consts.v[0][f] * u[0] + d_consts.v[1][f] * u[1] );
-            feq[f] = rho * d_consts.t[f] * ( 1 + cu + 0.5 * SQUARE(cu) - usqr );
-        }                                                                
-    } while(0);
+    double usqr = __dmul_rn(3./2, __dadd_rn( GPU_SQUARE(u[0]), GPU_SQUARE(u[1]) ));
+                                                                     
+    for (int f = 0; f < 9; f++) {
+        double cu = 3 * ( d_consts.v[0][f] * u[0] + d_consts.v[1][f] * u[1] );
+        feq[f] = rho * d_consts.t[f] * ( 1 + cu + 0.5 * SQUARE(cu) - usqr );
+    }                                                                
 }
 
 __device__ static void macroscopic(double* fin, double* rho, double* u)
