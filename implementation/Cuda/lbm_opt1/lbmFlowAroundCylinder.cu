@@ -198,8 +198,8 @@ __global__ void lbm_computation(lbm_vars *d_vars)
             d_vars->rho[0][y] = 1./(1 - d_vars->u[0][y][0]) * (s2 + 2*s3);
         }
 
-        double feq[9];
         // Compute equilibrium
+        double feq[9];
         d_equilibrium(feq, d_vars->rho[x][y], d_vars->u[x][y]);
 
         if (x == 0) {
