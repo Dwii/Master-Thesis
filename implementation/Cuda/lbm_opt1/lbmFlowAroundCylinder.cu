@@ -38,7 +38,6 @@ typedef struct {
     double u[NX][NY][2];
     double fin[NX][NY][9];
     double fout[NX][NY][9];
-    double rho[NX][NY];
     double vel[NX][NY][2];
 } lbm_vars;
 
@@ -97,15 +96,6 @@ static void initVelocity(lbm_vars* vars)
             for (int y = 0; y < NY; y++) {
                 vars->vel[x][y][d] = (1-d) * ULB * (1 + 0.0001 * sin( y / (double)LY * 2 * M_PI) );
             }
-        }
-    }
-}
-
-static void initRho(lbm_vars* vars)
-{
-    for (int x = 0; x < NX; x++) {
-        for (int y = 0; y < NY; y++) {
-            vars->rho[x][y] = 1.0;
         }
     }
 }
@@ -181,8 +171,8 @@ __global__ void lbm_computation(lbm_vars *d_vars)
         }
 
         // Compute macroscopic variables, density and velocity
-        double u0, u1;
-        macroscopic(d_vars->fin[x][y], &d_vars->rho[x][y], &u0, &u1);
+        double rho, u0, u1;
+        macroscopic(d_vars->fin[x][y], &rho, &u0, &u1);
         
         if (x == 0) {
             // Left wall: inflow condition
@@ -195,12 +185,12 @@ __global__ void lbm_computation(lbm_vars *d_vars)
                 s2 += d_vars->fin[0][y][d_consts.col[1][i]];
                 s3 += d_vars->fin[0][y][d_consts.col[2][i]];
             }
-            d_vars->rho[0][y] = 1./(1 - u0) * (s2 + 2*s3);
+            rho = 1./(1 - u0) * (s2 + 2*s3);
         }
 
         // Compute equilibrium
         double feq[9];
-        d_equilibrium(feq, d_vars->rho[x][y], u0, u1);
+        d_equilibrium(feq, rho, u0, u1);
 
         if (x == 0) {
             for (size_t i = 0, f = d_consts.col[0][i]; i < 3; f = d_consts.col[0][++i]) {
@@ -340,12 +330,11 @@ int main(int argc, char * const argv[])
     lbm_vars *h_vars = (lbm_vars*)malloc(sizeof(lbm_vars));
     initObstacles(h_vars);
     initVelocity(h_vars);
-    initRho(h_vars);
     
     // Initialization of the populations at equilibrium with the given velocity.
     for (int y = 0; y < NY; y++) {
         for (int x = 0; x < NX; x++) {
-            h_equilibrium(h_vars->fin[x][y], h_vars->rho[x][y], h_vars->vel[x][y]);
+            h_equilibrium(h_vars->fin[x][y], 1.0, h_vars->vel[x][y]);
         }
     }
     
