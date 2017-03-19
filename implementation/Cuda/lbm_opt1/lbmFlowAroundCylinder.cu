@@ -141,29 +141,29 @@ __host__ static void h_equilibrium(double* feq, double rho, double* u)
     }                                                                
 }
 
-__device__ static void d_equilibrium(double* feq, double rho, double* u)
+__device__ static void d_equilibrium(double* feq, double rho, double u0, double u1)
 {
-    double usqr = __dmul_rn(3./2, __dadd_rn( GPU_SQUARE(u[0]), GPU_SQUARE(u[1]) ));
+    double usqr = __dmul_rn(3./2, __dadd_rn( GPU_SQUARE(u0), GPU_SQUARE(u1) ));
                                                                      
     for (int f = 0; f < 9; f++) {
-        double cu = 3 * ( d_consts.v[0][f] * u[0] + d_consts.v[1][f] * u[1] );
+        double cu = 3 * ( d_consts.v[0][f] * u0 + d_consts.v[1][f] * u1 );
         feq[f] = rho * d_consts.t[f] * ( 1 + cu + 0.5 * SQUARE(cu) - usqr );
     }                                                                
 }
 
-__device__ static void macroscopic(double* fin, double* rho, double* u)
+__device__ static void macroscopic(double* fin, double* rho, double* u0, double* u1)
 {   
-    *rho = u[0] = u[1] = 0;
+    *rho = *u0 = *u1 = 0;
 
     for (int f = 0; f < 9; f++) {
         *rho += fin[f];
 
-        u[0] += d_consts.v[0][f] * fin[f];
-        u[1] += d_consts.v[1][f] * fin[f];
+        *u0 += d_consts.v[0][f] * fin[f];
+        *u1 += d_consts.v[1][f] * fin[f];
     }
     
-    u[0] /= *rho;
-    u[1] /= *rho;
+    *u0 /= *rho;
+    *u1 /= *rho;
 }
 
 __global__ void lbm_computation(lbm_vars *d_vars)
@@ -181,13 +181,13 @@ __global__ void lbm_computation(lbm_vars *d_vars)
         }
 
         // Compute macroscopic variables, density and velocity
-        macroscopic(d_vars->fin[x][y], &d_vars->rho[x][y], d_vars->u[x][y]);
+        double u0, u1;
+        macroscopic(d_vars->fin[x][y], &d_vars->rho[x][y], &u0, &u1);
         
         if (x == 0) {
             // Left wall: inflow condition
-            for (size_t d = 0; d < 2; d++) {
-                d_vars->u[0][y][d] = d_vars->vel[0][y][d];
-            }   
+            u0 = d_vars->vel[0][y][0];
+            u1 = d_vars->vel[0][y][1];
 
             // Calculate the density
             double s2 = 0, s3 = 0;
@@ -195,12 +195,12 @@ __global__ void lbm_computation(lbm_vars *d_vars)
                 s2 += d_vars->fin[0][y][d_consts.col[1][i]];
                 s3 += d_vars->fin[0][y][d_consts.col[2][i]];
             }
-            d_vars->rho[0][y] = 1./(1 - d_vars->u[0][y][0]) * (s2 + 2*s3);
+            d_vars->rho[0][y] = 1./(1 - u0) * (s2 + 2*s3);
         }
 
         // Compute equilibrium
         double feq[9];
-        d_equilibrium(feq, d_vars->rho[x][y], d_vars->u[x][y]);
+        d_equilibrium(feq, d_vars->rho[x][y], u0, u1);
 
         if (x == 0) {
             for (size_t i = 0, f = d_consts.col[0][i]; i < 3; f = d_consts.col[0][++i]) {
@@ -217,6 +217,9 @@ __global__ void lbm_computation(lbm_vars *d_vars)
                 d_vars->fout[x][y][f] = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(d_vars->fin[x][y][f], - feq[f])), d_vars->fin[x][y][f]);
             }
         }
+
+		d_vars->u[x][y][0] = u0;
+		d_vars->u[x][y][1] = u1;
     }
 }
 
