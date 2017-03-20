@@ -38,7 +38,6 @@ typedef struct {
     double u[NX][NY][2];
     double fin[NX][NY][9];
     double fout[NX][NY][9];
-    double vel[NX][NY][2];
 } lbm_vars;
 
 typedef struct {
@@ -46,6 +45,7 @@ typedef struct {
     size_t opp[9];
     ssize_t v[2][9];
     double t[9];
+    double vel[NY];
 } lbm_consts;
 
 __constant__ lbm_consts d_consts;
@@ -89,14 +89,10 @@ static void initObstacles(lbm_vars* vars)
  * Initial velocity profile: almost zero, with a slight perturbation to trigger
  * the instability.
  */
-static void initVelocity(lbm_vars* vars)
+static void initVelocity(double* vel)
 {
-    for (int d = 0; d < 2; d++) {
-        for (int x = 0; x < NX; x++) {
-            for (int y = 0; y < NY; y++) {
-                vars->vel[x][y][d] = (1-d) * ULB * (1 + 0.0001 * sin( y / (double)LY * 2 * M_PI) );
-            }
-        }
+    for (int y = 0; y < NY; y++) {
+        vel[y] = ULB * (1 + 0.0001 * sin( y / (double)LY * 2 * M_PI) );
     }
 }
 
@@ -121,12 +117,12 @@ static void initOpp(size_t* opp)
     }
 }
 
-__host__ static void h_equilibrium(double* feq, double rho, double* u)
+__host__ static void h_equilibrium(double* feq, double rho, double u)
 {
-    double usqr = 3./2 * ( SQUARE(u[0]) + SQUARE(u[1]) );
+    double usqr = 3./2 * ( SQUARE(u) );
 
     for (int f = 0; f < 9; f++) {
-        double cu = 3 * ( V[0][f] * u[0] + V[1][f] * u[1] );
+        double cu = 3 * ( V[0][f] * u );
         feq[f] = rho * T[f] * ( 1 + cu + 0.5 * SQUARE(cu) - usqr );
     }                                                                
 }
@@ -176,8 +172,8 @@ __global__ void lbm_computation(lbm_vars *d_vars)
         
         if (x == 0) {
             // Left wall: inflow condition
-            u0 = d_vars->vel[0][y][0];
-            u1 = d_vars->vel[0][y][1];
+            u0 = d_consts.vel[y];
+            u1 = 0;
 
             // Calculate the density
             double s2 = 0, s3 = 0;
@@ -322,6 +318,7 @@ int main(int argc, char * const argv[])
     initCol(h_consts->col[1],  0);
     initCol(h_consts->col[2], -1);
     initOpp(h_consts->opp);
+  	initVelocity(h_consts->vel);
     memcpy(h_consts->v, V, sizeof(V));
     memcpy(h_consts->t, T, sizeof(T));
     
@@ -329,12 +326,11 @@ int main(int argc, char * const argv[])
         
     lbm_vars *h_vars = (lbm_vars*)malloc(sizeof(lbm_vars));
     initObstacles(h_vars);
-    initVelocity(h_vars);
     
     // Initialization of the populations at equilibrium with the given velocity.
     for (int y = 0; y < NY; y++) {
         for (int x = 0; x < NX; x++) {
-            h_equilibrium(h_vars->fin[x][y], 1.0, h_vars->vel[x][y]);
+            h_equilibrium(h_vars->fin[x][y], 1.0, h_consts->vel[y]);
         }
     }
     
