@@ -7,7 +7,7 @@ define timing
 	eval $(1); \
 	end=$$(date +%s); \
 	T=$$(($$end-$$start)); \
-	printf "%02d:%02d:%02d" "$$((T/3600%24))" "$$((T/60%60))" "$$((T%60))" > $(2);
+	printf "$$T" > $(2);
 endef
 
 # Binary arguments
