@@ -5,6 +5,9 @@ GRN=\033[0;32m
 BLU=\e[34m
 NC=\033[0m
 
+NX=420
+NY=180
+
 # Function:    check
 # Description: Check that two files are identical, print the result and execution timing
 # Argument $1: Test title 
@@ -12,10 +15,13 @@ NC=\033[0m
 # Argument $3: Second file 
 # Argument $4: Timing file (optional)
 define check
-	$(eval timing=$(if $(strip $(4)), (time: $(shell cat $(4))), ""))
+	$(eval seconds=$(if $(strip $(4)), $(shell cat $(4)), ))
+	$(eval timing=$(if $(strip $(4)), $(shell printf "%02d:%02d:%02d" $$(($(seconds)/3600%24)) $$(($(seconds)/60%60)) $$(($(seconds)%60))), ""))
+	$(eval mlups=$(if $(strip $(4)), $(shell printf "%.2f" $$(export LC_NUMERIC="en_US.UTF-8"; printf "$(NX)*$(NY)*$(ITER)/$(seconds)/2^20\n" | bc -l )), ))
+	$(eval perf=$(if $(strip $(4)), (time: $(timing), MLUPS: $(mlups)), ))
 	$(eval delta=(diff: $(shell python3 Tools/floats_delta.py $(2) $(3))))
-	$(eval na_msg="[$(BLU)NA$(NC)] $(1) $(timing)\n")
-	$(eval ok_msg="[$(GRN)OK$(NC)] $(1) $(timing)\n")
+	$(eval na_msg="[$(BLU)NA$(NC)] $(1) $(perf)\n")
+	$(eval ok_msg="[$(GRN)OK$(NC)] $(1) $(perf)\n")
 	$(eval ko_msg="[$(RED)KO$(NC)] $(1) $(delta)\n")
 	$(eval msg=$(if $(and $(strip $(2)), $(strip $(3))), $(if $(shell diff $(2) $(3)), $(ko_msg), $(ok_msg)), $(na_msg) ))
 	printf $(msg)
