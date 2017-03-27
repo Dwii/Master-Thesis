@@ -1,0 +1,24 @@
+CXXFLAGS=-O2
+CXX=g++
+
+LIBDIR=../../C/libs
+LIBNAM=pgm
+LIBDEP=$(addprefix $(LIBDIR)/,$(LIBNAM))
+INCS=$(addprefix -I,$(LIBDEP))
+LIBS=$(addprefix -L,$(LIBDEP)) $(addprefix -l,$(LIBNAM))
+
+
+all: lbm_cuda lbm
+	
+clean:
+	rm -f lbm_cuda lbm *.o *.pgm
+
+sim.o: sim.cpp 
+	$(CXX) $(CXXFLAGS) -c -o $@ $< $(INCS) $(LIBS)
+
+lbm: lbm.cpp sim.o
+	$(CXX) $(CXXFLAGS) lbm.cpp sim.o -o lbm -lm $(INCS) $(LIBS)
+
+lbm_cuda: lbm.cu sim.o 
+	nvcc lbm.cu sim.cpp --use_fast_math -o lbm_cuda $(INCS) $(LIBS)
+

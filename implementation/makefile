@@ -69,6 +69,8 @@ print_test: vars
 	@$(call check,lbm_float_gpu_vs_cpu (GPU vs CPU) , Cuda/lbm_float_gpu_vs_cpu/out/gpu_$(OUT),  Cuda/lbm_float_gpu_vs_cpu/out/cpu_$(OUT) )
 	@$(call check,lbm_simple_gpu_vs_cpu (GPU vs CPU), Cuda/lbm_simple_gpu_vs_cpu/out/gpu_$(OUT), Cuda/lbm_simple_gpu_vs_cpu/out/cpu_$(OUT))
 	@$(call check,lbm_opt1                          , Python/lbm_palabos_friendly/out/$(OUT),    Cuda/lbm_opt1/out/$(OUT),                 Cuda/lbm_opt1/out/$(TIMING)                )
+	@$(call check,lbm_sailfish_hist (CPU)           ,,,                                                                                    Cuda/lbm_sailfish_hist/out/cpu_$(TIMING)   )
+	@$(call check,lbm_sailfish_hist (GPU)           ,,,                                                                                    Cuda/lbm_sailfish_hist/out/gpu_$(TIMING)   )
 
 test: vars output print_test
 
