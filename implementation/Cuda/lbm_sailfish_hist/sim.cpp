@@ -77,7 +77,7 @@ void output_image(char* filename, struct SimState *state)
     
     for (y = 0; y < LAT_H; y++) {
         for (x = 0; x < LAT_W; x++) {
-            int color = sqrtf(state->vx[i]*state->vx[i] + state->vy[i]*state->vy[i]) / 0.1f * 255.0f;
+            int color = fmin(255, sqrtf(state->vx[i]*state->vx[i] + state->vy[i]*state->vy[i]) / 0.1f * 255.0f);
             if (state->map[i] == GEO_WALL) {
                 pgm_set_pixel(pgm, x, y, 0);
             } else {
