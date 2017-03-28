@@ -218,7 +218,8 @@ void SimInit(struct SimState *state)
 
 	// left / right
 	for (i = 0; i < LAT_H; i++) {
-		state->map[i*LAT_W] = state->map[LAT_W-1 + i*LAT_W] = GEO_INFLOW;
+		state->map[i*LAT_W] = GEO_INFLOW;
+		state->map[LAT_W-1 + i*LAT_W] = GEO_FLUID;
 	}
 
 	// top
