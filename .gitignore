@@ -2,6 +2,7 @@
 bin/
 out/
 obj/
+hid/
 
 # Object files
 *.o
@@ -33,6 +34,7 @@ obj/
 *.pptx
 .DS_Store
 *.pyc
+*~$*
 
 # Latex report intermediate files
 report/*.out
