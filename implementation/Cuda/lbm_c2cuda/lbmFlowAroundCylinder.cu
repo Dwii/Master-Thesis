@@ -29,7 +29,7 @@
 
 #define SQUARE(a) ((a)*(a))
 #define GPU_SQUARE(a) (__dmul_rn(a,a))
-#define INDEX_2D_FROM_1D(x, y, i) (y) = (i)/(NX), (x) = (i)%(NX)
+#define INDEX_2D_FROM_1D(x, y, i) do { (y) = (i)/(NX), (x) = (i)%(NX); } while (0)
 
 typedef enum { OUT_NONE, OUT_FIN, OUT_IMG } out_mode;
 
