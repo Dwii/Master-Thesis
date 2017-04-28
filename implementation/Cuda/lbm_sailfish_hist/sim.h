@@ -9,6 +9,16 @@
 #define LAT_W 420
 #define BLOCK_SIZE 64
 
+#ifdef USE_FLOATS
+#define double float
+#define __dadd_rn __fadd_rn
+#define __dmul_rn __fmul_rn
+#else
+#define float double
+#define __fadd_rn __dadd_rn
+#define __fmul_rn __dmul_rn
+#endif
+
 struct Dist {
 	float *fC, *fE, *fW, *fS, *fN, *fSE, *fSW, *fNE, *fNW;
 };
