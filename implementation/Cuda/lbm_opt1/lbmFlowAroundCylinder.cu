@@ -147,7 +147,7 @@ __device__ static void macroscopic(double* fin, double* rho, double* u0, double*
         *u0 += d_consts.v[0][f] * fin[f];
         *u1 += d_consts.v[1][f] * fin[f];
     }
-    
+
     *u0 /= *rho;
     *u1 /= *rho;
 }
@@ -169,7 +169,7 @@ __global__ void lbm_computation(lbm_vars *d_vars)
         // Compute macroscopic variables, density and velocity
         double rho, u0, u1;
         macroscopic(d_vars->fin[x][y], &rho, &u0, &u1);
-        
+
         if (x == 0) {
             // Left wall: inflow condition
             u0 = d_consts.vel[y];
@@ -221,7 +221,6 @@ __global__ void lbm_streaming(lbm_vars *d_vars)
             size_t y_dst = (y + NY + d_consts.v[1][f]) % NY;
             d_vars->fin[x_dst][y_dst][f] = d_vars->fout[x][y][f];
         }
-   
     }
 }
 
