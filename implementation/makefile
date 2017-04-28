@@ -80,6 +80,7 @@ print_test: vars
 	@$(call check,lbm_opt1                          , Python/lbm_palabos_friendly/out/$(OUT),    Cuda/lbm_opt1/out/$(OUT),                 Cuda/lbm_opt1/out/$(TIMING)                )
 	@$(call check,lbm_sailfish_hist (CPU)           ,,,                                                                                    Cuda/lbm_sailfish_hist/out/cpu_$(TIMING)   )
 	@$(call check,lbm_sailfish_hist (GPU)           ,,,                                                                                    Cuda/lbm_sailfish_hist/out/gpu_$(TIMING)   )
+	@$(call check,lbm_opt2                          , Python/lbm_palabos_friendly/out/$(OUT),    Cuda/lbm_opt2/out/$(OUT),                 Cuda/lbm_opt2/out/$(TIMING)                )
 
 test: vars output print_test
 
