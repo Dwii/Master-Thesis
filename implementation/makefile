@@ -1,6 +1,7 @@
 # usage: $(MAKE) [ test [ ITER=<total iterations> ] [ OUT=<test filename> ] ]
 
 RED=\033[0;31m
+YEL=\e[33m
 GRN=\033[0;32m
 BLU=\e[34m
 NC=\033[0m
@@ -15,15 +16,23 @@ NY=180
 # Argument $3: Second file 
 # Argument $4: Timing file (optional)
 define check
+	$(eval err=)
+	$(if $(shell test -n '$(strip $(4))' -a ! -e '$(strip $(4))' && echo ERR),$(eval err=(timing not found)))
+	$(if $(shell test -n '$(strip $(3))' -a ! -e '$(strip $(3))' && echo ERR),$(eval err=($(strip $(3)) not found)))
+	$(if $(shell test -n '$(strip $(2))' -a ! -e '$(strip $(2))' && echo ERR),$(eval err=($(strip $(2)) not found)))
+	$(if $(err), 
+	$(eval msg="[$(YEL)ER$(NC)] $(1) $(err)\n")
+	,
 	$(eval seconds=$(if $(strip $(4)), $(shell cat $(4)), ))
 	$(eval timing=$(if $(strip $(4)), $(shell printf "%02d:%02d:%02d" $$(($(seconds)/3600%24)) $$(($(seconds)/60%60)) $$(($(seconds)%60))), ""))
-	$(eval mlups=$(if $(strip $(4)), $(shell printf "%.2f" $$(export LC_NUMERIC="en_US.UTF-8"; printf "$(NX)*$(NY)*$(ITER)/$(seconds)/2^20\n" | bc -l )), ))
+	$(eval mlups=$(if $(strip $(4)), $(shell export LC_NUMERIC="en_US.UTF-8"; printf "%.2f" $$(printf "$(NX)*$(NY)*$(ITER)/$(seconds)/2^20\n" | bc -l )), ))
 	$(eval perf=$(if $(strip $(4)), (time: $(timing), MLUPS: $(mlups)), ))
 	$(eval delta=(diff: $(shell python3 Tools/floats_delta.py $(2) $(3))))
 	$(eval na_msg="[$(BLU)NA$(NC)] $(1) $(perf)\n")
 	$(eval ok_msg="[$(GRN)OK$(NC)] $(1) $(perf)\n")
 	$(eval ko_msg="[$(RED)KO$(NC)] $(1) $(delta)\n")
 	$(eval msg=$(if $(and $(strip $(2)), $(strip $(3))), $(if $(shell diff $(2) $(3)), $(ko_msg), $(ok_msg)), $(na_msg) ))
+	)
 	printf $(msg)
 endef
 
