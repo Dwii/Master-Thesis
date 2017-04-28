@@ -22,7 +22,7 @@ GPUPRE=gpu_$(OUTPRE)
 CPUPRE=cpu_$(OUTPRE)
 
 # Non-standard libraries
-LIBNAM=pgm
+LIBNAM=pgm timing
 LIBDEP=$(addprefix $(LIBDIR)/,$(LIBNAM))
 INCS=$(addprefix -I,$(LIBDEP))
 LIBS=$(addprefix -L,$(LIBDEP)) $(addprefix -l,$(LIBNAM))

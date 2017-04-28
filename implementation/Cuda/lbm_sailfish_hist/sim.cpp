@@ -3,8 +3,8 @@
 #include <cmath>
 #include <ctime>
 #include <pgm.h>
-
 #include <libgen.h>
+#include <timing.h>
 
 #include "sim.h"
 #include "vis.h"
@@ -14,60 +14,6 @@
 #define R        ((LAT_H) / 9)  // Cylinder radius
 
 #define SQUARE(a) ((a)*(a))
-
-
-#ifdef __APPLE__
-typedef struct start_time_t {
-    double base;
-    uint64_t time;
-} start_time_t;
-
-// Thanks to Jens Gustedt
-// http://stackoverflow.com/questions/5167269/clock-gettime-alternative-in-mac-os-x
-#include <mach/mach_time.h>
-#include <libc.h>
-#define ORWL_NANO (+1.0E-9)
-#define ORWL_GIGA UINT64_C(1000000000)
-
-#else
-typedef struct timespec start_time_t;
-#endif
-
-
-/// @brief Starts the high resolution timer.
-/// @param start Where to store the start time.
-void timing_start(start_time_t *start) {
-#ifdef __APPLE__
-    mach_timebase_info_data_t tb;
-    memset(&tb, 0, sizeof(tb));
-    mach_timebase_info(&tb);
-    start->base = tb.numer;
-    start->base /= tb.denom;
-    start->time = mach_absolute_time();
-#else
-    clock_gettime(CLOCK_MONOTONIC, start);
-#endif
-}
-
-/// @brief Stops the high resolution timer and computes the elapsed time.
-/// @param start Start time.
-/// @return Elapsed time in nanoseconds.
-long timing_stop(start_time_t *start) {
-    
-    long diff;
-#ifdef __APPLE__
-    diff = (mach_absolute_time() - start->time) * start->base;
-    struct timespec t_diff;
-    t_diff.tv_sec = diff * ORWL_NANO;
-    t_diff.tv_nsec = diff - (t_diff.tv_sec * ORWL_GIGA);
-    diff = (t_diff.tv_sec) * 1000000000 + (t_diff.tv_nsec);
-#else
-    struct timespec finish;
-    clock_gettime(CLOCK_MONOTONIC, &finish);
-    diff = (finish.tv_sec-start->tv_sec) * 1000000000 + (finish.tv_nsec-start->tv_nsec);
-#endif
-    return diff;
-}
 
 void output_image(char* filename, struct SimState *state)
 {
@@ -90,7 +36,6 @@ void output_image(char* filename, struct SimState *state)
     pgm_write(pgm, filename);
     pgm_destroy(pgm);
 }
-
 
 static void initObstacles(struct SimState* state)
 {
@@ -140,7 +85,7 @@ int main(int argc, char **argv)
             long timediff = timing_stop(&start_time);
             
             float lups = LAT_H * LAT_W * 100 * 1000000000.0f / timediff;
-            printf("lups = %.4f\n", lups);
+            printf("mlups = %.4f\n", lups/1000000);
 
             if (out_path && out_pre) {
                 char* filename;
