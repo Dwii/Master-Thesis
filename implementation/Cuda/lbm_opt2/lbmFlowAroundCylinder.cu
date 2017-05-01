@@ -429,9 +429,10 @@ int main(int argc, char * const argv[])
                 HANDLE_ERROR(cudaMemcpy(h_vars->u0, d_vars->u0, sizeof(double)*NX*NY, cudaMemcpyDeviceToHost));
                 HANDLE_ERROR(cudaMemcpy(h_vars->u1, d_vars->u1, sizeof(double)*NX*NY, cudaMemcpyDeviceToHost));
 
-                asprintf(&filename, "%s/%s%d.pgm", out_path, out_pref, iter);
-                output_image(filename, h_vars->u0, h_vars->u1);
-                free(filename);
+                if ( asprintf(&filename, "%s/%s%d.pgm", out_path, out_pref, iter) != -1 ) {
+                    output_image(filename, h_vars->u0, h_vars->u1);
+                    free(filename);
+                }
             }
 
             if (out == OUT_FIN) {
@@ -439,10 +440,10 @@ int main(int argc, char * const argv[])
                 lbm_lattices* h_f = (lbm_lattices*) malloc(sizeof(lbm_lattices));
                 HANDLE_ERROR(cudaMemcpy(&h_f, d_f, sizeof(lbm_lattices), cudaMemcpyDeviceToHost));
 
-                asprintf(&filename, "%s/%s%d.out", out_path, out_pref, iter);
-                output_variables(filename, h_f);
-                free(filename);
-
+                if ( asprintf(&filename, "%s/%s%d.out", out_path, out_pref, iter) != -1) {
+                    output_variables(filename, h_f);
+                    free(filename);
+                }
                 free(h_f);
             }
             timing_start(&start_time);
