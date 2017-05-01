@@ -371,7 +371,7 @@ int main(int argc, char * const argv[])
 
     lbm_consts* h_consts = (lbm_consts*)malloc(sizeof(lbm_consts));
     
-  	initVelocity(h_consts->vel);
+    initVelocity(h_consts->vel);
     memcpy(h_consts->v, V, sizeof(V));
     memcpy(h_consts->t, T, sizeof(T));
     
@@ -438,7 +438,7 @@ int main(int argc, char * const argv[])
             if (out == OUT_FIN) {
                 lbm_lattices* d_f = iter % 2 == 1 ? &d_vars->f1 : &d_vars->f0;
                 lbm_lattices* h_f = (lbm_lattices*) malloc(sizeof(lbm_lattices));
-                HANDLE_ERROR(cudaMemcpy(&h_f, d_f, sizeof(lbm_lattices), cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(h_f, d_f, sizeof(lbm_lattices), cudaMemcpyDeviceToHost));
 
                 if ( asprintf(&filename, "%s/%s%d.out", out_path, out_pref, iter) != -1) {
                     output_variables(filename, h_f);
