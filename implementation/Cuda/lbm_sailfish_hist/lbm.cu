@@ -3,7 +3,6 @@
 #include <cmath>
 
 #include "sim.h"
-#include "vis.h"
 
 const int size_i = LAT_W*LAT_H*sizeof(int);
 const int size_f = LAT_W*LAT_H*sizeof(float);

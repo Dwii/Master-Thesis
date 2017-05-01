@@ -7,7 +7,6 @@
 #include <timing.h>
 
 #include "sim.h"
-#include "vis.h"
 
 #define CX       ((LAT_W) / 4)  // X coordinates of the cylinder
 #define CY       ((LAT_H) / 2)  // Y coordinates of the cylinder
