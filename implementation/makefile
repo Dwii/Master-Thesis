@@ -1,9 +1,9 @@
 # usage: $(MAKE) [ test [ ITER=<total iterations> ] [ OUT=<test filename> ] ]
 
 RED=\033[0;31m
-YEL=\e[33m
+YEL=\033[0;33m
 GRN=\033[0;32m
-BLU=\e[34m
+BLU=\033[0;34m
 NC=\033[0m
 
 NX=420
