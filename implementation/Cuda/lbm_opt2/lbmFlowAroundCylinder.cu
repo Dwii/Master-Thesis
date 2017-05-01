@@ -295,20 +295,20 @@ __global__ void lbm_computation(lbm_vars *d_vars, lbm_lattices* f0, lbm_lattices
     }
 }
 
-void output_variables(char* filename, lbm_lattices var) 
+void output_variables(char* filename, lbm_lattices* var) 
 {
     FILE* file = fopen(filename, "w");
     for (size_t x = 0; x < NX; x++) {
         for (size_t y = 0; y < NY; y++) {
-            fprintf(file, "%64.60f\n", var.ne[IDX(x,y)]);
-            fprintf(file, "%64.60f\n", var.e [IDX(x,y)]);
-            fprintf(file, "%64.60f\n", var.se[IDX(x,y)]);
-            fprintf(file, "%64.60f\n", var.n [IDX(x,y)]);
-            fprintf(file, "%64.60f\n", var.c [IDX(x,y)]);
-            fprintf(file, "%64.60f\n", var.s [IDX(x,y)]);
-            fprintf(file, "%64.60f\n", var.nw[IDX(x,y)]);
-            fprintf(file, "%64.60f\n", var.w [IDX(x,y)]);
-            fprintf(file, "%64.60f\n", var.sw[IDX(x,y)]);
+            fprintf(file, "%64.60f\n", var->ne[IDX(x,y)]);
+            fprintf(file, "%64.60f\n", var->e [IDX(x,y)]);
+            fprintf(file, "%64.60f\n", var->se[IDX(x,y)]);
+            fprintf(file, "%64.60f\n", var->n [IDX(x,y)]);
+            fprintf(file, "%64.60f\n", var->c [IDX(x,y)]);
+            fprintf(file, "%64.60f\n", var->s [IDX(x,y)]);
+            fprintf(file, "%64.60f\n", var->nw[IDX(x,y)]);
+            fprintf(file, "%64.60f\n", var->w [IDX(x,y)]);
+            fprintf(file, "%64.60f\n", var->sw[IDX(x,y)]);
         }
     }
     fclose(file);
@@ -351,7 +351,7 @@ int main(int argc, char * const argv[])
             default : { goto usage; }
         }
     }
-    
+
     // check that execution mode is set (output images or fin values)
     if (max_iter < 1) {
     usage:
@@ -436,12 +436,14 @@ int main(int argc, char * const argv[])
 
             if (out == OUT_FIN) {
                 lbm_lattices* d_f = iter % 2 == 1 ? &d_vars->f1 : &d_vars->f0;
-                lbm_lattices h_f;
+                lbm_lattices* h_f = (lbm_lattices*) malloc(sizeof(lbm_lattices));
                 HANDLE_ERROR(cudaMemcpy(&h_f, d_f, sizeof(lbm_lattices), cudaMemcpyDeviceToHost));
 
                 asprintf(&filename, "%s/%s%d.out", out_path, out_pref, iter);
                 output_variables(filename, h_f);
                 free(filename);
+
+                free(h_f);
             }
             timing_start(&start_time);
         }
