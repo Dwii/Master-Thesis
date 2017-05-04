@@ -341,7 +341,7 @@ int main(int argc, char * const argv[])
 
             total_time_diff += time_diff = timing_stop(&start_time);
             if ( print_lups ) {
-                long iter_diff = out_interval? out_interval : max_iter;
+                size_t iter_diff = out_interval? out_interval : (size_t)max_iter;
                 printf("lups: %.2f\n", get_lups(NX*NY, iter_diff, time_diff));
             }
 
