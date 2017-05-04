@@ -48,6 +48,11 @@ static void initObstacles(struct SimState* state)
     SimUpdateMap(*state);
 }
 
+float get_lups(int lattices, int iterations, long ns_time_diff)
+{
+    return lattices * iterations * 1000000000.0f / ns_time_diff;
+}
+
 int main(int argc, char **argv)
 {
 
@@ -74,17 +79,16 @@ int main(int argc, char **argv)
     
 	int last_x, last_y;
 
+    long time_diff, total_time_diff = 0;
 	start_time_t start_time;
-
     timing_start(&start_time);
 
     for (int iter = 0; iter < max_iter; iter++) {
 		SimUpdate(iter, state);
         if (iter % 100 == 0) {
-            long timediff = timing_stop(&start_time);
+            total_time_diff += time_diff = timing_stop(&start_time);
             
-            float lups = LAT_H * LAT_W * 100 * 1000000000.0f / timediff;
-            printf("mlups = %.4f\n", lups/1000000);
+            printf("lups = %.4f\n", get_lups(LAT_H * LAT_W, 100, time_diff));
 
             if (out_path && out_pre) {
                 char* filename;
@@ -96,6 +100,8 @@ int main(int argc, char **argv)
             timing_start(&start_time);
         }
 	}
+
+    printf("average lups: %.2f\n", get_lups(LAT_H * LAT_W, max_iter, total_time_diff));
 
 	SimCleanup(&state);
 
