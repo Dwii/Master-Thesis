@@ -23,9 +23,10 @@ define check
 	$(if $(err), 
 	$(eval msg="[$(YEL)ER$(NC)] $(1) $(err)\n")
 	,
-	$(eval seconds=$(if $(strip $(4)), $(shell cat $(4)), ))
+	$(eval seconds=$(if $(strip $(4)), $(shell cat $(4) | sed -n 2p), ))
 	$(eval timing=$(if $(strip $(4)), $(shell printf "%02d:%02d:%02d" $$(($(seconds)/3600%24)) $$(($(seconds)/60%60)) $$(($(seconds)%60))), ""))
-	$(eval mlups=$(if $(strip $(4)), $(shell export LC_NUMERIC="en_US.UTF-8"; printf "%.2f" $$(printf "$(NX)*$(NY)*$(ITER)/$(seconds)/2^20\n" | bc -l )), ))
+	$(eval lups=$(if $(strip $(4)), $(shell cat $(4) | sed -n 1p), ))
+	$(eval mlups=$(if $(strip $(lups)), $(shell export LC_NUMERIC="en_US.UTF-8"; printf "%.2f" $$(printf "$(lups)/10^6\n" | bc -l )), "unknown"))
 	$(eval perf=$(if $(strip $(4)), (time: $(timing), MLUPS: $(mlups)), ))
 	$(eval delta=(diff: $(shell python3 Tools/floats_delta.py $(2) $(3))))
 	$(eval na_msg="[$(BLU)NA$(NC)] $(1) $(perf)\n")
