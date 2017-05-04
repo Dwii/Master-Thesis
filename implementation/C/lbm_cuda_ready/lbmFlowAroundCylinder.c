@@ -280,7 +280,8 @@ int main(int argc, char * const argv[])
                 equilibrium(vars->feq[x][y], vars->rho[x][y], vars->u[x][y]);
             }
             
-            for (size_t i = 0, f = consts->col[0][i]; i < 3; f = consts->col[0][++i]) {
+            for (size_t i = 0; i < 3; i++) {
+                size_t f = consts->col[0][i];
                 vars->fin[0][y][f] = vars->feq[0][y][f] + vars->fin[0][y][consts->opp[f]] - vars->feq[0][y][consts->opp[f]];
             }
             

@@ -275,7 +275,8 @@ int main(int argc, char * const argv[])
                 equilibrium(feq, rho, u, x, y);
             }
             
-            for (size_t i = 0, f = COL1[i]; i < 3; f = COL1[++i]) {
+            for (size_t i = 0; i < 3; i++) {
+                size_t f = COL1[i];
                 fin[0][y][f] = feq[0][y][f] + fin[0][y][OPP[f]] - feq[0][y][OPP[f]];
             }
             

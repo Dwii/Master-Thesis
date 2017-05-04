@@ -261,7 +261,8 @@ __global__ void lbm_computation(lbm_vars *d_vars)
     d_equilibrium(d_vars->feq[x][y], d_vars->rho[x][y], d_vars->u[x][y]);
 
     if (x == 0) {
-        for (size_t i = 0, f = d_consts.col[0][i]; i < 3; f = d_consts.col[0][++i]) {
+        for (size_t i = 0; i < 3; i++) {
+            size_t f = d_consts.col[0][i];
             d_vars->fin[0][y][f] = d_vars->feq[0][y][f] + d_vars->fin[0][y][d_consts.opp[f]] - d_vars->feq[0][y][d_consts.opp[f]];
         }
     }
