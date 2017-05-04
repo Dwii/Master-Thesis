@@ -11,6 +11,7 @@ from numpy import *
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import sys
+import datetime
 
 ###### Outputs definitions #####################################################
 out = sys.argv[1]
@@ -89,6 +90,9 @@ vel = fromfunction(inivel, (2,nx,ny))
 # Initialization of the populations at equilibrium with the given velocity.
 fin = equilibrium(1, vel)
 
+seconds = 0
+start = datetime.datetime.now()
+
 ###### Main time loop ##########################################################
 for iter in range(1, maxIter+1):
     # Right wall: outflow condition.
@@ -120,6 +124,9 @@ for iter in range(1, maxIter+1):
                             v[i,1], axis=1 )
  
     if (outInterval==0 and iter == maxIter) or (outInterval>0 and iter % outInterval == 0):
+
+        seconds += (datetime.datetime.now() - start).total_seconds()
+
         # Visualization of the velocity.
         if out == 'IMG':
             plt.clf()
@@ -131,3 +138,6 @@ for iter in range(1, maxIter+1):
                 for x in range(nx):
                     for y in range(ny):
                         file.write("{0:64.60f}\n".format(fin[f,x,y]))
+        start = datetime.datetime.now()
+
+print ("average lups:", nx*ny*maxIter/seconds)

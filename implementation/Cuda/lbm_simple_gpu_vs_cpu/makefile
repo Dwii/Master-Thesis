@@ -34,7 +34,7 @@ OBJS= $(GPUOBJS) $(CPUOBJS)
 NVCC_FLAGS=-Wno-deprecated-gpu-targets -O3
 
 # Non-standard libraries
-LIBNAM=pgm array
+LIBNAM=pgm array timing
 LIBDEP=$(addprefix $(LIBDIR)/,$(LIBNAM))
 INCS=$(addprefix -I,$(LIBDEP))
 LIBS=$(addprefix -L,$(LIBDEP)) $(addprefix -l,$(LIBNAM))
@@ -61,10 +61,10 @@ output: all $(OUTDIR)
 	$(MAKE) outcpu outgpu -j 2 INTERVAL=$(INTERVAL)
 
 outcpu: 
-	$(call timing, "$(BINDIR)/$(CPUBIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(CPUPRE)", $(OUTDIR)/$(CPUPRE)$(ITER).timing)
+	$(call timing, "$(BINDIR)/$(CPUBIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(CPUPRE) -L", $(OUTDIR)/$(CPUPRE)$(ITER).timing)
 
 outgpu: 
-	$(call timing, "$(BINDIR)/$(GPUBIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(GPUPRE)", $(OUTDIR)/$(GPUPRE)$(ITER).timing)
+	$(call timing, "$(BINDIR)/$(GPUBIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(GPUPRE) -L", $(OUTDIR)/$(GPUPRE)$(ITER).timing)
 
 deltas: all $(OUTDIR)
 	$(eval INTERVAL ?= 1)

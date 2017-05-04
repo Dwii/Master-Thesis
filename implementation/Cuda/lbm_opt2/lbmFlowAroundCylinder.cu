@@ -330,6 +330,11 @@ void output_image(char* filename, double* u0, double* u1)
     pgm_destroy(pgm);
 }
 
+float get_lups(int lattices, int iterations, long ns_time_diff)
+{
+    return lattices * iterations * 1000000000.0f / ns_time_diff;
+}
+
 int main(int argc, char * const argv[])
 {
     // Init options to default values
@@ -338,16 +343,20 @@ int main(int argc, char * const argv[])
     out_mode out = OUT_NONE;
     ssize_t max_iter = 0;
     size_t out_interval = 0;
+    bool print_lups = false;
+    bool print_avg_lups = false;
 
     // Read arguments
     while (optind < argc) {
-        switch (getopt(argc, argv, "pfi:I:o:O:")) {
+        switch (getopt(argc, argv, "pfi:I:o:O:lL")) {
             case 'p': { out = OUT_IMG; break; }
             case 'f': { out = OUT_FIN; break; }
             case 'i': { max_iter = strtol(optarg, NULL, 10); break; }
             case 'I': { out_interval = strtol(optarg, NULL, 10); break; }
             case 'o': { out_path = optarg; break; }
             case 'O': { out_pref = optarg; break; }
+            case 'l': { print_lups = true; break; }
+            case 'L': { print_avg_lups = true; break; }
             default : { goto usage; }
         }
     }
@@ -355,13 +364,15 @@ int main(int argc, char * const argv[])
     // check that execution mode is set (output images or fin values)
     if (max_iter < 1) {
     usage:
-        fprintf(stderr, "usage: %s (-p | -f) -i <iter> [-I <out_interval>] [-o <out_dir>] [-O <out_prefix>]\n", basename((char*)argv[0]));
+        fprintf(stderr, "usage: %s (-p | -f) -i <iter> [-I <out_interval>] [-o <out_dir>] [-O <out_prefix>] [-l] [-L]\n", basename((char*)argv[0]));
         fprintf(stderr, "  -p : output pictures\n");
         fprintf(stderr, "  -f : output populations\n");
         fprintf(stderr, "  -i : number of iterations\n");
         fprintf(stderr, "  -I : output interval; (0 if only the last iteration output in required)\n");
         fprintf(stderr, "  -o : output file directory\n");
         fprintf(stderr, "  -O : output filename prefix\n");
+        fprintf(stderr, "  -l : print lups at each output interval\n");
+        fprintf(stderr, "  -L : print average lups at the end\n");
         return EXIT_FAILURE;
     }
 
@@ -403,6 +414,7 @@ int main(int argc, char * const argv[])
 
     size_t shared_mem_size = 6 * sizeof(double) * BLOCK_SIZE;
 
+    long time_diff, total_time_diff = 0;
     start_time_t start_time;
     timing_start(&start_time);
 
@@ -417,12 +429,12 @@ int main(int argc, char * const argv[])
 
         if ( (!out_interval && iter == max_iter) || (out_interval && iter % out_interval == 0) ) {
 
-            long timediff = timing_stop(&start_time);
-            long iterdiff = out_interval? out_interval : iter;
+            total_time_diff += time_diff = timing_stop(&start_time);
+            if ( print_lups ) {
+                long iter_diff = out_interval? out_interval : max_iter;
+                printf("lups: %.2f\n", get_lups(NX*NY, iter_diff, time_diff));
+            }
             
-            float lups = NY * NX * iterdiff * 1000000000.0f / timediff;
-            printf("mlups = %.4f\n", lups/1000000);
-
             char* filename;
 
             if ( out == OUT_IMG ) {
@@ -448,6 +460,10 @@ int main(int argc, char * const argv[])
             }
             timing_start(&start_time);
         }
+    }
+
+    if ( print_avg_lups ) {
+        printf("average lups: %.2f\n", get_lups(NX*NY, max_iter, total_time_diff));
     }
 
     free(h_consts);

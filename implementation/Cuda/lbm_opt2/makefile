@@ -50,7 +50,7 @@ images: all $(OUTDIR)
 
 output: all $(OUTDIR) 
 	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
-	$(call timing, "$(BINDIR)/$(BIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE)", $(OUTDIR)/$(OUTPRE)$(ITER).timing)
+	$(call timing, "$(BINDIR)/$(BIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -L", $(OUTDIR)/$(OUTPRE)$(ITER).timing)
 
 $(OBJDIR) $(BINDIR) $(OUTDIR): 
 	mkdir -p $@

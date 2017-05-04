@@ -27,7 +27,7 @@ OBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.c=.o)))
 CFLAGS=-g -Wall -Wextra -pedantic -std=gnu99 -O3
 
 # Non-standard libraries
-LIBNAM=pgm array
+LIBNAM=pgm array timing
 LIBDEP=$(addprefix $(LIBDIR)/,$(LIBNAM))
 INCS=$(addprefix -I,$(LIBDEP))
 LIBS=$(addprefix -L,$(LIBDEP)) $(addprefix -l,$(LIBNAM))
@@ -45,7 +45,7 @@ images: all $(OUTDIR)
 
 output: all $(OUTDIR) 
 	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
-	$(call timing, "$(BINDIR)/$(BIN)  -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE)", $(OUTDIR)/$(OUTPRE)$(ITER).timing)
+	$(call timing, "$(BINDIR)/$(BIN)  -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -L", $(OUTDIR)/$(OUTPRE)$(ITER).timing)
 
 $(OBJDIR) $(BINDIR) $(OUTDIR): 
 	mkdir -p $@
