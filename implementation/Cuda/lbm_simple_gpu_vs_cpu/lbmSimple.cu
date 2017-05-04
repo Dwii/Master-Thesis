@@ -464,15 +464,17 @@ int main(int argc, char * const argv[])
             char* filename;
 
             if ( out == OUT_IMG ) {
-                asprintf(&filename, "%s/%s%d.pgm", out_path, out_pref, iter);
-                output_image(filename, h_vars->u);
-                free(filename);
+                if ( asprintf(&filename, "%s/%s%d.pgm", out_path, out_pref, iter) != -1) {
+                    output_image(filename, h_vars->u);
+                    free(filename);
+                }
             }
 
             if (out == OUT_FIN) {
-                asprintf(&filename, "%s/%s%d.out", out_path, out_pref, iter);
-                output_variables(filename, h_vars->fin);
-                free(filename);
+                if ( asprintf(&filename, "%s/%s%d.out", out_path, out_pref, iter) != -1 ) {
+                    output_variables(filename, h_vars->fin);
+                    free(filename);
+                }
             }
             timing_start(&start_time);
         }

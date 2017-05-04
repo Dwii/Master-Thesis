@@ -92,9 +92,10 @@ int main(int argc, char **argv)
 
             if (out_path && out_pre) {
                 char* filename;
-                asprintf(&filename, "%s/%s%d.pgm", out_path, out_pre, iter);
-                output_image(filename, &state);
-                free(filename);
+                if ( asprintf(&filename, "%s/%s%d.pgm", out_path, out_pre, iter) != -1) {
+                    output_image(filename, &state);
+                    free(filename);
+                }
             }
 
             timing_start(&start_time);
