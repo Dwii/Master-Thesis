@@ -1,15 +1,10 @@
 include ../../lbm_common.mk
 
 # Compiler
-CC=gcc
 NVCC=nvcc
 
 # Binary target
 BIN=lbmFlowAroundCylinder
-
-# Binary arguments
-NB_BLOCKS=1
-NB_THREADS=0
 
 # Directories
 SRCDIR=.
@@ -29,10 +24,11 @@ SRCS=$(wildcard $(SRCDIR)/*.cu)
 OBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.cu=.o)))
 
 # Flags
+CFLAGS=-g -Wall -Wextra -pedantic -O3
 NVCC_FLAGS=-Wno-deprecated-gpu-targets -O3 --ptxas-options=-v
 
-# Non-standard libraries
-LIBNAM=pgm array timing
+# Non-standard libraries and headers
+LIBNAM=pgm array timing lbmmain
 LIBDEP=$(addprefix $(LIBDIR)/,$(LIBNAM))
 INCS=$(addprefix -I,$(LIBDEP))
 LIBS=$(addprefix -L,$(LIBDEP)) $(addprefix -l,$(LIBNAM))
@@ -41,7 +37,7 @@ LIBS=$(addprefix -L,$(LIBDEP)) $(addprefix -l,$(LIBNAM))
 LIBS+=-lm
 
 all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(BIN)
-	
+
 run: images
 
 images: all $(OUTDIR)

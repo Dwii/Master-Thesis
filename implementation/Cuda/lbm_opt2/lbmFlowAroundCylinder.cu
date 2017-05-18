@@ -6,17 +6,15 @@
  */
 
 #include <stdlib.h>
-#include <unistd.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdbool.h>
-#include <libgen.h>
-#include <pgm.h>
-#include <timing.h>
+#include <lbm.h>
 
 #define RE       220.0       // Reynolds number
-#define NX       420         // Numer of lattice nodes (width)
-#define NY       180         // Numer of lattice nodes (height)
+#define NX       420         // Number of lattice nodes (width)
+#define NY       180         // Number of lattice nodes (height)
+#define NL       ((NX)*(NY)) // Number of lattice nodes (total)
 #define LY       ((NY) - 1)  // Height of the domain in lattice units
 #define CX       ((NX) / 4)  // X coordinates of the cylinder
 #define CY       ((NY) / 2)  // Y coordinates of the cylinder
@@ -33,36 +31,28 @@
 
 #define IDX(x, y) ((x+NX)%(NX) + ( (y+NY)%(NY) )*(NX))
 
-typedef enum { OUT_NONE, OUT_FIN, OUT_IMG } out_mode;
+struct lbm_lattices{
+    double ne[NL], e[NL], se[NL], n[NL], c[NL], s[NL], nw[NL], w[NL], sw[NL];
+};
+
+struct lbm_u {
+    double u0[NL];
+    double u1[NL];
+};
 
 typedef struct {
-    double ne[NX*NY], e[NX*NY], se[NX*NY], n[NX*NY], c[NX*NY], s[NX*NY], nw[NX*NY], w[NX*NY], sw[NX*NY];
-} lbm_lattices;
-
-typedef struct {
-    bool obstacles[NX*NY];  // Should reside in lbm_consts but is too big for constant memory
-    double u0[NX*NY];
-    double u1[NX*NY];
+    bool obstacles[NL];  // Should reside in lbm_consts but is too big for constant memory
+    double u0[NL];
+    double u1[NL];
     lbm_lattices f0;
     lbm_lattices f1;
 } lbm_vars;
 
 typedef struct {
-    ssize_t v[2][9];
-    double t[9];
     double vel[NY];
 } lbm_consts;
 
-enum { F_NE, F_E, F_SE, F_N, F_C, F_S, F_NW, F_W, F_SW };
-
 __constant__ lbm_consts d_consts;
-
-const ssize_t V[][9] = {
-//   NE  E SE  N  C  S NW  W SW
-    { 1, 1, 1, 0, 0, 0,-1,-1,-1 },
-    { 1, 0,-1, 1, 0,-1, 1, 0,-1 }
-};
-const double T[] = { 1./36, 1./9, 1./36, 1./9, 4./9, 1./9, 1./36, 1./9, 1./36 };
 
 #define HANDLE_ERROR(ans) (handleError((ans), __FILE__, __LINE__))
 inline void handleError(cudaError_t code, const char *file, int line)
@@ -295,180 +285,131 @@ __global__ void lbm_computation(lbm_vars *d_vars, lbm_lattices* f0, lbm_lattices
     }
 }
 
-void output_variables(char* filename, lbm_lattices* var) 
+struct lbm_simulation{
+    lbm_vars h_vars, *d_vars;
+    dim3 dimComputationGrid, dimComputationBlock;
+    dim3 dimRightWallGrid, dimRightWallBlock;
+    size_t shared_mem_size;
+    bool switch_f0_f1;
+};
+
+
+lbm_simulation* lbm_simulation_create()
 {
-    FILE* file = fopen(filename, "w");
-    for (size_t x = 0; x < NX; x++) {
-        for (size_t y = 0; y < NY; y++) {
-            fprintf(file, "%64.60f\n", var->ne[IDX(x,y)]);
-            fprintf(file, "%64.60f\n", var->e [IDX(x,y)]);
-            fprintf(file, "%64.60f\n", var->se[IDX(x,y)]);
-            fprintf(file, "%64.60f\n", var->n [IDX(x,y)]);
-            fprintf(file, "%64.60f\n", var->c [IDX(x,y)]);
-            fprintf(file, "%64.60f\n", var->s [IDX(x,y)]);
-            fprintf(file, "%64.60f\n", var->nw[IDX(x,y)]);
-            fprintf(file, "%64.60f\n", var->w [IDX(x,y)]);
-            fprintf(file, "%64.60f\n", var->sw[IDX(x,y)]);
-        }
-    }
-    fclose(file);
-}
-
-void output_image(char* filename, double* u0, double* u1) 
-{
-    pgm_image* pgm = pgm_create(NX, NY);
-
-    for (size_t x = 0; x < NX; x++) {
-        for (size_t y = 0; y < NY; y++) {
-            double vel = sqrt( SQUARE(u0[IDX(x,y)]) + SQUARE(u1[IDX(x,y)]) );
-            int color =  255 * min(vel * 10, 1.0);
-            pgm_set_pixel(pgm, x, y, color);
-        }
-    }
-
-    pgm_write(pgm, filename);
-    pgm_destroy(pgm);
-}
-
-float get_lups(int lattices, int iterations, long ns_time_diff)
-{
-    return lattices * iterations * 1000000000.0f / ns_time_diff;
-}
-
-int main(int argc, char * const argv[])
-{
-    // Init options to default values
-    const char* out_path = ".";
-    const char* out_pref = "lbm";
-    out_mode out = OUT_NONE;
-    ssize_t max_iter = 0;
-    size_t out_interval = 0;
-    bool print_lups = false;
-    bool print_avg_lups = false;
-
-    // Read arguments
-    while (optind < argc) {
-        switch (getopt(argc, argv, "pfi:I:o:O:lL")) {
-            case 'p': { out = OUT_IMG; break; }
-            case 'f': { out = OUT_FIN; break; }
-            case 'i': { max_iter = strtol(optarg, NULL, 10); break; }
-            case 'I': { out_interval = strtol(optarg, NULL, 10); break; }
-            case 'o': { out_path = optarg; break; }
-            case 'O': { out_pref = optarg; break; }
-            case 'l': { print_lups = true; break; }
-            case 'L': { print_avg_lups = true; break; }
-            default : { goto usage; }
-        }
-    }
-
-    // check that execution mode is set (output images or fin values)
-    if (max_iter < 1) {
-    usage:
-        fprintf(stderr, "usage: %s (-p | -f) -i <iter> [-I <out_interval>] [-o <out_dir>] [-O <out_prefix>] [-l] [-L]\n", basename((char*)argv[0]));
-        fprintf(stderr, "  -p : output pictures\n");
-        fprintf(stderr, "  -f : output populations\n");
-        fprintf(stderr, "  -i : number of iterations\n");
-        fprintf(stderr, "  -I : output interval; (0 if only the last iteration output in required)\n");
-        fprintf(stderr, "  -o : output file directory\n");
-        fprintf(stderr, "  -O : output filename prefix\n");
-        fprintf(stderr, "  -l : print lups at each output interval\n");
-        fprintf(stderr, "  -L : print average lups at the end\n");
-        return EXIT_FAILURE;
-    }
-
-    if (out == OUT_NONE) {
-        fprintf(stderr, "No output mode specified.\n");
-    }
-
-    lbm_consts* h_consts = (lbm_consts*)malloc(sizeof(lbm_consts));
+    lbm_simulation* lbm_sim = (lbm_simulation*) malloc (sizeof(lbm_simulation));
     
-    initVelocity(h_consts->vel);
-    memcpy(h_consts->v, V, sizeof(V));
-    memcpy(h_consts->t, T, sizeof(T));
+    lbm_consts h_consts;
     
-    HANDLE_ERROR(cudaMemcpyToSymbol(d_consts, h_consts, sizeof(lbm_consts)));
+    initVelocity(h_consts.vel);
+    
+    HANDLE_ERROR(cudaMemcpyToSymbol(d_consts, &h_consts, sizeof(lbm_consts)));
         
-    lbm_vars *h_vars = (lbm_vars*)malloc(sizeof(lbm_vars));
-    initObstacles(h_vars->obstacles);
+    initObstacles(lbm_sim->h_vars.obstacles);
     
     // Initialization of the populations at equilibrium with the given velocity.
+    lbm_sim->switch_f0_f1 = false;
     for (int y = 0; y < NY; y++) {
         for (int x = 0; x < NX; x++) {
-            h_equilibrium(&h_vars->f0, IDX(x,y), 1.0, h_consts->vel[y]);
+            h_equilibrium(&lbm_sim->h_vars.f0, IDX(x,y), 1.0, h_consts.vel[y]);
         }
     }
 
-    lbm_vars *d_vars;
-    HANDLE_ERROR(cudaMalloc(&d_vars, sizeof(lbm_vars)));
-    HANDLE_ERROR(cudaMemcpy(d_vars, h_vars, sizeof(lbm_vars), cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMalloc(&lbm_sim->d_vars, sizeof(lbm_vars)));
+    HANDLE_ERROR(cudaMemcpy(lbm_sim->d_vars, &lbm_sim->h_vars, sizeof(lbm_vars), cudaMemcpyHostToDevice));
 
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, 0);
 
-
     dim3 dimComputationGrid(max(1, NX/BLOCK_SIZE), min(NY, prop.maxGridSize[1]));
     dim3 dimComputationBlock(BLOCK_SIZE);
+    lbm_sim->dimComputationGrid = dimComputationGrid;
+    lbm_sim->dimComputationBlock = dimComputationBlock;
 
     dim3 dimRightWallGrid(1, min(NY, prop.maxGridSize[1]));
     dim3 dimRightWallBlock(1);
+    lbm_sim->dimRightWallGrid = dimRightWallGrid;
+    lbm_sim->dimRightWallBlock = dimRightWallBlock;
 
-    size_t shared_mem_size = 6 * sizeof(double) * BLOCK_SIZE;
+    lbm_sim->shared_mem_size = 6 * sizeof(double) * BLOCK_SIZE;
 
-    long time_diff, total_time_diff = 0;
-    start_time_t start_time;
-    timing_start(&start_time);
+    return lbm_sim;
+}
 
-    for (int iter = 1; iter <= max_iter; iter++) {
-        if (iter % 2 == 1) {
-            HANDLE_KERNEL_ERROR(lbm_right_wall<<<dimRightWallGrid, dimRightWallBlock>>>(&d_vars->f0));
-            HANDLE_KERNEL_ERROR(lbm_computation<<<dimComputationGrid, dimComputationBlock, shared_mem_size>>>(d_vars, &d_vars->f0, &d_vars->f1));
-        } else {
-            HANDLE_KERNEL_ERROR(lbm_right_wall<<<dimRightWallGrid, dimRightWallBlock>>>(&d_vars->f1));
-            HANDLE_KERNEL_ERROR(lbm_computation<<<dimComputationGrid, dimComputationBlock, shared_mem_size>>>(d_vars, &d_vars->f1, &d_vars->f0));
-        }
+void lbm_simulation_destroy(lbm_simulation* lbm_sim)
+{
+    HANDLE_ERROR(cudaFree(lbm_sim->d_vars));
+    free(lbm_sim);
+}
 
-        if ( (!out_interval && iter == max_iter) || (out_interval && iter % out_interval == 0) ) {
-
-            total_time_diff += time_diff = timing_stop(&start_time);
-            if ( print_lups ) {
-                size_t iter_diff = out_interval? out_interval : (size_t)max_iter;
-                printf("lups: %.2f\n", get_lups(NX*NY, iter_diff, time_diff));
-            }
-            
-            char* filename;
-
-            if ( out == OUT_IMG ) {
-                HANDLE_ERROR(cudaMemcpy(h_vars->u0, d_vars->u0, sizeof(double)*NX*NY, cudaMemcpyDeviceToHost));
-                HANDLE_ERROR(cudaMemcpy(h_vars->u1, d_vars->u1, sizeof(double)*NX*NY, cudaMemcpyDeviceToHost));
-
-                if ( asprintf(&filename, "%s/%s%d.pgm", out_path, out_pref, iter) != -1 ) {
-                    output_image(filename, h_vars->u0, h_vars->u1);
-                    free(filename);
-                }
-            }
-
-            if (out == OUT_FIN) {
-                lbm_lattices* d_f = iter % 2 == 1 ? &d_vars->f1 : &d_vars->f0;
-                lbm_lattices* h_f = (lbm_lattices*) malloc(sizeof(lbm_lattices));
-                HANDLE_ERROR(cudaMemcpy(h_f, d_f, sizeof(lbm_lattices), cudaMemcpyDeviceToHost));
-
-                if ( asprintf(&filename, "%s/%s%d.out", out_path, out_pref, iter) != -1) {
-                    output_variables(filename, h_f);
-                    free(filename);
-                }
-                free(h_f);
-            }
-            timing_start(&start_time);
-        }
+void lbm_simulation_update(lbm_simulation* lbm_sim)
+{
+    if (lbm_sim->switch_f0_f1) {
+        HANDLE_KERNEL_ERROR(lbm_right_wall<<<lbm_sim->dimRightWallGrid, lbm_sim->dimRightWallBlock>>>(&lbm_sim->d_vars->f1));
+        HANDLE_KERNEL_ERROR(lbm_computation<<<lbm_sim->dimComputationGrid, lbm_sim->dimComputationBlock, lbm_sim->shared_mem_size>>>(lbm_sim->d_vars, &lbm_sim->d_vars->f1, &lbm_sim->d_vars->f0));
+    } else {
+        HANDLE_KERNEL_ERROR(lbm_right_wall<<<lbm_sim->dimRightWallGrid, lbm_sim->dimRightWallBlock>>>(&lbm_sim->d_vars->f0));
+        HANDLE_KERNEL_ERROR(lbm_computation<<<lbm_sim->dimComputationGrid, lbm_sim->dimComputationBlock, lbm_sim->shared_mem_size>>>(lbm_sim->d_vars, &lbm_sim->d_vars->f0, &lbm_sim->d_vars->f1));
     }
 
-    if ( print_avg_lups ) {
-        printf("average lups: %.2f\n", get_lups(NX*NY, max_iter, total_time_diff));
-    }
+    lbm_sim->switch_f0_f1 = ! lbm_sim->switch_f0_f1;
+}
 
-    free(h_consts);
-    free(h_vars);
-    HANDLE_ERROR(cudaFree(d_vars));
-   
-    return EXIT_SUCCESS;
+void lbm_simulation_get_size(lbm_simulation* lbm_sim, size_t* width, size_t* height)
+{
+    *width = NX;
+    *height = NY;
+}
+
+void lbm_lattices_read(lbm_simulation* lbm_sim, lbm_lattices* lat)
+{
+    lbm_lattices* d_lat = lbm_sim->switch_f0_f1 ? &lbm_sim->d_vars->f1 : &lbm_sim->d_vars->f0;
+    HANDLE_ERROR(cudaMemcpy(lat, d_lat, sizeof(lbm_lattices), cudaMemcpyDeviceToHost));
+}
+
+void lbm_u_read(lbm_simulation* lbm_sim, lbm_u* u)
+{
+    HANDLE_ERROR(cudaMemcpy(u->u0, lbm_sim->d_vars->u0, sizeof(double)*NL, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(u->u1, lbm_sim->d_vars->u1, sizeof(double)*NL, cudaMemcpyDeviceToHost));
+}
+
+lbm_lattices* lbm_lattices_create()
+{
+    return (lbm_lattices*) malloc(sizeof(lbm_lattices));
+}
+
+void lbm_lattices_destroy(lbm_lattices* lat)
+{
+    free(lat);
+}
+
+lbm_u* lbm_u_create()
+{
+    return (lbm_u*) malloc(sizeof(lbm_u));
+}
+
+void lbm_u_destroy(lbm_u* u)
+{
+    free(u);
+}
+
+void lbm_lattices_at_index(lbm_lattice* lattice, lbm_lattices* lattices, int x, int y)
+{
+    int gi = IDX(x,y);
+    lbm_lattices* lat = (lbm_lattices*) lattices;
+    lattice->ne = lat->ne[gi];
+    lattice->e  = lat->e [gi];
+    lattice->se = lat->se[gi];
+    lattice->n  = lat->n [gi];
+    lattice->c  = lat->c [gi];
+    lattice->s  = lat->s [gi];
+    lattice->nw = lat->nw[gi];
+    lattice->w  = lat->w [gi];
+    lattice->sw = lat->sw[gi];
+}
+
+void lbm_u_at_index(double* u0, double* u1, lbm_u* u, int x, int y)
+{
+    int gi = IDX(x,y);
+    *u0 = u->u0[gi];
+    *u1 = u->u1[gi];
 }
