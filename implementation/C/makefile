@@ -1,4 +1,4 @@
-PROJECTS=lbm_py2c lbm_palabos_friendly lbm_cuda_ready
+PROJECTS=lbm_py2c lbm_palabos_friendly lbm_cuda_ready lbm_simple_3d
 
 # Default variables values
 DEFAULT_ITER=1
