@@ -1,4 +1,4 @@
-all: array pgm timing lbmmain
+all: array pgm timing lbmmain lbmmain3d
 
 array: 
 	$(MAKE) -C array
