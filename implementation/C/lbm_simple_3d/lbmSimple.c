@@ -137,7 +137,7 @@ static void initOpp(size_t* opp)
     }
 }
 
-static void equilibrium(double* feq, double rho, double* u, bool print_it)
+static void equilibrium(double* feq, double rho, double* u)
 {
     double usqr = 3./2 * ( SQUARE(u[0]) + SQUARE(u[1]) + SQUARE(u[2]));
     for (int f = 0; f < NF; f++) {
@@ -195,14 +195,7 @@ void lbm_computation(lbm_simulation *lbm_sim, int x, int y, int z)
     }
      */
     // Compute equilibrium
-    equilibrium(lbm_sim->feq[x][y][z], lbm_sim->rho[x][y][z], lbm_sim->u[x][y][z], x==50 && y==49 && z==3 && i == 2);
-
-    if (x==50 && y==49 && z==3) i++;
-
-
-    for (int f = 0; f < NF; ++f) {
-        lbm_sim->out[x][y][z][f] = lbm_sim->feq[x][y][z][f];
-    }
+    equilibrium(lbm_sim->feq[x][y][z], lbm_sim->rho[x][y][z], lbm_sim->u[x][y][z]);
 
     /*
     if (x == 0) {
@@ -253,7 +246,7 @@ lbm_simulation* lbm_simulation_create()
     for (int z = 0; z < NZ; z++) {
         for (int y = 0; y < NY; y++) {
             for (int x = 0; x < NX; x++) {
-                equilibrium(lbm_sim->fin[x][y][z], lbm_sim->rho[x][y][z], lbm_sim->vel[x][y][z], false);
+                equilibrium(lbm_sim->fin[x][y][z], lbm_sim->rho[x][y][z], lbm_sim->vel[x][y][z]);
             }
         }
     }
