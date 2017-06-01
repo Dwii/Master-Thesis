@@ -24,7 +24,7 @@ images: $(OUTDIR)
 
 output: $(OUTDIR) 
 	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
-	$(call timing, "$(PY) $(SRCDIR)/$(SCRIPT) OUT $(ITER) $(INTERVAL) $(OUTDIR) $(OUTPRE)", $(OUTDIR)/$(OUTPRE)$(ITER).timing)
+	$(call execute,, "$(PY) $(SRCDIR)/$(SCRIPT) OUT $(ITER) $(INTERVAL) $(OUTDIR) $(OUTPRE)", $(OUTDIR)/$(OUTPRE)$(ITER).timing)
 
 $(OUTDIR):
 	mkdir -p $@

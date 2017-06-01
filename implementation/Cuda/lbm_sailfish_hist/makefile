@@ -32,15 +32,15 @@ CXXFLAGS=-O2
 all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(GPUBIN) $(BINDIR)/$(CPUBIN)
 
 images: all $(OUTDIR)
-	$(BINDIR)/$(GPUBIN) $(ITER) $(OUTDIR) $(GPUPRE)
+	$(call execute, $(LIBDEP), "$(BINDIR)/$(GPUBIN) $(ITER) $(OUTDIR) $(GPUPRE)")
 
 output: all $(OUTDIR) outcpu outgpu
 
 outcpu: 
-	$(call timing, "$(BINDIR)/$(CPUBIN) $(ITER)", $(OUTDIR)/$(CPUPRE)$(ITER).timing)
+	$(call execute, $(LIBDEP), "$(BINDIR)/$(CPUBIN) $(ITER)", $(OUTDIR)/$(CPUPRE)$(ITER).timing)
 
 outgpu: 
-	$(call timing, "$(BINDIR)/$(GPUBIN) $(ITER)", $(OUTDIR)/$(GPUPRE)$(ITER).timing)
+	$(call execute, $(LIBDEP), "$(BINDIR)/$(GPUBIN) $(ITER)", $(OUTDIR)/$(GPUPRE)$(ITER).timing)
 
 $(OBJDIR)/%.o: %.cpp $(OBJDIR)
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(INCS)

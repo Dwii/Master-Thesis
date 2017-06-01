@@ -41,18 +41,17 @@ run: images
 
 images: all $(OUTDIR)
 	$(eval INTERVAL ?= $(DEFAULT_IMG_INTERVAL))
-	$(BINDIR)/$(BIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) 
+	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE)")
 
 output: all $(OUTDIR) 
 	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
-	$(call timing, "$(BINDIR)/$(BIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -L", $(OUTDIR)/$(OUTPRE)$(ITER).timing)
+	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -L", $(OUTDIR)/$(OUTPRE)$(ITER).timing)
 
 $(OBJDIR) $(BINDIR) $(OUTDIR): 
 	mkdir -p $@
 
-
 $(BINDIR)/$(BIN): $(OBJS)
-	$(CC) $(CFLAGS) $< -o $@ $(LIBS)
+	$(CC) $(CFLAGS) $< -o $@ $(LIBS) -L/Users/Dwii/Desktop -Wl,-rpath /Users/Dwii/Desktop
 
 -include $(OBJS:.o=.d)
 
