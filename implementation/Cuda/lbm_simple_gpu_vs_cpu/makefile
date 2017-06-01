@@ -54,7 +54,7 @@ run: images
 
 images: all $(OUTDIR)
 	$(eval INTERVAL ?= $(DEFAULT_IMG_INTERVAL))
-	$(BINDIR)/$(CPUBIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) 
+	$(call execute, $(LIBDEP), "$(BINDIR)/$(CPUBIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE)")
 
 output: all $(OUTDIR) 
 	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
