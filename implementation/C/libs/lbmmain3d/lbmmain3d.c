@@ -56,8 +56,8 @@ static void output_image(char* filename, size_t width, size_t height, size_t z, 
         for (size_t y = 0; y < height; y++) {
             double u0, u1, u2;
             lbm_u_at_index(&u0, &u1, &u2, u, x, y, z);
-            double vel = sqrt( u0*u0 + u1*u1 + u2*u2);
-            int color =  255 * fmin(vel * 10, 1.0);
+            double vel = sqrt( 100* u0*u0 + 100* u1*u1 + 100* u2*u2);
+            int color =  255 * fmin(vel * 100, 1.0);
             pgm_set_pixel(pgm, x, y, color);
         }
     }
@@ -161,6 +161,7 @@ int main(int argc, char * const argv[])
                     free(filename);
                 }
             }
+            
             timing_start(&start_time);
         }
     }
