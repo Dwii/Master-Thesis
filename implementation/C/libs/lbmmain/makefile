@@ -2,13 +2,13 @@
 CC=gcc
 
 # Binary target
-BIN=liblbmmain.a
+BIN=liblbmmain.so
 
 # Directories
 SRCDIR=.
 OBJDIR=obj
 OUTDIR=out
-LIBDIR=../../../C/libs
+LIBDIR=..
 
 # Source and object files
 SRCS=$(wildcard $(SRCDIR)/*.c)
@@ -37,7 +37,7 @@ $(OBJS): $(SRCS)
 	$(CC) -MMD $(CFLAGS) -o $@ -c $< $(INCS)
 
 $(BIN): $(OBJS)
-	$(AR) rcs $@ $^ 
+	$(CC) $(FLAGS) -fPIC -shared $^ -o $@ $(LIBS) $(INCS) -Wl,-undefined,dynamic_lookup
 
 clean:
 	rm -rf $(OBJDIR) $(BIN)

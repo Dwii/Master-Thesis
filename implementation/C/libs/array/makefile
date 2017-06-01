@@ -3,7 +3,7 @@ CC=gcc -fPIC
 AR=ar
 
 # Binary target
-BIN=libarray.a
+BIN=libarray.so
 
 # Directories
 OBJDIR=obj
@@ -21,7 +21,7 @@ $(OBJDIR) $(BINDIR) $(IMGDIR):
 	mkdir -p $@
 
 $(BIN): $(OBJS)
-	$(AR) rcs $@ $^ 
+	$(CC) $(FLAGS) -fPIC -shared $^ -o $@ $(LIBS) $(INCS)
 
 -include $(OBJS:.o=.d)
 
