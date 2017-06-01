@@ -139,7 +139,7 @@ for iter in range(1, maxIter+1):
             for x in range(nx):
                 for y in range(ny):
                     for f in range(9):
-                        file.write("[{0}, {1}, {2}] {3:64.60f}\n".format(x,y,f, fin[f,x,y]))
+                        file.write("{0:64.60f}\n".format(fin[f,x,y]))
         start = datetime.datetime.now()
 
 print ("average lups:", nx*ny*maxIter/max(1,seconds))
