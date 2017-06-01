@@ -189,18 +189,6 @@ __device__ static void macroscopic(double ne, double e, double se, double n, dou
     *u2 = (te + tn + tc + ts + tw - be - bn - bc - bs - bw) / *rho;
 }
 
-__global__ void lbm_right_wall(lbm_lattices* f)
-{
-    for (int z = blockIdx.z; z < NZ; z+=gridDim.z) {
-        for (int y = blockIdx.y; y < NY; y+=gridDim.y) {
-           // Right wall: outflow condition.
-           f->nw[IDX(NX-1,y,z)] = f->nw[IDX(NX-2,y,z)];
-           f->w [IDX(NX-1,y,z)] = f->w [IDX(NX-2,y,z)];
-           f->sw[IDX(NX-1,y,z)] = f->sw[IDX(NX-2,y,z)];
-        }
-    }
-}
-
 __global__ void lbm_computation(lbm_vars *d_vars, lbm_lattices* f0, lbm_lattices* f1)
 {
     int tix = threadIdx.x;
@@ -244,20 +232,6 @@ __global__ void lbm_computation(lbm_vars *d_vars, lbm_lattices* f0, lbm_lattices
                             fin_be, fin_bn, fin_bc, fin_bs, fin_bw,
                             &rho, &u0, &u1, &u2);
 
-                
-//                if (x == 0) {
-//                    // Left wall: inflow condition
-//                    u0 = d_consts.vel[y];
-//                    u1 = 0;
-//                    u2 = 0;
-//
-//                    // Calculate the density
-//                    double s2 = fin_n  + fin_c + fin_s + fin_tn + fin_tc + fin_ts + fin_bn + fin_bc + fin_bs;
-//                    double s3 = fin_nw + fin_w + fin_sw + fin_tw + fin_bw;
-//                    rho = 1./(1 - u0) * (s2 + 2*s3);
-//                }
-//          
-
                 // Compute equilibrium
                 double feq_ne, feq_e, feq_se, feq_n, feq_c, feq_s, feq_nw, feq_w, feq_sw, 
                        feq_te, feq_tn, feq_tc, feq_ts, feq_tw, 
@@ -266,14 +240,6 @@ __global__ void lbm_computation(lbm_vars *d_vars, lbm_lattices* f0, lbm_lattices
                               &feq_te, &feq_tn, &feq_tc, &feq_ts, &feq_tw, 
                               &feq_be, &feq_bn, &feq_bc, &feq_bs, &feq_bw, 
                               rho, u0, u1, u2);       
-
-//     
-//                if (x == 0) {
-//                    fin_ne = feq_ne + fin_sw - feq_sw;
-//                    fin_e  = feq_e  + fin_w  - feq_w ;
-//                    fin_se = feq_se + fin_nw - feq_nw;
-//                }
-//
 
                 if (d_vars->obstacles[IDX(x, y, z)]) {
                     // Bounce-back condition for obstacle
@@ -471,10 +437,8 @@ void lbm_simulation_destroy(lbm_simulation* lbm_sim)
 void lbm_simulation_update(lbm_simulation* lbm_sim)
 {
     if (lbm_sim->switch_f0_f1) {
-//        HANDLE_KERNEL_ERROR(lbm_right_wall<<<lbm_sim->dimRightWallGrid, lbm_sim->dimRightWallBlock>>>(&lbm_sim->d_vars->f1));
         HANDLE_KERNEL_ERROR(lbm_computation<<<lbm_sim->dimComputationGrid, lbm_sim->dimComputationBlock, lbm_sim->shared_mem_size>>>(lbm_sim->d_vars, &lbm_sim->d_vars->f1, &lbm_sim->d_vars->f0));
     } else {
-//        HANDLE_KERNEL_ERROR(lbm_right_wall<<<lbm_sim->dimRightWallGrid, lbm_sim->dimRightWallBlock>>>(&lbm_sim->d_vars->f0));
         HANDLE_KERNEL_ERROR(lbm_computation<<<lbm_sim->dimComputationGrid, lbm_sim->dimComputationBlock, lbm_sim->shared_mem_size>>>(lbm_sim->d_vars, &lbm_sim->d_vars->f0, &lbm_sim->d_vars->f1));
     }
 
