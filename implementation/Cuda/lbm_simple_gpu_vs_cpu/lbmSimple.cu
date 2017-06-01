@@ -123,7 +123,7 @@ static void initVelocity(lbm_vars* vars)
     for (int d = 0; d < 2; d++) {
         for (int x = 0; x < NX; x++) {
             for (int y = 0; y < NY; y++) {
-                vars->vel[x][y][d] = (1-d) * ULB * (1 + 0.0001 * sin( y / (double)LY * 2 * M_PI) );
+                vars->vel[x][y][d] = 0; //(1-d) * ULB * (1 + 0.0001 * sin( y / (double)LY * 2 * M_PI) );
             }
         }
     }
@@ -136,7 +136,7 @@ static void initRho(lbm_vars* vars)
             vars->rho[x][y] = 1.0;
         }
     }
-    vars->rho[NX/2][NY/2] = 2.0;   
+    vars->rho[NX/2][NY/2] = 2.0;
 }
 
 static void initCol(size_t* col, ssize_t v0)
@@ -231,41 +231,41 @@ __global__ void lbm_computation(lbm_vars *d_vars)
         INDEX_2D_FROM_1D(x, y, idx);
 #endif
 
-    // Right wall: outflow condition.
-    if (x == NX-1) {
-        for (int i = 0; i < 3; i++) {
-            int f = d_consts.col[2][i];
-            d_vars->fin[NX-1][y][f] = d_vars->fin[NX-2][y][f];
-        }
-    }
+//    // Right wall: outflow condition.
+//    if (x == NX-1) {
+//        for (int i = 0; i < 3; i++) {
+//            int f = d_consts.col[2][i];
+//            d_vars->fin[NX-1][y][f] = d_vars->fin[NX-2][y][f];
+//        }
+//    }
 
     // Compute macroscopic variables, density and velocity
     macroscopic(d_vars->fin[x][y], &d_vars->rho[x][y], d_vars->u[x][y]);
     
-    if (x == 0) {
-        // Left wall: inflow condition
-        for (size_t d = 0; d < 2; d++) {
-            d_vars->u[0][y][d] = d_vars->vel[0][y][d];
-        }        
+//    if (x == 0) {
+//        // Left wall: inflow condition
+//        for (size_t d = 0; d < 2; d++) {
+//            d_vars->u[0][y][d] = d_vars->vel[0][y][d];
+//        }        
 
-        // Calculate the density
-        double s2 = 0, s3 = 0;
-        for (size_t i = 0; i < 3; i++) {
-            s2 += d_vars->fin[0][y][d_consts.col[1][i]];
-            s3 += d_vars->fin[0][y][d_consts.col[2][i]];
-        }
-        d_vars->rho[0][y] = 1./(1 - d_vars->u[0][y][0]) * (s2 + 2*s3);
-    }
+//        // Calculate the density
+//        double s2 = 0, s3 = 0;
+//        for (size_t i = 0; i < 3; i++) {
+//            s2 += d_vars->fin[0][y][d_consts.col[1][i]];
+//            s3 += d_vars->fin[0][y][d_consts.col[2][i]];
+//        }
+//        d_vars->rho[0][y] = 1./(1 - d_vars->u[0][y][0]) * (s2 + 2*s3);
+//    }
    
     // Compute equilibrium
     d_equilibrium(d_vars->feq[x][y], d_vars->rho[x][y], d_vars->u[x][y]);
 
-    if (x == 0) {
-        for (size_t i = 0; i < 3; i++) {
-            size_t f = d_consts.col[0][i];
-            d_vars->fin[0][y][f] = d_vars->feq[0][y][f] + d_vars->fin[0][y][d_consts.opp[f]] - d_vars->feq[0][y][d_consts.opp[f]];
-        }
-    }
+//    if (x == 0) {
+//        for (size_t i = 0; i < 3; i++) {
+//            size_t f = d_consts.col[0][i];
+//            d_vars->fin[0][y][f] = d_vars->feq[0][y][f] + d_vars->fin[0][y][d_consts.opp[f]] - d_vars->feq[0][y][d_consts.opp[f]];
+//        }
+//    }
     
     for (size_t f = 0; f < 9; f++) {
         if (d_vars->obstacles[x][y]) {
@@ -296,14 +296,11 @@ __global__ void lbm_streaming(lbm_vars *d_vars)
         int x, y;
         INDEX_2D_FROM_1D(x, y, idx);
 #endif
-
     // Streaming step
     for (size_t f = 0; f < 9; f++) {
-        ssize_t x_dst = x + d_consts.v[0][f];
-        ssize_t y_dst = y + d_consts.v[1][f];
-        if (0 <= x_dst && x_dst < NX && 0 <= y_dst && y_dst < NY) {
-            d_vars->fin[x_dst][y_dst][f] = d_vars->fout[x][y][f];
-        }
+        ssize_t x_dst = (x + d_consts.v[0][f] + NX) % NX ;
+        ssize_t y_dst = (y + d_consts.v[1][f] + NY) % NY ;
+        d_vars->fin[x_dst][y_dst][f] = d_vars->fout[x][y][f];
     }
 
 #ifndef COMPUTE_ON_CPU
