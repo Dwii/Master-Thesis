@@ -95,7 +95,7 @@ static void initVelocity(lbm_simulation *lbm_sim)
         for (int x = 0; x < NX; x++) {
             for (int y = 0; y < NY; y++) {
                 for (int z = 0; z < NZ; z++) {
-                    lbm_sim->vel[x][y][z][d] = (1-d) * ULB * (1 + 0.0001 * sin( y / (double)LY * 2 * M_PI) );
+                    lbm_sim->vel[x][y][z][d] = 0; // (1-d) * ULB * (1 + 0.0001 * sin( y / (double)LY * 2 * M_PI) );
                 }
             }
         }

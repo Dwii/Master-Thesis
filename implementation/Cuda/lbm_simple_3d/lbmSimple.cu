@@ -116,7 +116,7 @@ static void initObstacles(bool* obstacles)
 static void initVelocity(double* vel)
 {
     for (int y = 0; y < NY; y++) {
-        vel[y] = ULB * (1 + 0.0001 * sin( y / (double)LY * 2 * M_PI) );
+        vel[y] = 0; // ULB * (1 + 0.0001 * sin( y / (double)LY * 2 * M_PI) );
     }
 }
 
