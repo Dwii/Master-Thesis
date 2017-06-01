@@ -39,6 +39,7 @@ hid/
 # Palabos
 tmp/
 *.dblite
+*.dat
 
 # Latex report intermediate files
 report/*.out
