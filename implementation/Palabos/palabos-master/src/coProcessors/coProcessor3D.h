@@ -146,31 +146,6 @@ public:
     virtual int receive(int domainHandle, Box3D const& subDomain, std::vector<char>& data) const;
     /// Execute BGK collision and streaming in device memory.
     virtual int collideAndStream(int domainHandle);
-private:
-    /*
-    PyObject *createCUDASimulation(void);
-    void prepareSimulationToRun(void);
-
-    PyObject *geometryClass;
-    PyObject *simulationClass;
-    PyObject *simulation;
-    PyObject *pyCUDA;
-    PyObject *copyFunctionDtoH;
-    PyObject *copyFunctionHtoD;
-    PyObject *buffer;
-    float *data;
-    int nx;
-    int ny;
-    int nz;
-    int basis;
-    int size;
-    int floatSize;
-    int strideXSailfish;
-    int strideYSailfish;
-    int strideZSailfish;
-    int strideYPalabos;
-    int strideZPalabos;
-    */
 };
 
 namespace global {
