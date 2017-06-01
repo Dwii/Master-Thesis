@@ -140,4 +140,4 @@ for iter in range(1, maxIter+1):
                         file.write("{0:64.60f}\n".format(fin[f,x,y]))
         start = datetime.datetime.now()
 
-print ("average lups:", nx*ny*maxIter/seconds)
+print ("average lups:", nx*ny*maxIter/max(1, seconds))
