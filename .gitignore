@@ -36,6 +36,10 @@ hid/
 *.pyc
 *~$*
 
+# Palabos
+tmp/
+*.dblite
+
 # Latex report intermediate files
 report/*.out
 report/*.aux
