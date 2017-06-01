@@ -15,7 +15,7 @@
 #                optimFlags   = -O -finline-functions
 
 # Leading directory of the Palabos source code
-palabosRoot  = "${PALABOS_ROOT}"
+palabosRoot  = ../palabos-master
 # Name of source files in current directory to compile and link with Palabos
 projectFiles = exemple_validation.cpp
 
