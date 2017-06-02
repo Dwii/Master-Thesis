@@ -12,17 +12,8 @@
 #include <lbm.h>
 
 #define RE       220.0       // Reynolds number
-#define NX       100//420         // Numer of lattice nodes (width)
-#define NY       100//180         // Number of lattice nodes (height)
-#define NZ       10 //30          // Number of lattice nodes (depth)
-#define NL       ((NX)*(NY)*(NZ))    // Number of lattice nodes (total)
-#define LY       ((NY) - 1)  // Height of the domain in lattice units
-#define CX       ((NX) / 4)  // X coordinates of the cylinder
-#define CY       ((NY) / 2)  // Y coordinates of the cylinder
-#define CZ       ((NZ) / 2)  // Y coordinates of the cylinder
-#define R        ((NY) / 9)  // Cylinder radius
 #define ULB      0.04        // Velocity in lattice units
-#define NULB     ((ULB) * (R) / (RE))   // Viscoscity in lattice units
+#define NULB     ((ULB) * 10 / (RE))   // Viscoscity in lattice units
 #define OMEGA    ((double)1. / (3*(NULB)+0.5))  // Relaxation parameter
 
 #define BLOCK_SIZE 64
@@ -30,53 +21,45 @@
 #define SQUARE(a) ((a)*(a))
 #define GPU_SQUARE(a) __dmul_rn(a,a)
 
-#define IDX(x, y, z) ((x+NX)%(NX) + ((y+NY)%(NY) + ( (z+NZ)%(NZ) )*(NY))*(NX) )
+#define IDX(x, y, z, nx, ny, nz) ((x+(nx))%(nx) + ((y+(ny))%(ny) + ( (z+(nz))%(nz) )*(ny))*(nx) )
 
 struct lbm_lattices{
     // Middle plane
-    double ne[NL];  // [ 1, 1,  0]   1./36   (1./36)
-    double  e[NL];  // [ 1, 0,  0]   1./18   (1./9 )
-    double se[NL];  // [ 1,-1,  0]   1./36   (1./36)
-    double  n[NL];  // [ 0, 1,  0]   1./18   (1./9 )
-    double  c[NL];  // [ 0, 0,  0]   1./3    (4./9 )
-    double  s[NL];  // [ 0,-1,  0]   1./18   (1./9 )
-    double nw[NL];  // [-1, 1,  0]   1./36   (1./36)
-    double  w[NL];  // [-1, 0,  0]   1./18   (1./9 )
-    double sw[NL];  // [-1,-1,  0]   1./36   (1./36)
+    double* ne;  // [ 1, 1,  0]   1./36   (1./36)
+    double*  e;  // [ 1, 0,  0]   1./18   (1./9 )
+    double* se;  // [ 1,-1,  0]   1./36   (1./36)
+    double*  n;  // [ 0, 1,  0]   1./18   (1./9 )
+    double*  c;  // [ 0, 0,  0]   1./3    (4./9 )
+    double*  s;  // [ 0,-1,  0]   1./18   (1./9 )
+    double* nw;  // [-1, 1,  0]   1./36   (1./36)
+    double*  w;  // [-1, 0,  0]   1./18   (1./9 )
+    double* sw;  // [-1,-1,  0]   1./36   (1./36)
     // Top plane
-    double te[NL];  // [ 1, 0,  1]   1./36
-    double tn[NL];  // [ 0, 1,  1]   1./36
-    double tc[NL];  // [ 0, 0,  1]   1./18
-    double ts[NL];  // [ 0,-1,  1]   1./36
-    double tw[NL];  // [-1, 0,  1]   1./36
+    double* te;  // [ 1, 0,  1]   1./36
+    double* tn;  // [ 0, 1,  1]   1./36
+    double* tc;  // [ 0, 0,  1]   1./18
+    double* ts;  // [ 0,-1,  1]   1./36
+    double* tw;  // [-1, 0,  1]   1./36
     // Bottom plane
-    double be[NL];  // [ 1, 0, -1]   1./36
-    double bn[NL];  // [ 0, 1, -1]   1./36
-    double bc[NL];  // [ 0, 0, -1]   1./18
-    double bs[NL];  // [ 0,-1, -1]   1./36
-    double bw[NL];  // [-1, 0, -1]   1./36
+    double* be;  // [ 1, 0, -1]   1./36
+    double* bn;  // [ 0, 1, -1]   1./36
+    double* bc;  // [ 0, 0, -1]   1./18
+    double* bs;  // [ 0,-1, -1]   1./36
+    double* bw;  // [-1, 0, -1]   1./36
 };
 
 struct lbm_u {
-    double u0[NL];
-    double u1[NL];
-    double u2[NL];
+    double* u0;
+    double* u1;
+    double* u2;
 };
 
 typedef struct {
-    bool obstacles[NL];  // Should reside in lbm_consts but is too big for constant memory
-    double u0[NL];
-    double u1[NL];
-    double u2[NL];
+    bool* obstacles;  // Should reside in lbm_consts but is too big for constant memory
+    lbm_u u;
     lbm_lattices f0;
     lbm_lattices f1;
 } lbm_vars;
-
-typedef struct {
-    double vel[NY];
-} lbm_consts;
-
-__constant__ lbm_consts d_consts;
 
 #define HANDLE_ERROR(ans) (handleError((ans), __FILE__, __LINE__))
 inline void handleError(cudaError_t code, const char *file, int line)
@@ -98,12 +81,12 @@ do {                                         \
  * Setup: cylindrical obstacle and velocity inlet with perturbation
  * Creation of a mask with boolean values, defining the shape of the obstacle.
  */
-static void initObstacles(bool* obstacles)
+static void initObstacles(bool* obstacles, size_t nx, size_t ny, size_t nz)
 {
-    for (int x = 0; x < NX; x++) {
-        for (int y = 0; y < NY; y++) {
-            for (int z = 0; z < NZ; z++) {
-                obstacles[IDX(x,y,z)] = false; //SQUARE(x-CX) + SQUARE(y-CY) < SQUARE(R);
+    for (int x = 0; x < nx; x++) {
+        for (int y = 0; y < ny; y++) {
+            for (int z = 0; z < nz; z++) {
+                obstacles[IDX(x,y,z,nx,ny,nz)] = false;
             }
         }
     }
@@ -113,10 +96,10 @@ static void initObstacles(bool* obstacles)
  * Initial velocity profile: almost zero, with a slight perturbation to trigger
  * the instability.
  */
-static void initVelocity(double* vel)
+static void initVelocity(double* vel, size_t ny)
 {
-    for (int y = 0; y < NY; y++) {
-        vel[y] = 0; // ULB * (1 + 0.0001 * sin( y / (double)LY * 2 * M_PI) );
+    for (int y = 0; y < ny; y++) {
+        vel[y] = 0; // ULB * (1 + 0.0001 * sin( y / (double)(ny-1) * 2 * M_PI) );
     }
 }
 
@@ -189,14 +172,13 @@ __device__ static void macroscopic(double ne, double e, double se, double n, dou
     *u2 = (te + tn + tc + ts + tw - be - bn - bc - bs - bw) / *rho;
 }
 
-__global__ void lbm_computation(lbm_vars *d_vars, lbm_lattices* f0, lbm_lattices* f1)
+__global__ void lbm_computation(lbm_vars d_vars, lbm_lattices f0, lbm_lattices f1, size_t nx, size_t ny, size_t nz)
 {
     int tix = threadIdx.x;
-
-    for (int z = blockIdx.z; z < NZ; z+=gridDim.z) {
-        for (int y = blockIdx.y; y < NY; y+=gridDim.y) {
-            for (int x = threadIdx.x + blockIdx.x * blockDim.x; x < NX; x += blockDim.x * gridDim.x) {
-                size_t gi = IDX(x,y,z);
+    for (int z = blockIdx.z; z < nz; z+=gridDim.z) {
+        for (int y = blockIdx.y; y < ny; y+=gridDim.y) {
+            for (int x = threadIdx.x + blockIdx.x * blockDim.x; x < nx; x += blockDim.x * gridDim.x) {
+                size_t gi = IDX(x,y,z,nx,ny,nz);
 
                 double fin_ne, fin_e, fin_se, fin_n, fin_c, fin_s, fin_nw, fin_w, fin_sw,
                        fin_te, fin_tn, fin_tc, fin_ts, fin_tw, 
@@ -205,25 +187,25 @@ __global__ void lbm_computation(lbm_vars *d_vars, lbm_lattices* f0, lbm_lattices
                        fout_te, fout_tn, fout_tc, fout_ts, fout_tw, 
                        fout_be, fout_bn, fout_bc, fout_bs, fout_bw;
 
-                fin_ne = f0->ne[gi];
-                fin_e  = f0->e [gi];
-                fin_se = f0->se[gi];
-                fin_n  = f0->n [gi];
-                fin_c  = f0->c [gi];
-                fin_s  = f0->s [gi];
-                fin_nw = f0->nw[gi];
-                fin_w  = f0->w [gi];
-                fin_sw = f0->sw[gi];
-                fin_te = f0->te[gi];
-                fin_tn = f0->tn[gi];
-                fin_tc = f0->tc[gi];
-                fin_ts = f0->ts[gi];
-                fin_tw = f0->tw[gi];
-                fin_be = f0->be[gi];
-                fin_bn = f0->bn[gi];
-                fin_bc = f0->bc[gi];
-                fin_bs = f0->bs[gi];
-                fin_bw = f0->bw[gi];
+                fin_ne = f0.ne[gi];
+                fin_e  = f0.e [gi];
+                fin_se = f0.se[gi];
+                fin_n  = f0.n [gi];
+                fin_c  = f0.c [gi];
+                fin_s  = f0.s [gi];
+                fin_nw = f0.nw[gi];
+                fin_w  = f0.w [gi];
+                fin_sw = f0.sw[gi];
+                fin_te = f0.te[gi];
+                fin_tn = f0.tn[gi];
+                fin_tc = f0.tc[gi];
+                fin_ts = f0.ts[gi];
+                fin_tw = f0.tw[gi];
+                fin_be = f0.be[gi];
+                fin_bn = f0.bn[gi];
+                fin_bc = f0.bc[gi];
+                fin_bs = f0.bs[gi];
+                fin_bw = f0.bw[gi];
 
                 // Compute macroscopic variables, density and velocity
                 double rho, u0, u1, u2;
@@ -241,7 +223,7 @@ __global__ void lbm_computation(lbm_vars *d_vars, lbm_lattices* f0, lbm_lattices
                               &feq_be, &feq_bn, &feq_bc, &feq_bs, &feq_bw, 
                               rho, u0, u1, u2);       
 
-                if (d_vars->obstacles[IDX(x, y, z)]) {
+                if (d_vars.obstacles[IDX(x,y,z,nx,ny,nz)]) {
                     // Bounce-back condition for obstacle
                     fout_ne = fin_sw; 
                     fout_e  = fin_w ; 
@@ -289,9 +271,9 @@ __global__ void lbm_computation(lbm_vars *d_vars, lbm_lattices* f0, lbm_lattices
                 }
 
 
-        		d_vars->u0[gi] = u0;
-        		d_vars->u1[gi] = u1;
-                d_vars->u2[gi] = u2;
+        		d_vars.u.u0[gi] = u0;
+        		d_vars.u.u1[gi] = u1;
+                d_vars.u.u2[gi] = u2;
 
                 // STREAMING
 
@@ -304,22 +286,22 @@ __global__ void lbm_computation(lbm_vars *d_vars, lbm_lattices* f0, lbm_lattices
                 __shared__ double fo_NW[BLOCK_SIZE];
 
                 // Center 'propagation' (global memory)
-                f1->c[gi] = fout_c;
+                f1.c[gi] = fout_c;
 
                 // N + S propagation (global memory)
-                f1->s[IDX(x, y-1, z)] = fout_s;
-                f1->n[IDX(x, y+1, z)] = fout_n;
+                f1.s[IDX(x, y-1, z, nx,ny,nz)] = fout_s;
+                f1.n[IDX(x, y+1, z, nx,ny,nz)] = fout_n;
 
                 // E propagation in shared memory
-                if (tix < blockDim.x-1 && x < NX-1) {
+                if (tix < blockDim.x-1 && x < nx-1) {
                     fo_E [tix+1] = fout_e;
                     fo_NE[tix+1] = fout_ne;
                     fo_SE[tix+1] = fout_se;
                 // E propagation in global memory (at block boundary)
                 } else {
-                    f1->e [IDX(x+1, y  , z)] = fout_e;
-                    f1->se[IDX(x+1, y-1, z)] = fout_se;
-                    f1->ne[IDX(x+1, y+1, z)] = fout_ne;
+                    f1.e [IDX(x+1, y  , z, nx,ny,nz)] = fout_e;
+                    f1.se[IDX(x+1, y-1, z, nx,ny,nz)] = fout_se;
+                    f1.ne[IDX(x+1, y+1, z, nx,ny,nz)] = fout_ne;
                 }
 
                 // W propagation in shared memory
@@ -329,37 +311,37 @@ __global__ void lbm_computation(lbm_vars *d_vars, lbm_lattices* f0, lbm_lattices
                     fo_SW[tix-1] = fout_sw;
                 // W propagation in global memory (at block boundary)
                 } else {
-                    f1->w [IDX(x-1, y  , z)] = fout_w;
-                    f1->sw[IDX(x-1, y-1, z)] = fout_sw;
-                    f1->nw[IDX(x-1, y+1, z)] = fout_nw;
+                    f1.w [IDX(x-1, y  , z, nx,ny,nz)] = fout_w;
+                    f1.sw[IDX(x-1, y-1, z, nx,ny,nz)] = fout_sw;
+                    f1.nw[IDX(x-1, y+1, z, nx,ny,nz)] = fout_nw;
                 }
 
                 // Top and Bottom propagation (global memory)
-                f1->te[IDX(x+1, y  , z+1)] = fout_te;
-                f1->tn[IDX(x  , y+1, z+1)] = fout_tn;
-                f1->tc[IDX(x  , y  , z+1)] = fout_tc;
-                f1->ts[IDX(x  , y-1, z+1)] = fout_ts;
-                f1->tw[IDX(x-1, y  , z+1)] = fout_tw;
-                f1->be[IDX(x+1, y  , z-1)] = fout_be;
-                f1->bn[IDX(x  , y+1, z-1)] = fout_bn;
-                f1->bc[IDX(x  , y  , z-1)] = fout_bc;
-                f1->bs[IDX(x  , y-1, z-1)] = fout_bs;
-                f1->bw[IDX(x-1, y  , z-1)] = fout_bw;
+                f1.te[IDX(x+1, y  , z+1, nx,ny,nz)] = fout_te;
+                f1.tn[IDX(x  , y+1, z+1, nx,ny,nz)] = fout_tn;
+                f1.tc[IDX(x  , y  , z+1, nx,ny,nz)] = fout_tc;
+                f1.ts[IDX(x  , y-1, z+1, nx,ny,nz)] = fout_ts;
+                f1.tw[IDX(x-1, y  , z+1, nx,ny,nz)] = fout_tw;
+                f1.be[IDX(x+1, y  , z-1, nx,ny,nz)] = fout_be;
+                f1.bn[IDX(x  , y+1, z-1, nx,ny,nz)] = fout_bn;
+                f1.bc[IDX(x  , y  , z-1, nx,ny,nz)] = fout_bc;
+                f1.bs[IDX(x  , y-1, z-1, nx,ny,nz)] = fout_bs;
+                f1.bw[IDX(x-1, y  , z-1, nx,ny,nz)] = fout_bw;
 
                 __syncthreads();
 
                 // the leftmost thread is not updated in this block
                 if (tix > 0) {
-                    f1->e [gi            ] = fo_E [tix];
-                    f1->se[IDX(x, y-1, z)] = fo_SE[tix];
-                    f1->ne[IDX(x, y+1, z)] = fo_NE[tix];
+                    f1.e [gi                      ] = fo_E [tix];
+                    f1.se[IDX(x, y-1, z, nx,ny,nz)] = fo_SE[tix];
+                    f1.ne[IDX(x, y+1, z, nx,ny,nz)] = fo_NE[tix];
                 }
 
                 // the rightmost thread is not updated in this block
-                if (tix < blockDim.x-1 && x < NX-1) {
-                    f1->w [gi            ] = fo_W [tix];
-                    f1->sw[IDX(x, y-1, z)] = fo_SW[tix];
-                    f1->nw[IDX(x, y+1, z)] = fo_NW[tix];
+                if (tix < blockDim.x-1 && x < nx-1) {
+                    f1.w [gi                      ] = fo_W [tix];
+                    f1.sw[IDX(x, y-1, z, nx,ny,nz)] = fo_SW[tix];
+                    f1.nw[IDX(x, y+1, z, nx,ny,nz)] = fo_NW[tix];
                 }
 
                 __syncthreads(); // only nessessary when NX % BLOCK_SIZE != 0 
@@ -369,56 +351,199 @@ __global__ void lbm_computation(lbm_vars *d_vars, lbm_lattices* f0, lbm_lattices
 }
 
 struct lbm_simulation{
-    lbm_vars h_vars, *d_vars;
+    lbm_vars h_vars, d_vars;
     dim3 dimComputationGrid, dimComputationBlock;
     dim3 dimRightWallGrid, dimRightWallBlock;
     size_t shared_mem_size;
     bool switch_f0_f1;
+    size_t nx, ny, nz;
 };
 
+void lbm_lattices_alloc(lbm_lattices* lat, size_t nl) {
+    lat->ne = (double*) malloc ( sizeof(double)*nl );
+    lat->e  = (double*) malloc ( sizeof(double)*nl );
+    lat->se = (double*) malloc ( sizeof(double)*nl );
+    lat->n  = (double*) malloc ( sizeof(double)*nl );
+    lat->c  = (double*) malloc ( sizeof(double)*nl );
+    lat->s  = (double*) malloc ( sizeof(double)*nl );
+    lat->nw = (double*) malloc ( sizeof(double)*nl );
+    lat->w  = (double*) malloc ( sizeof(double)*nl );
+    lat->sw = (double*) malloc ( sizeof(double)*nl );
+    lat->te = (double*) malloc ( sizeof(double)*nl );
+    lat->tn = (double*) malloc ( sizeof(double)*nl );
+    lat->tc = (double*) malloc ( sizeof(double)*nl );
+    lat->ts = (double*) malloc ( sizeof(double)*nl );
+    lat->tw = (double*) malloc ( sizeof(double)*nl );
+    lat->be = (double*) malloc ( sizeof(double)*nl );
+    lat->bn = (double*) malloc ( sizeof(double)*nl );
+    lat->bc = (double*) malloc ( sizeof(double)*nl );
+    lat->bs = (double*) malloc ( sizeof(double)*nl );
+    lat->bw = (double*) malloc ( sizeof(double)*nl );
+}
 
-lbm_simulation* lbm_simulation_create()
+void lbm_lattices_cuda_alloc(lbm_lattices* lat, size_t nl) {
+    HANDLE_ERROR(cudaMalloc(&lat->ne, sizeof(double)*nl ));
+    HANDLE_ERROR(cudaMalloc(&lat->e , sizeof(double)*nl ));
+    HANDLE_ERROR(cudaMalloc(&lat->se, sizeof(double)*nl ));
+    HANDLE_ERROR(cudaMalloc(&lat->n , sizeof(double)*nl ));
+    HANDLE_ERROR(cudaMalloc(&lat->c , sizeof(double)*nl ));
+    HANDLE_ERROR(cudaMalloc(&lat->s , sizeof(double)*nl ));
+    HANDLE_ERROR(cudaMalloc(&lat->nw, sizeof(double)*nl ));
+    HANDLE_ERROR(cudaMalloc(&lat->w , sizeof(double)*nl ));
+    HANDLE_ERROR(cudaMalloc(&lat->sw, sizeof(double)*nl ));
+    HANDLE_ERROR(cudaMalloc(&lat->te, sizeof(double)*nl ));
+    HANDLE_ERROR(cudaMalloc(&lat->tn, sizeof(double)*nl ));
+    HANDLE_ERROR(cudaMalloc(&lat->tc, sizeof(double)*nl ));
+    HANDLE_ERROR(cudaMalloc(&lat->ts, sizeof(double)*nl ));
+    HANDLE_ERROR(cudaMalloc(&lat->tw, sizeof(double)*nl ));
+    HANDLE_ERROR(cudaMalloc(&lat->be, sizeof(double)*nl ));
+    HANDLE_ERROR(cudaMalloc(&lat->bn, sizeof(double)*nl ));
+    HANDLE_ERROR(cudaMalloc(&lat->bc, sizeof(double)*nl ));
+    HANDLE_ERROR(cudaMalloc(&lat->bs, sizeof(double)*nl ));
+    HANDLE_ERROR(cudaMalloc(&lat->bw, sizeof(double)*nl ));
+}
+
+void lbm_lattices_dealloc(lbm_lattices* lat) {
+    free(lat->ne);
+    free(lat->e );
+    free(lat->se);
+    free(lat->n );
+    free(lat->c );
+    free(lat->s );
+    free(lat->nw);
+    free(lat->w );
+    free(lat->sw);
+    free(lat->te);
+    free(lat->tn);
+    free(lat->tc);
+    free(lat->ts);
+    free(lat->tw);
+    free(lat->be);
+    free(lat->bn);
+    free(lat->bc);
+    free(lat->bs);
+    free(lat->bw);
+}
+
+void lbm_lattices_cuda_dealloc(lbm_lattices* lat) {
+    HANDLE_ERROR(cudaFree(lat->ne));
+    HANDLE_ERROR(cudaFree(lat->e ));
+    HANDLE_ERROR(cudaFree(lat->se));
+    HANDLE_ERROR(cudaFree(lat->n ));
+    HANDLE_ERROR(cudaFree(lat->c ));
+    HANDLE_ERROR(cudaFree(lat->s ));
+    HANDLE_ERROR(cudaFree(lat->nw));
+    HANDLE_ERROR(cudaFree(lat->w ));
+    HANDLE_ERROR(cudaFree(lat->sw));
+    HANDLE_ERROR(cudaFree(lat->te));
+    HANDLE_ERROR(cudaFree(lat->tn));
+    HANDLE_ERROR(cudaFree(lat->tc));
+    HANDLE_ERROR(cudaFree(lat->ts));
+    HANDLE_ERROR(cudaFree(lat->tw));
+    HANDLE_ERROR(cudaFree(lat->be));
+    HANDLE_ERROR(cudaFree(lat->bn));
+    HANDLE_ERROR(cudaFree(lat->bc));
+    HANDLE_ERROR(cudaFree(lat->bs));
+    HANDLE_ERROR(cudaFree(lat->bw));
+}
+
+void lbm_u_alloc(lbm_u* u, size_t nl) {
+    u->u0 = (double*) malloc( sizeof(double)*nl );
+    u->u1 = (double*) malloc( sizeof(double)*nl );
+    u->u2 = (double*) malloc( sizeof(double)*nl );
+}
+
+void lbm_u_cuda_alloc(lbm_u* u, size_t nl) {
+    HANDLE_ERROR(cudaMalloc(&u->u0, sizeof(double)*nl ));
+    HANDLE_ERROR(cudaMalloc(&u->u1, sizeof(double)*nl ));
+    HANDLE_ERROR(cudaMalloc(&u->u2, sizeof(double)*nl ));
+}
+
+void lbm_u_dealloc(lbm_u* u) {
+    free(u->u0);
+    free(u->u1);
+    free(u->u2);
+}
+
+void lbm_u_cuda_dealloc(lbm_u* u) {
+    HANDLE_ERROR(cudaFree(u->u0));
+    HANDLE_ERROR(cudaFree(u->u1));
+    HANDLE_ERROR(cudaFree(u->u2));
+}
+
+void lbm_vars_alloc(lbm_vars* vars, size_t nl)
 {
+    vars->obstacles = (bool*) malloc( sizeof(bool)*nl);
+    lbm_u_alloc(&vars->u, nl);
+    lbm_lattices_alloc(&vars->f0, nl);
+    lbm_lattices_alloc(&vars->f1, nl);
+}
 
-    size_t free, total;
-    cudaMemGetInfo(&free, &total);
-    printf("free memory:  %lu\n", free);
-    printf("total memory: %lu\n", total);
-    printf("sizeof(lbm_vars) = %lu\n", sizeof(lbm_vars));
+void lbm_vars_cuda_alloc(lbm_vars* vars, size_t nl)
+{
+    HANDLE_ERROR(cudaMalloc(&vars->obstacles, sizeof(bool)*nl));
+    lbm_u_cuda_alloc(&vars->u, nl);
+    lbm_lattices_cuda_alloc(&vars->f0, nl);
+    lbm_lattices_cuda_alloc(&vars->f1, nl);
+}
 
+void lbm_vars_dealloc(lbm_vars* vars)
+{
+    free(vars->obstacles);
+    lbm_u_dealloc(&vars->u);
+    lbm_lattices_dealloc(&vars->f0);
+    lbm_lattices_dealloc(&vars->f1);
+}
+
+void lbm_vars_cuda_dealloc(lbm_vars* vars)
+{
+    HANDLE_ERROR(cudaFree(vars->obstacles));
+    lbm_u_cuda_dealloc(&vars->u);
+    lbm_lattices_cuda_dealloc(&vars->f0);
+    lbm_lattices_cuda_dealloc(&vars->f1);
+}
+
+void lbm_lattices_write(lbm_lattices* d_lat, lbm_lattices* h_lat, size_t nl);
+
+lbm_simulation* lbm_simulation_create(size_t nx, size_t ny, size_t nz)
+{
     lbm_simulation* lbm_sim = (lbm_simulation*) malloc (sizeof(lbm_simulation));
-    
-    lbm_consts h_consts;
-    
-    initVelocity(h_consts.vel);
-    
-    HANDLE_ERROR(cudaMemcpyToSymbol(d_consts, &h_consts, sizeof(lbm_consts)));
-        
-    initObstacles(lbm_sim->h_vars.obstacles);
+    size_t nl = nx*ny*nz;
+    lbm_sim->nx = nx;
+    lbm_sim->ny = ny;
+    lbm_sim->nz = nz;
+   
+    lbm_vars_alloc(&lbm_sim->h_vars, nl);
+    initObstacles(lbm_sim->h_vars.obstacles, nx, ny, nz);
+
+    double vel[ny];
+    initVelocity(vel, ny);
     
     // Initialization of the populations at equilibrium with the given velocity.
     lbm_sim->switch_f0_f1 = false;
-    for (int z = 0; z < NZ; z++) {
-        for (int y = 0; y < NY; y++) {
-            for (int x = 0; x < NX; x++) {
-                double rho = x == NX/2 && y == NY/2 && z == NZ/2 ? 2.0 : 1.0;
-                h_equilibrium(&lbm_sim->h_vars.f0, IDX(x,y,z), rho, h_consts.vel[y], 0, -h_consts.vel[y]);
+    for (int z = 0; z < nz; z++) {
+        for (int y = 0; y < ny; y++) {
+            for (int x = 0; x < nx; x++) {
+                double rho = x == nx/2 && y == ny/2 && z == nz/2 ? 2.0 : 1.0;
+                h_equilibrium(&lbm_sim->h_vars.f0, IDX(x,y,z,nx,ny,nz), rho, vel[y], 0, -vel[y]);
             }
         }
     }
 
-    HANDLE_ERROR(cudaMalloc(&lbm_sim->d_vars, sizeof(lbm_vars)));
-    HANDLE_ERROR(cudaMemcpy(lbm_sim->d_vars, &lbm_sim->h_vars, sizeof(lbm_vars), cudaMemcpyHostToDevice));
+    lbm_vars_cuda_alloc(&lbm_sim->d_vars, nl);
+
+    lbm_lattices_write(&lbm_sim->d_vars.f0, &lbm_sim->h_vars.f0, nl);
+    HANDLE_ERROR(cudaMemcpy(lbm_sim->d_vars.obstacles, lbm_sim->h_vars.obstacles, sizeof(bool)*nl, cudaMemcpyHostToDevice));
 
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, 0);
 
-    dim3 dimComputationGrid(max(1, NX/BLOCK_SIZE), min(NY, prop.maxGridSize[1]), min(NZ, prop.maxGridSize[2]));
+    dim3 dimComputationGrid(max((unsigned long)1, (unsigned long)nx/BLOCK_SIZE), min((unsigned long)ny, (unsigned long)prop.maxGridSize[1]), min((unsigned long)nz, (unsigned long)prop.maxGridSize[2]));
     dim3 dimComputationBlock(BLOCK_SIZE);
     lbm_sim->dimComputationGrid = dimComputationGrid;
     lbm_sim->dimComputationBlock = dimComputationBlock;
 
-    dim3 dimRightWallGrid(1, min(NY, prop.maxGridSize[1]));
+    dim3 dimRightWallGrid(1, min((unsigned long)ny, (unsigned long)prop.maxGridSize[1]));
     dim3 dimRightWallBlock(1);
     lbm_sim->dimRightWallGrid = dimRightWallGrid;
     lbm_sim->dimRightWallBlock = dimRightWallBlock;
@@ -431,89 +556,135 @@ lbm_simulation* lbm_simulation_create()
 
 void lbm_simulation_destroy(lbm_simulation* lbm_sim)
 {
-//    HANDLE_ERROR(cudaFree(lbm_sim->d_vars));
+    lbm_vars_dealloc(&lbm_sim->h_vars);
+    lbm_vars_cuda_dealloc(&lbm_sim->d_vars);
     free(lbm_sim);
 }
 void lbm_simulation_update(lbm_simulation* lbm_sim)
 {
     if (lbm_sim->switch_f0_f1) {
-        HANDLE_KERNEL_ERROR(lbm_computation<<<lbm_sim->dimComputationGrid, lbm_sim->dimComputationBlock, lbm_sim->shared_mem_size>>>(lbm_sim->d_vars, &lbm_sim->d_vars->f1, &lbm_sim->d_vars->f0));
+        HANDLE_KERNEL_ERROR(lbm_computation<<<lbm_sim->dimComputationGrid, lbm_sim->dimComputationBlock, lbm_sim->shared_mem_size>>>(lbm_sim->d_vars, lbm_sim->d_vars.f1, lbm_sim->d_vars.f0, lbm_sim->nx, lbm_sim->ny, lbm_sim->nz));
     } else {
-        HANDLE_KERNEL_ERROR(lbm_computation<<<lbm_sim->dimComputationGrid, lbm_sim->dimComputationBlock, lbm_sim->shared_mem_size>>>(lbm_sim->d_vars, &lbm_sim->d_vars->f0, &lbm_sim->d_vars->f1));
+        HANDLE_KERNEL_ERROR(lbm_computation<<<lbm_sim->dimComputationGrid, lbm_sim->dimComputationBlock, lbm_sim->shared_mem_size>>>(lbm_sim->d_vars, lbm_sim->d_vars.f0, lbm_sim->d_vars.f1, lbm_sim->nx, lbm_sim->ny, lbm_sim->nz));
     }
 
     lbm_sim->switch_f0_f1 = ! lbm_sim->switch_f0_f1;
 }
 
-void lbm_simulation_get_size(lbm_simulation* lbm_sim, size_t* width, size_t* height, size_t* depth)
+
+void lbm_lattices_write(lbm_lattices* d_lat, lbm_lattices* h_lat, size_t nl)
 {
-    *width  = NX;
-    *height = NY;
-    *depth  = NZ;
+    HANDLE_ERROR(cudaMemcpy(d_lat->ne, h_lat->ne, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->e , h_lat->e , sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->se, h_lat->se, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->n , h_lat->n , sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->c , h_lat->c , sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->s , h_lat->s , sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->nw, h_lat->nw, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->w , h_lat->w , sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->sw, h_lat->sw, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->te, h_lat->te, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->tn, h_lat->tn, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->tc, h_lat->tc, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->ts, h_lat->ts, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->tw, h_lat->tw, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->be, h_lat->be, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->bn, h_lat->bn, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->bc, h_lat->bc, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->bs, h_lat->bs, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->bw, h_lat->bw, sizeof(double)*nl, cudaMemcpyHostToDevice));
 }
 
-void lbm_lattices_read(lbm_simulation* lbm_sim, lbm_lattices* lat)
+void lbm_lattices_read(lbm_simulation* lbm_sim, lbm_lattices* h_lat)
 {
-//    lbm_lattices* d_lat = &lbm_sim->d_vars->out;
-    lbm_lattices* d_lat = lbm_sim->switch_f0_f1 ? &lbm_sim->d_vars->f1 : &lbm_sim->d_vars->f0;
-    HANDLE_ERROR(cudaMemcpy(lat, d_lat, sizeof(lbm_lattices), cudaMemcpyDeviceToHost));
+    size_t nl = lbm_sim->nx * lbm_sim->ny * lbm_sim->nz;
+
+    lbm_lattices* d_lat = lbm_sim->switch_f0_f1 ? &lbm_sim->d_vars.f1 : &lbm_sim->d_vars.f0;
+
+    HANDLE_ERROR(cudaMemcpy(h_lat->ne, d_lat->ne, sizeof(double)*nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(h_lat->e , d_lat->e , sizeof(double)*nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(h_lat->se, d_lat->se, sizeof(double)*nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(h_lat->n , d_lat->n , sizeof(double)*nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(h_lat->c , d_lat->c , sizeof(double)*nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(h_lat->s , d_lat->s , sizeof(double)*nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(h_lat->nw, d_lat->nw, sizeof(double)*nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(h_lat->w , d_lat->w , sizeof(double)*nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(h_lat->sw, d_lat->sw, sizeof(double)*nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(h_lat->te, d_lat->te, sizeof(double)*nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(h_lat->tn, d_lat->tn, sizeof(double)*nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(h_lat->tc, d_lat->tc, sizeof(double)*nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(h_lat->ts, d_lat->ts, sizeof(double)*nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(h_lat->tw, d_lat->tw, sizeof(double)*nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(h_lat->be, d_lat->be, sizeof(double)*nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(h_lat->bn, d_lat->bn, sizeof(double)*nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(h_lat->bc, d_lat->bc, sizeof(double)*nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(h_lat->bs, d_lat->bs, sizeof(double)*nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(h_lat->bw, d_lat->bw, sizeof(double)*nl, cudaMemcpyDeviceToHost));
 }
 
-void lbm_u_read(lbm_simulation* lbm_sim, lbm_u* u)
+
+
+void lbm_u_read(lbm_simulation* lbm_sim, lbm_u* u, size_t nx, size_t ny, size_t nz)
 {
-    HANDLE_ERROR(cudaMemcpy(u->u0, lbm_sim->d_vars->u0, sizeof(double)*NL, cudaMemcpyDeviceToHost));
-    HANDLE_ERROR(cudaMemcpy(u->u1, lbm_sim->d_vars->u1, sizeof(double)*NL, cudaMemcpyDeviceToHost));
-    HANDLE_ERROR(cudaMemcpy(u->u2, lbm_sim->d_vars->u2, sizeof(double)*NL, cudaMemcpyDeviceToHost));
+    size_t nl = nx*ny*nz;
+    HANDLE_ERROR(cudaMemcpy(u->u0, lbm_sim->d_vars.u.u0, sizeof(double)*nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(u->u1, lbm_sim->d_vars.u.u1, sizeof(double)*nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(u->u2, lbm_sim->d_vars.u.u2, sizeof(double)*nl, cudaMemcpyDeviceToHost));
 }
 
-lbm_lattices* lbm_lattices_create()
+lbm_lattices* lbm_lattices_create(size_t nx, size_t ny, size_t nz)
 {
-    return (lbm_lattices*) malloc(sizeof(lbm_lattices));
+    lbm_lattices* lat = (lbm_lattices*) malloc(sizeof(lbm_lattices));
+    lbm_lattices_alloc(lat, nx*ny*nz);
+    return lat;
 }
 
 void lbm_lattices_destroy(lbm_lattices* lat)
 {
+    lbm_lattices_dealloc(lat);
     free(lat);
 }
 
-lbm_u* lbm_u_create()
+lbm_u* lbm_u_create(size_t nx, size_t ny, size_t nz)
 {
-    return (lbm_u*) malloc(sizeof(lbm_u));
+    lbm_u* u = (lbm_u*) malloc(sizeof(lbm_u));
+    lbm_u_alloc(u, nx*ny*nz);
+    return u;
 }
 
 void lbm_u_destroy(lbm_u* u)
 {
+    lbm_u_dealloc(u);
     free(u);
 }
 
-void lbm_lattices_at_index(lbm_lattice* lattice, lbm_lattices* lattices, int x, int y, int z)
+void lbm_lattices_at_index(lbm_lattice* lattice, lbm_lattices* lattices, int x, int y, int z, size_t nx, size_t ny, size_t nz)
 {
-    int gi = IDX(x,y,z);
-    lbm_lattices* lat = (lbm_lattices*) lattices;
-    lattice->ne = lat->ne[gi];
-    lattice->e  = lat->e [gi];
-    lattice->se = lat->se[gi];
-    lattice->n  = lat->n [gi];
-    lattice->c  = lat->c [gi];
-    lattice->s  = lat->s [gi];
-    lattice->nw = lat->nw[gi];
-    lattice->w  = lat->w [gi];
-    lattice->sw = lat->sw[gi];
-    lattice->te = lat->te[gi];
-    lattice->tn = lat->tn[gi];
-    lattice->tc = lat->tc[gi];
-    lattice->ts = lat->ts[gi];
-    lattice->tw = lat->tw[gi];
-    lattice->be = lat->be[gi];
-    lattice->bn = lat->bn[gi];
-    lattice->bc = lat->bc[gi];
-    lattice->bs = lat->bs[gi];
-    lattice->bw = lat->bw[gi];
+    int gi = IDX(x,y,z,nx,ny,nz);
+    lattice->ne = lattices->ne[gi];
+    lattice->e  = lattices->e [gi];
+    lattice->se = lattices->se[gi];
+    lattice->n  = lattices->n [gi];
+    lattice->c  = lattices->c [gi];
+    lattice->s  = lattices->s [gi];
+    lattice->nw = lattices->nw[gi];
+    lattice->w  = lattices->w [gi];
+    lattice->sw = lattices->sw[gi];
+    lattice->te = lattices->te[gi];
+    lattice->tn = lattices->tn[gi];
+    lattice->tc = lattices->tc[gi];
+    lattice->ts = lattices->ts[gi];
+    lattice->tw = lattices->tw[gi];
+    lattice->be = lattices->be[gi];
+    lattice->bn = lattices->bn[gi];
+    lattice->bc = lattices->bc[gi];
+    lattice->bs = lattices->bs[gi];
+    lattice->bw = lattices->bw[gi];
 }
 
-void lbm_u_at_index(double* u0, double* u1, double* u2, lbm_u* u, int x, int y, int z)
+void lbm_u_at_index(double* u0, double* u1, double* u2, lbm_u* u, int x, int y, int z, size_t nx, size_t ny, size_t nz)
 {
-    int gi = IDX(x,y,z);
+    int gi = IDX(x,y,z,nx,ny,nz);
     *u0 = u->u0[gi];
     *u1 = u->u1[gi];
     *u2 = u->u2[gi];

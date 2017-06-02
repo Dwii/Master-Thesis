@@ -15,6 +15,9 @@ LIBDIR=../../C/libs
 
 # Binary default arguments
 OUTPRE=lbm_
+NX=100
+NY=100
+NZ=10
 
 DEFAULT_IMG_INTERVAL=100
 DEFAULT_OUT_INTERVAL=0
@@ -28,7 +31,7 @@ CFLAGS=-g -Wall -Wextra -pedantic -O3
 NVCC_FLAGS=-Wno-deprecated-gpu-targets -O3 --ptxas-options=-v
 
 # Non-standard libraries and headers
-LIBNAM=pgm array timing lbmmain3d
+LIBNAM=pgm array timing lbmmain3d_dynsize
 LIBDEP=$(addprefix $(LIBDIR)/,$(LIBNAM))
 INCS=$(addprefix -I,$(LIBDEP))
 LIBS=$(addprefix -L,$(LIBDEP)) $(addprefix -l,$(LIBNAM))
@@ -42,11 +45,12 @@ run: images
 
 images: all $(OUTDIR)
 	$(eval INTERVAL ?= $(DEFAULT_IMG_INTERVAL))
-	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE)" )
+	echo "$(BINDIR)/$(BIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -x $(NX) -y $(NY) -z $(NZ)"
+	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -x $(NX) -y $(NY) -z $(NZ)" )
 
 output: all $(OUTDIR) 
 	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
-	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -L", $(OUTDIR)/$(OUTPRE)$(ITER).timing)
+	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -L -x $(NX) -y $(NY) -z $(NZ)", $(OUTDIR)/$(OUTPRE)$(ITER).timing)
 
 $(OBJDIR) $(BINDIR) $(OUTDIR): 
 	mkdir -p $@
