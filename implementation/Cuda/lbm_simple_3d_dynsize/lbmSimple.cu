@@ -270,7 +270,6 @@ __global__ void lbm_computation(lbm_vars d_vars, lbm_lattices f0, lbm_lattices f
                     fout_bw = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_bw, - feq_bw)), fin_bw);
                 }
 
-
         		d_vars.u.u0[gi] = u0;
         		d_vars.u.u1[gi] = u1;
                 d_vars.u.u2[gi] = u2;
