@@ -31,7 +31,6 @@
 typedef enum { OUT_NONE, OUT_FIN, OUT_IMG } out_mode;
 
 struct lbm_simulation {
-//    size_t col[3][3];
     size_t opp[NF];
     bool obstacles[NX][NY][NZ];
     double u[NX][NY][NZ][ND];
@@ -95,7 +94,7 @@ static void initVelocity(lbm_simulation *lbm_sim)
         for (int x = 0; x < NX; x++) {
             for (int y = 0; y < NY; y++) {
                 for (int z = 0; z < NZ; z++) {
-                    lbm_sim->vel[x][y][z][d] = 0; // (1-d) * ULB * (1 + 0.0001 * sin( y / (double)LY * 2 * M_PI) );
+                    lbm_sim->vel[x][y][z][d] = 0;
                 }
             }
         }
@@ -113,17 +112,6 @@ static void initRho(lbm_simulation *lbm_sim)
     }
     lbm_sim->rho[NX/2][NY/2][NZ/2] = 2.0;
 }
-
-/*
-static void initCol(size_t* col, ssize_t v0)
-{
-    for (int f = 0, i = 0; f < NF && i < 3; f++) {
-        if (V[0][f] == v0) {
-            col[i++] = f;
-        }
-    }
-}
-*/
 
 static void initOpp(size_t* opp)
 {
@@ -163,48 +151,15 @@ static void macroscopic(double* fin, double* rho, double* u)
         u[d] /= *rho;
     }
 }
-int i =0 ;
+
 void lbm_computation(lbm_simulation *lbm_sim, int x, int y, int z)
 {
-    /*
-    // Right wall: outflow condition.
-    if (x == NX-1) {
-        for (int i = 0; i < 3; i++) {
-            size_t f = d_consts.col[2][i];
-            d_vars->fin[NX-1][y][z][f] = d_vars->fin[NX-2][y][z][f];
-        }
-    }
-     */
     // Compute macroscopic variables, density and velocity
     macroscopic(lbm_sim->fin[x][y][z], &lbm_sim->rho[x][y][z], lbm_sim->u[x][y][z]);
 
-    /*
-    if (x == 0) {
-        // Left wall: inflow condition
-        for (size_t d = 0; d < ND; d++) {
-            d_vars->u[0][y][z][d] = d_vars->vel[0][y][z][d];
-        }
-
-        // Calculate the density
-        double s2 = 0, s3 = 0;
-        for (size_t i = 0; i < 3; i++) {
-            s2 += d_vars->fin[0][y][z][d_consts.col[1][i]];
-            s3 += d_vars->fin[0][y][z][d_consts.col[2][i]];
-        }
-        d_vars->rho[0][y][z] = 1./(1 - d_vars->u[0][y][z][0]) * (s2 + 2*s3);
-    }
-     */
     // Compute equilibrium
     equilibrium(lbm_sim->feq[x][y][z], lbm_sim->rho[x][y][z], lbm_sim->u[x][y][z]);
 
-    /*
-    if (x == 0) {
-        for (size_t i = 0; i < 3; i++) {
-            size_t f = d_consts.col[0][i];
-            d_vars->fin[0][y][z][f] = d_vars->feq[0][y][z][f] + d_vars->fin[0][y][z][d_consts.opp[f]] - d_vars->feq[0][y][z][d_consts.opp[f]];
-        }
-    }
-     */
     for (size_t f = 0; f < NF; f++) {
         if (lbm_sim->obstacles[x][y][z]) {
             // Bounce-back condition for obstacle
@@ -231,11 +186,7 @@ void lbm_streaming(lbm_simulation *lbm_sim, int x, int y, int z)
 lbm_simulation* lbm_simulation_create()
 {
     lbm_simulation* lbm_sim = (lbm_simulation*) malloc (sizeof(lbm_simulation));
-/*
-    initCol(lbm_sim->col[0],  1);
-    initCol(lbm_sim->col[1],  0);
-    initCol(lbm_sim->col[2], -1);
-*/
+
     initOpp(lbm_sim->opp);
     
     initObstacles(lbm_sim);
