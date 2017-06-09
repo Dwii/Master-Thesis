@@ -13,7 +13,7 @@
 #include <timing.h>
 #include "lbm.h"
 
-typedef enum { OUT_NONE, OUT_FIN, OUT_IMG } out_mode;
+typedef enum { OUT_NONE, OUT_FIN, OUT_FINP, OUT_IMG } out_mode;
 
 static void output_lattices(char* filename, size_t width, size_t height, size_t depth, lbm_lattices* lattices)
 {
@@ -42,6 +42,39 @@ static void output_lattices(char* filename, size_t width, size_t height, size_t 
                 fprintf(file, "%64.60f\n", lattice.bc);
                 fprintf(file, "%64.60f\n", lattice.bs);
                 fprintf(file, "%64.60f\n", lattice.bw);
+            }
+        }
+    }
+    fclose(file);
+}
+
+static void output_palabos_lattices(char* filename, size_t width, size_t height, size_t depth, lbm_lattices* lattices)
+{
+    FILE* file = fopen(filename, "w");
+    for (size_t x = 0; x < width; x++) {
+        for (size_t y = 0; y < height; y++) {
+            for (size_t z = 0; z < depth; z++) {
+                lbm_lattice lattice;
+                lbm_lattices_at_index(&lattice, lattices, x, y, z, width, height, depth);
+                fprintf(file, "%.60f ", lattice.c  - 1./3 );
+                fprintf(file, "%.60f ", lattice.w  - 1./18);
+                fprintf(file, "%.60f ", lattice.s  - 1./18);
+                fprintf(file, "%.60f ", lattice.bc - 1./18);
+                fprintf(file, "%.60f ", lattice.sw - 1./36);
+                fprintf(file, "%.60f ", lattice.nw - 1./36);
+                fprintf(file, "%.60f ", lattice.bw - 1./36);
+                fprintf(file, "%.60f ", lattice.tw - 1./36);
+                fprintf(file, "%.60f ", lattice.bs - 1./36);
+                fprintf(file, "%.60f ", lattice.ts - 1./36);
+                fprintf(file, "%.60f ", lattice.e  - 1./18);
+                fprintf(file, "%.60f ", lattice.n  - 1./18);
+                fprintf(file, "%.60f ", lattice.tc - 1./18);
+                fprintf(file, "%.60f ", lattice.ne - 1./36);
+                fprintf(file, "%.60f ", lattice.se - 1./36);
+                fprintf(file, "%.60f ", lattice.te - 1./36);
+                fprintf(file, "%.60f ", lattice.be - 1./36);
+                fprintf(file, "%.60f ", lattice.tn - 1./36);
+                fprintf(file, "%.60f ", lattice.bn - 1./36);
             }
         }
     }
@@ -86,9 +119,10 @@ int main(int argc, char * const argv[])
 
     // Read arguments
     while (optind < argc) {
-        switch (getopt(argc, argv, "pfi:I:o:O:lLx:y:z:")) {
+        switch (getopt(argc, argv, "pfFi:I:o:O:lLx:y:z:")) {
             case 'p': { out = OUT_IMG; break; }
             case 'f': { out = OUT_FIN; break; }
+            case 'F': { out = OUT_FINP; break; }
             case 'i': { max_iter = strtol(optarg, NULL, 10); break; }
             case 'I': { out_interval = strtol(optarg, NULL, 10); break; }
             case 'o': { out_path = optarg; break; }
@@ -105,9 +139,10 @@ int main(int argc, char * const argv[])
     // check that execution mode is set (output images or fin values)
     if (max_iter < 1 && width > 0 && height > 0 && depth > 0) {
     usage:
-        fprintf(stderr, "usage: %s (-p | -f) -i <iter> [-I <out_interval>] [-o <out_dir>] [-O <out_prefix>] [-l] [-L] -x <nx> -y <ny> -z <nz>\n", basename((char*)argv[0]));
+        fprintf(stderr, "usage: %s (-p | -f | -F) -i <iter> [-I <out_interval>] [-o <out_dir>] [-O <out_prefix>] [-l] [-L] -x <nx> -y <ny> -z <nz>\n", basename((char*)argv[0]));
         fprintf(stderr, "  -p : output pictures\n");
         fprintf(stderr, "  -f : output populations\n");
+        fprintf(stderr, "  -F : output populations formated like Palabos\n");
         fprintf(stderr, "  -i : number of iterations\n");
         fprintf(stderr, "  -I : output interval; (0 if only the last iteration output in required)\n");
         fprintf(stderr, "  -o : output file directory\n");
@@ -167,6 +202,16 @@ int main(int argc, char * const argv[])
 
                 if ( asprintf(&filename, "%s/%s%d.out", out_path, out_pref, iter) != -1) {
                     output_lattices(filename, width, height, depth, fin);
+                    free(filename);
+                }
+            }
+ 
+            if (out == OUT_FINP) {
+                
+                lbm_lattices_read(lbm_sim, fin);
+                
+                if ( asprintf(&filename, "%s/%s%06d.dat", out_path, out_pref, iter) != -1) {
+                    output_palabos_lattices(filename, width, height, depth, fin);
                     free(filename);
                 }
             }
