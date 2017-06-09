@@ -82,8 +82,10 @@ print_test: vars
 	@$(call check,lbm_sailfish_hist (CPU)           ,,,                                                                                    Cuda/lbm_sailfish_hist/out/cpu_$(TIMING)   )
 	@$(call check,lbm_sailfish_hist (GPU)           ,,,                                                                                    Cuda/lbm_sailfish_hist/out/gpu_$(TIMING)   )
 	@$(call check,lbm_opt2                          , Python/lbm_palabos_friendly/out/$(OUT),    Cuda/lbm_opt2/out/$(OUT),                 Cuda/lbm_opt2/out/$(TIMING)                )
-	@$(call check,lbm_simple_3d (CPU)               ,,,                                                                                    C/lbm_simple_3d/out/$(TIMING)              )
-	@$(call check,lbm_simple_3d (GPU)               , C/lbm_simple_3d/out/$(OUT),                Cuda/lbm_simple_3d/out/$(OUT),            Cuda/lbm_simple_3d/out/$(TIMING)           )
+	@$(call check,lbm_simple_3d (Python)            ,,,                                                                                    Python/lbm_simple_3d/out/$(TIMING)         )
+	@$(call check,lbm_simple_3d (CPU)               , Python/lbm_simple_3d/out/$(OUT),           C/lbm_simple_3d/out/$(OUT),               C/lbm_simple_3d/out/$(TIMING)              )
+	@$(call check,lbm_simple_3d (GPU)               , Python/lbm_simple_3d/out/$(OUT),           Cuda/lbm_simple_3d/out/$(OUT),            Cuda/lbm_simple_3d/out/$(TIMING)           )
+	@$(call check,lbm_simple_3d_dynsize (GPU)       , Python/lbm_simple_3d/out/$(OUT),           Cuda/lbm_simple_3d_dynsize/out/$(OUT),    Cuda/lbm_simple_3d_dynsize/out/$(TIMING)   )
 
 test: vars output print_test
 
