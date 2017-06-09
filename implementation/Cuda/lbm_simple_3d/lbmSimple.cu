@@ -22,7 +22,7 @@
 #define CZ       ((NZ) / 2)  // Y coordinates of the cylinder
 #define R        ((NY) / 9)  // Cylinder radius
 #define ULB      0.04        // Velocity in lattice units
-#define NULB     ((ULB) * (R) / (RE))   // Viscoscity in lattice units
+#define NULB     ((ULB) * 10 / (RE))   // Viscoscity in lattice units
 #define OMEGA    ((double)1. / (3*(NULB)+0.5))  // Relaxation parameter
 
 #define BLOCK_SIZE 64
