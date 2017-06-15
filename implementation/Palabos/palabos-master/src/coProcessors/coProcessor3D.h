@@ -32,6 +32,7 @@
 #include "core/geometry3D.h"
 #include "atomicBlock/blockLattice3D.h"
 #include <map>
+#include <lbmcuda.h>
 
 namespace plb {
 
@@ -146,6 +147,12 @@ public:
     virtual int receive(int domainHandle, Box3D const& subDomain, std::vector<char>& data) const;
     /// Execute BGK collision and streaming in device memory.
     virtual int collideAndStream(int domainHandle);
+private:
+    lbm_simulation* lbm_sim;
+    lbm_lattices* lattices;
+    bool lattices_on_host;
+    int nx, ny, nz, nl;
+
 };
 
 namespace global {

@@ -69,6 +69,7 @@ namespace plb {
     template<typename T>
     int D3Q19ExampleCoProcessor3D<T>::collideAndStream(int domainHandle)
     {
+        fprintf(stderr, "collideAndStream2\n");
         typename std::map<int, BlockLattice3D<T,descriptors::D3Q19Descriptor> >::iterator it
         = domains.find(domainHandle);
         PLB_ASSERT( it != domains.end() );
@@ -77,39 +78,145 @@ namespace plb {
         return 1; // Success.
     }
     
+    /**** Cuda coProcessor ****/
+
+    #define PIDX(x, y, z, f, nx, ny, nz) ( ( x*(nz*ny) + y*(nz) + z) * 19 + f)
+
     template<typename T>
-    D3Q19CudaCoProcessor3D<T>::D3Q19CudaCoProcessor3D()
+    D3Q19CudaCoProcessor3D<T>::D3Q19CudaCoProcessor3D() 
     {
-        
+        lbm_sim = NULL;
+        lattices = NULL;
     }
     
     template<typename T>
     D3Q19CudaCoProcessor3D<T>::~D3Q19CudaCoProcessor3D()
     {
-        
+        if (lbm_sim) {
+            lbm_simulation_destroy(lbm_sim);
+        }
+
+        lbm_lattices_destroy(lattices);
     }
     
     template<typename T>
     int D3Q19CudaCoProcessor3D<T>::addDomain(plint nx, plint ny, plint nz, T omega, int& domainHandle)
     //int D3Q19CudaCoProcessor3D<T>::addDomain(Box3D const& domain, T omega)
     {
+        printf("addDomain\n");
+        this->nx = nx;
+        this->ny = ny;
+        this->nz = nz;
+        this->nl = nx * ny * nz;
+
+        if (lbm_sim) {
+            lbm_simulation_destroy(lbm_sim);
+        }
+
+        lbm_sim = lbm_simulation_create(nx, ny, nz, omega);
+        
+        if (lattices) {
+            lbm_lattices_destroy(lattices);
+        }
+
+        lattices = lbm_lattices_create(nl);
+
+        lattices_on_host = true;
+
         return 1;
     }
     
     template<typename T>
     int D3Q19CudaCoProcessor3D<T>::send(int domainHandle, Box3D const& subDomain, std::vector<char> const& data)
     {
+        printf("send\n");
+        T const* pal_lattices = (const double *)&data[0];
+
+        if ( ! lattices_on_host ) {
+            lbm_lattices_read(lbm_sim, lattices);
+            lattices_on_host = true;
+        }
+
+        for (plint x = subDomain.x0; x <= subDomain.x1; x++) {
+            for (plint y = subDomain.y0; y <= subDomain.y1; y++) {
+                for (plint z = subDomain.z0; z <= subDomain.z1; z++) {
+                    size_t gi = IDX(x,y,z,nx,ny,nz);
+
+                    lattices->c [gi] = pal_lattices[PIDX(x,y,z, 0,nx,ny,nz)];
+                    lattices->w [gi] = pal_lattices[PIDX(x,y,z, 1,nx,ny,nz)];
+                    lattices->s [gi] = pal_lattices[PIDX(x,y,z, 2,nx,ny,nz)];
+                    lattices->bc[gi] = pal_lattices[PIDX(x,y,z, 3,nx,ny,nz)];
+                    lattices->sw[gi] = pal_lattices[PIDX(x,y,z, 4,nx,ny,nz)];
+                    lattices->nw[gi] = pal_lattices[PIDX(x,y,z, 5,nx,ny,nz)];
+                    lattices->bw[gi] = pal_lattices[PIDX(x,y,z, 6,nx,ny,nz)];
+                    lattices->tw[gi] = pal_lattices[PIDX(x,y,z, 7,nx,ny,nz)];
+                    lattices->bs[gi] = pal_lattices[PIDX(x,y,z, 8,nx,ny,nz)];
+                    lattices->ts[gi] = pal_lattices[PIDX(x,y,z, 9,nx,ny,nz)];
+                    lattices->e [gi] = pal_lattices[PIDX(x,y,z,10,nx,ny,nz)];
+                    lattices->n [gi] = pal_lattices[PIDX(x,y,z,11,nx,ny,nz)];
+                    lattices->tc[gi] = pal_lattices[PIDX(x,y,z,12,nx,ny,nz)];
+                    lattices->ne[gi] = pal_lattices[PIDX(x,y,z,13,nx,ny,nz)];
+                    lattices->se[gi] = pal_lattices[PIDX(x,y,z,14,nx,ny,nz)];
+                    lattices->te[gi] = pal_lattices[PIDX(x,y,z,15,nx,ny,nz)];
+                    lattices->be[gi] = pal_lattices[PIDX(x,y,z,16,nx,ny,nz)];
+                    lattices->tn[gi] = pal_lattices[PIDX(x,y,z,17,nx,ny,nz)];
+                    lattices->bn[gi] = pal_lattices[PIDX(x,y,z,18,nx,ny,nz)];
+                }
+            }
+        }
+
+        lbm_lattices_write(lbm_sim, lattices, nl);
+
         return 1;
     }
     template<typename T>
     int D3Q19CudaCoProcessor3D<T>::receive(int domainHandle, Box3D const& subDomain, std::vector<char>& data) const
     {
+        printf("receive\n");
+        T* pal_lattices = (double *)&data[0];
+
+        if ( ! lattices_on_host ) {
+            lbm_lattices_read(lbm_sim, lattices);
+//            lattices_on_host = true;
+        }
+
+        for (plint x = subDomain.x0; x <= subDomain.x1; x++) {
+            for (plint y = subDomain.y0; y <= subDomain.y1; y++) {
+                for (plint z = subDomain.z0; z <= subDomain.z1; z++) {
+                    size_t gi = IDX(x,y,z,nx,ny,nz);
+
+                    pal_lattices[PIDX(x,y,z, 0,nx,ny,nz)] = lattices->c [gi];
+                    pal_lattices[PIDX(x,y,z, 1,nx,ny,nz)] = lattices->w [gi];
+                    pal_lattices[PIDX(x,y,z, 2,nx,ny,nz)] = lattices->s [gi];
+                    pal_lattices[PIDX(x,y,z, 3,nx,ny,nz)] = lattices->bc[gi];
+                    pal_lattices[PIDX(x,y,z, 4,nx,ny,nz)] = lattices->sw[gi];
+                    pal_lattices[PIDX(x,y,z, 5,nx,ny,nz)] = lattices->nw[gi];
+                    pal_lattices[PIDX(x,y,z, 6,nx,ny,nz)] = lattices->bw[gi];
+                    pal_lattices[PIDX(x,y,z, 7,nx,ny,nz)] = lattices->tw[gi];
+                    pal_lattices[PIDX(x,y,z, 8,nx,ny,nz)] = lattices->bs[gi];
+                    pal_lattices[PIDX(x,y,z, 9,nx,ny,nz)] = lattices->ts[gi];
+                    pal_lattices[PIDX(x,y,z,10,nx,ny,nz)] = lattices->e [gi];
+                    pal_lattices[PIDX(x,y,z,11,nx,ny,nz)] = lattices->n [gi];
+                    pal_lattices[PIDX(x,y,z,12,nx,ny,nz)] = lattices->tc[gi];
+                    pal_lattices[PIDX(x,y,z,13,nx,ny,nz)] = lattices->ne[gi];
+                    pal_lattices[PIDX(x,y,z,14,nx,ny,nz)] = lattices->se[gi];
+                    pal_lattices[PIDX(x,y,z,15,nx,ny,nz)] = lattices->te[gi];
+                    pal_lattices[PIDX(x,y,z,16,nx,ny,nz)] = lattices->be[gi];
+                    pal_lattices[PIDX(x,y,z,17,nx,ny,nz)] = lattices->tn[gi];
+                    pal_lattices[PIDX(x,y,z,18,nx,ny,nz)] = lattices->bn[gi];
+                }
+            }
+        }
+
         return 1;
     }
     
     template<typename T>
     int D3Q19CudaCoProcessor3D<T>::collideAndStream(int domainHandle)
     {
+        printf("collideAndStream\n");
+        //lbm_simulation_update(lbm_sim);
+        lattices_on_host = false;
         return 1;
     }
     
