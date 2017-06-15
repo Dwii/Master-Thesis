@@ -1,0 +1,36 @@
+# Compiler
+NVCC=nvcc
+
+# Binary target
+BIN=liblbmcuda.so
+
+# Directories
+OBJDIR=obj
+
+# Source and object files
+SRCS=$(wildcard *.cu)
+OBJS=$(addprefix $(OBJDIR)/,$(SRCS:.cu=.o))
+
+# Flags
+NVCC_FLAGS=
+
+all: $(OBJDIR) $(BIN)
+
+$(OBJDIR) $(BINDIR) $(IMGDIR): 
+	mkdir -p $@
+
+$(BIN): $(OBJS)
+	$(NVCC) $(NVCC_FLAGS) --compiler-options '-fPIC' -shared $^ -o $@
+
+-include $(OBJS:.o=.d)
+
+$(OBJS) : $(SRCS)
+	$(NVCC) -M $(NVCC_FLAGS) $< -odir $(OBJDIR) > $(@:.o=.d)
+	$(NVCC) $(NVCC_FLAGS) -o $@ -c $< 
+
+clean:
+	rm -rf $(OBJDIR) $(BIN)
+
+rebuild: clean all
+
+.PHONY: all clean rebuild
