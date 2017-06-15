@@ -49,7 +49,7 @@ void initialSetup(MultiBlockLattice3D<T,DESCRIPTOR>& lattice)
 }
 
 template<class BlockLatticeT>
-void writeData( BlockLatticeT& lattice, plint iter)
+void writeData( std::string prefix, BlockLatticeT& lattice, plint iter)
 {
     const plint imSize = 600;
     const plint nx = lattice.getNx();
@@ -63,10 +63,14 @@ void writeData( BlockLatticeT& lattice, plint iter)
                                 *computeVelocityNorm (lattice, slice),
                                 imSize, imSize );
 
-    plb_ofstream ofile((createFileName("./tmp/unorm", iter, 6)+".dat").c_str());
+    plb_ofstream ofile((createFileName("./tmp/" + prefix + "unorm", iter, 6)+".dat").c_str());
     ofile << *computeVelocityNorm(lattice);
-    plb_ofstream ofile2((createFileName("./tmp/f", iter, 6)+".dat").c_str());
+    plb_ofstream ofile2((createFileName("./tmp/" + prefix + "f", iter, 6)+".dat").c_str());
     ofile2 << *computeAllPopulations(lattice);
+    plb_ofstream ofile3((createFileName("./tmp/" + prefix + "rho", iter, 6)+".dat").c_str());
+    ofile3 << *computeDensity(lattice);
+    plb_ofstream ofile4((createFileName("./tmp/" + prefix + "feq", iter, 6)+".dat").c_str());
+    ofile4 << *computeEquilibria(lattice);
 }
 
 
@@ -92,8 +96,11 @@ int main(int argc, char* argv[])
     initialSetup(lattice);
 
     for (plint iT=0; iT<maxIter; ++iT) {
-        writeData(lattice, iT);
-        lattice.collideAndStream();
+        writeData("beforecollision", lattice, iT);
+        lattice.collide();
+        writeData("aftercollision", lattice, iT);
+        lattice.stream();
+        writeData("afterstreaming", lattice, iT);
     }
 }
 
