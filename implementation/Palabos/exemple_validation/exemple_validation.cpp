@@ -64,13 +64,13 @@ void writeData( std::string prefix, BlockLatticeT& lattice, plint iter)
                                 imSize, imSize );
 
     plb_ofstream ofile((createFileName("./tmp/" + prefix + "unorm", iter, 6)+".dat").c_str());
-    ofile << *computeVelocityNorm(lattice);
+    ofile << std::setprecision( 60 ) << std::fixed << *computeVelocityNorm(lattice);
     plb_ofstream ofile2((createFileName("./tmp/" + prefix + "f", iter, 6)+".dat").c_str());
-    ofile2 << *computeAllPopulations(lattice);
+    ofile2 << std::setprecision( 60 ) << std::fixed << *computeAllPopulations(lattice);
     plb_ofstream ofile3((createFileName("./tmp/" + prefix + "rho", iter, 6)+".dat").c_str());
-    ofile3 << *computeDensity(lattice);
+    ofile3 << std::setprecision( 60 ) << std::fixed << *computeDensity(lattice);
     plb_ofstream ofile4((createFileName("./tmp/" + prefix + "feq", iter, 6)+".dat").c_str());
-    ofile4 << *computeEquilibria(lattice);
+    ofile4 << std::setprecision( 60 ) << std::fixed << *computeEquilibria(lattice);
 }
 
 
@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
     plint ny = 100;
     plint nz = 10;
     plint maxIter = 20;
-    plint r = ny / 9;
+    plint r = 10;
     T uLB = 0.04;
     T RE = 220.0;
     T nuLB = uLB*r / RE;
