@@ -35,8 +35,39 @@
 using namespace plb;
 using namespace std;
 
+#ifdef USE_MYDESCRIPTOR
+
+namespace plb {
+namespace descriptors {
+
+template <typename T> struct MyD3Q19DescriptorBase
+    : public D3Q19Constants<T>, public NoOptimizationRoundOffPolicy<T>
+{
+    typedef D3Q19DescriptorBase<T> BaseDescriptor;
+    enum { numPop=D3Q19Constants<T>::q };
+};
+
+template <typename T> struct MyD3Q19Descriptor
+    : public MyD3Q19DescriptorBase<T>, public NoExternalFieldBase
+{
+    static const char name[];
+};
+
+template<typename T>
+const char MyD3Q19Descriptor<T>::name[] = "MyD3Q19";
+
+}
+}
+
+typedef double T;
+#define DESCRIPTOR descriptors::MyD3Q19Descriptor
+
+#else
+
 typedef double T;
 #define DESCRIPTOR descriptors::D3Q19Descriptor
+
+#endif
 
 void initialSetup(MultiBlockLattice3D<T,DESCRIPTOR>& lattice)
 {
@@ -70,7 +101,7 @@ void writeData( std::string prefix, BlockLatticeT& lattice, plint iter)
     plb_ofstream ofile3((createFileName("./tmp/" + prefix + "rho", iter, 6)+".dat").c_str());
     ofile3 << std::setprecision( 60 ) << std::fixed << *computeDensity(lattice);
     plb_ofstream ofile4((createFileName("./tmp/" + prefix + "feq", iter, 6)+".dat").c_str());
-    ofile4 << std::setprecision( 60 ) << std::fixed << *computeEquilibria(lattice);
+    ofile4 << std::setprecision( 60 ) << std::fixed << *computeEquilibrium(lattice);
 }
 
 
