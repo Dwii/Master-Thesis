@@ -162,8 +162,8 @@ inline CoProcessor3D<T>& defaultCoProcessor3D() {
     /// @Tomasz: At this stage, I'd suggest that you simply replace the
     //  D3Q19ExampleCoProcessor3D singleton by a
     //  D3Q19CudaCoProcessor3D singleton to get your code running.
-    static D3Q19ExampleCoProcessor3D<T> singleton;
-    //static D3Q19CudaCoProcessor3D<T> singleton;
+    //static D3Q19ExampleCoProcessor3D<T> singleton;
+    static D3Q19CudaCoProcessor3D<T> singleton;
     return singleton;
 };
 
