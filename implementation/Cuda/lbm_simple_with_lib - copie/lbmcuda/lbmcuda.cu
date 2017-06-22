@@ -1,15 +1,14 @@
 /*!
- * \file    lbmFlowAroundCylinder.cu
- * \brief   Cuda version based on lbm_sailfish_hist and lbm_opt1.
+ * \file    lbmcuda.c
+ * \brief   LBM cuda library
  * \author  Adrien Python
- * \date    28.01.2017
+ * \version 1.0
+ * \date    14.06.2017
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-#include <stdbool.h>
 #include "lbmcuda.h"
+
+#include <stdio.h>
 
 #define BLOCK_SIZE 64
 
@@ -17,11 +16,21 @@
 #define GPU_SQUARE(a) __dmul_rn(a,a)
 
 typedef struct {
-    bool* obstacles;  // Should reside in lbm_consts but is too big for constant memory
-    lbm_u u;
+    bool* obstacles;
     lbm_lattices f0;
     lbm_lattices f1;
+    lbm_u u;
 } lbm_vars;
+
+struct lbm_simulation {
+    lbm_vars d_vars;
+    dim3 dimComputationGrid, dimComputationBlock;
+    dim3 dimRightWallGrid, dimRightWallBlock;
+    size_t shared_mem_size;
+    bool switch_f0_f1;
+    size_t nx, ny, nz;
+    double omega;
+};
 
 #define HANDLE_ERROR(ans) (handleError((ans), __FILE__, __LINE__))
 inline void handleError(cudaError_t code, const char *file, int line)
@@ -39,88 +48,35 @@ do {                                         \
 /*    HANDLE_ERROR( cudaDeviceSynchronize() );*/ \
 } while(0)
 
-/**
- * Setup: cylindrical obstacle and velocity inlet with perturbation
- * Creation of a mask with boolean values, defining the shape of the obstacle.
- */
-static void initObstacles(bool* obstacles, size_t nx, size_t ny, size_t nz)
-{
-    for (int x = 0; x < nx; x++) {
-        for (int y = 0; y < ny; y++) {
-            for (int z = 0; z < nz; z++) {
-                obstacles[IDX(x,y,z,nx,ny,nz)] = false;
-            }
-        }
-    }
-}
 
-/**
- * Initial velocity profile: almost zero, with a slight perturbation to trigger
- * the instability.
- */
-static void initVelocity(double* vel, size_t ny)
-{
-    for (int y = 0; y < ny; y++) {
-        vel[y] = 0; // ULB * (1 + 0.0001 * sin( y / (double)(ny-1) * 2 * M_PI) );
-    }
-}
+#define EQUILIBRIUM(rho, t, cu, usqr) __dmul_rn(__dmul_rn(rho, (t)), __dadd_rn(__dadd_rn(__dadd_rn(1, cu) , __dmul_rn(0.5, GPU_SQUARE(cu))), - usqr) )
 
-#define H_EQUILIBRIUM(rho, t, cu, usqr) ((rho) * (t) * ( 1 + (cu) + 0.5 * SQUARE(cu) - (usqr) ))
-#define D_EQUILIBRIUM(rho, t, cu, usqr) __dmul_rn(__dmul_rn(rho, (t)), __dadd_rn(__dadd_rn(__dadd_rn(1, cu) , __dmul_rn(0.5, GPU_SQUARE(cu))), - usqr) )
-
-
-__host__ static void h_equilibrium(lbm_lattices* f, int index, double rho, double u0, double u1, double u2)
-{
-    double usqr = 3./2 * ( SQUARE(u0) + SQUARE(u1) + SQUARE(u2) );
-
-    { double cu = 3 * (  u0 +  u1 ); f->ne[index] = H_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
-    { double cu = 3 * (  u0       ); f->e [index] = H_EQUILIBRIUM(rho, 1./18, cu, usqr ); } 
-    { double cu = 3 * (  u0 + -u1 ); f->se[index] = H_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
-    { double cu = 3 * (        u1 ); f->n [index] = H_EQUILIBRIUM(rho, 1./18, cu, usqr ); } 
-    { double cu = 0                ; f->c [index] = H_EQUILIBRIUM(rho, 1./3 , cu, usqr ); } 
-    { double cu = 3 * (       -u1 ); f->s [index] = H_EQUILIBRIUM(rho, 1./18, cu, usqr ); } 
-    { double cu = 3 * ( -u0 +  u1 ); f->nw[index] = H_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
-    { double cu = 3 * ( -u0       ); f->w [index] = H_EQUILIBRIUM(rho, 1./18, cu, usqr ); } 
-    { double cu = 3 * ( -u0 + -u1 ); f->sw[index] = H_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
-    { double cu = 3 * (  u0 +  u2 ); f->te[index] = H_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
-    { double cu = 3 * (  u1 +  u2 ); f->tn[index] = H_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
-    { double cu = 3 * (        u2 ); f->tc[index] = H_EQUILIBRIUM(rho, 1./18, cu, usqr ); } 
-    { double cu = 3 * ( -u1 +  u2 ); f->ts[index] = H_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
-    { double cu = 3 * ( -u0 +  u2 ); f->tw[index] = H_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
-    { double cu = 3 * (  u0 + -u2 ); f->be[index] = H_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
-    { double cu = 3 * (  u1 + -u2 ); f->bn[index] = H_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
-    { double cu = 3 * (       -u2 ); f->bc[index] = H_EQUILIBRIUM(rho, 1./18, cu, usqr ); } 
-    { double cu = 3 * ( -u1 + -u2 ); f->bs[index] = H_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
-    { double cu = 3 * ( -u0 + -u2 ); f->bw[index] = H_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
-}
-
-
-__device__ static void d_equilibrium(double* ne, double* e, double* se, double* n, double* c, double* s, double* nw, double* w, double* sw, 
+__device__ static void equilibrium(double* ne, double* e, double* se, double* n, double* c, double* s, double* nw, double* w, double* sw, 
                                      double* te, double* tn, double* tc, double* ts, double* tw,
                                      double* be, double* bn, double* bc, double* bs, double* bw,
                                      double rho, double u0, double u1, double u2)
 {
     double usqr = __dmul_rn(3./2, __dadd_rn( __dadd_rn( GPU_SQUARE(u0), GPU_SQUARE(u1)), GPU_SQUARE(u2) ));
 
-    { double cu = 3 * (  u0 +  u1 ); *ne = D_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
-    { double cu = 3 * (  u0       ); *e  = D_EQUILIBRIUM(rho, 1./18, cu, usqr ); } 
-    { double cu = 3 * (  u0 + -u1 ); *se = D_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
-    { double cu = 3 * (        u1 ); *n  = D_EQUILIBRIUM(rho, 1./18, cu, usqr ); } 
-    { double cu = 0                ; *c  = D_EQUILIBRIUM(rho, 1./3 , cu, usqr ); } 
-    { double cu = 3 * (       -u1 ); *s  = D_EQUILIBRIUM(rho, 1./18, cu, usqr ); } 
-    { double cu = 3 * ( -u0 +  u1 ); *nw = D_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
-    { double cu = 3 * ( -u0       ); *w  = D_EQUILIBRIUM(rho, 1./18, cu, usqr ); } 
-    { double cu = 3 * ( -u0 + -u1 ); *sw = D_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
-    { double cu = 3 * (  u0 +  u2 ); *te = D_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
-    { double cu = 3 * (  u1 +  u2 ); *tn = D_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
-    { double cu = 3 * (        u2 ); *tc = D_EQUILIBRIUM(rho, 1./18, cu, usqr ); } 
-    { double cu = 3 * ( -u1 +  u2 ); *ts = D_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
-    { double cu = 3 * ( -u0 +  u2 ); *tw = D_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
-    { double cu = 3 * (  u0 + -u2 ); *be = D_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
-    { double cu = 3 * (  u1 + -u2 ); *bn = D_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
-    { double cu = 3 * (       -u2 ); *bc = D_EQUILIBRIUM(rho, 1./18, cu, usqr ); } 
-    { double cu = 3 * ( -u1 + -u2 ); *bs = D_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
-    { double cu = 3 * ( -u0 + -u2 ); *bw = D_EQUILIBRIUM(rho, 1./36, cu, usqr ); } 
+    { double cu = 3 * (  u0 +  u1 ); *ne = EQUILIBRIUM(rho, 1./36, cu, usqr ); }
+    { double cu = 3 * (  u0       ); *e  = EQUILIBRIUM(rho, 1./18, cu, usqr ); }
+    { double cu = 3 * (  u0 + -u1 ); *se = EQUILIBRIUM(rho, 1./36, cu, usqr ); }
+    { double cu = 3 * (        u1 ); *n  = EQUILIBRIUM(rho, 1./18, cu, usqr ); }
+    { double cu = 0                ; *c  = EQUILIBRIUM(rho, 1./3 , cu, usqr ); }
+    { double cu = 3 * (       -u1 ); *s  = EQUILIBRIUM(rho, 1./18, cu, usqr ); }
+    { double cu = 3 * ( -u0 +  u1 ); *nw = EQUILIBRIUM(rho, 1./36, cu, usqr ); }
+    { double cu = 3 * ( -u0       ); *w  = EQUILIBRIUM(rho, 1./18, cu, usqr ); }
+    { double cu = 3 * ( -u0 + -u1 ); *sw = EQUILIBRIUM(rho, 1./36, cu, usqr ); }
+    { double cu = 3 * (  u0 +  u2 ); *te = EQUILIBRIUM(rho, 1./36, cu, usqr ); }
+    { double cu = 3 * (  u1 +  u2 ); *tn = EQUILIBRIUM(rho, 1./36, cu, usqr ); }
+    { double cu = 3 * (        u2 ); *tc = EQUILIBRIUM(rho, 1./18, cu, usqr ); }
+    { double cu = 3 * ( -u1 +  u2 ); *ts = EQUILIBRIUM(rho, 1./36, cu, usqr ); }
+    { double cu = 3 * ( -u0 +  u2 ); *tw = EQUILIBRIUM(rho, 1./36, cu, usqr ); }
+    { double cu = 3 * (  u0 + -u2 ); *be = EQUILIBRIUM(rho, 1./36, cu, usqr ); }
+    { double cu = 3 * (  u1 + -u2 ); *bn = EQUILIBRIUM(rho, 1./36, cu, usqr ); }
+    { double cu = 3 * (       -u2 ); *bc = EQUILIBRIUM(rho, 1./18, cu, usqr ); }
+    { double cu = 3 * ( -u1 + -u2 ); *bs = EQUILIBRIUM(rho, 1./36, cu, usqr ); }
+    { double cu = 3 * ( -u0 + -u2 ); *bw = EQUILIBRIUM(rho, 1./36, cu, usqr ); }
 }
 
 __device__ static void macroscopic(double ne, double e, double se, double n, double c, double s, double nw, double w, double sw,
@@ -180,10 +136,10 @@ __global__ void lbm_computation(lbm_vars d_vars, lbm_lattices f0, lbm_lattices f
                 double feq_ne, feq_e, feq_se, feq_n, feq_c, feq_s, feq_nw, feq_w, feq_sw, 
                        feq_te, feq_tn, feq_tc, feq_ts, feq_tw, 
                        feq_be, feq_bn, feq_bc, feq_bs, feq_bw;
-                d_equilibrium(&feq_ne, &feq_e, &feq_se, &feq_n, &feq_c, &feq_s, &feq_nw, &feq_w, &feq_sw, 
-                              &feq_te, &feq_tn, &feq_tc, &feq_ts, &feq_tw, 
-                              &feq_be, &feq_bn, &feq_bc, &feq_bs, &feq_bw, 
-                              rho, u0, u1, u2);       
+                equilibrium(&feq_ne, &feq_e, &feq_se, &feq_n, &feq_c, &feq_s, &feq_nw, &feq_w, &feq_sw, 
+                            &feq_te, &feq_tn, &feq_tc, &feq_ts, &feq_tw, 
+                            &feq_be, &feq_bn, &feq_bc, &feq_bs, &feq_bw, 
+                            rho, u0, u1, u2);       
 
                 if (d_vars.obstacles[IDX(x,y,z,nx,ny,nz)]) {
                     // Bounce-back condition for obstacle
@@ -311,17 +267,8 @@ __global__ void lbm_computation(lbm_vars d_vars, lbm_lattices f0, lbm_lattices f
     }
 }
 
-struct lbm_simulation{
-    lbm_vars h_vars, d_vars;
-    dim3 dimComputationGrid, dimComputationBlock;
-    dim3 dimRightWallGrid, dimRightWallBlock;
-    size_t shared_mem_size;
-    bool switch_f0_f1;
-    size_t nx, ny, nz;
-    double omega;
-};
-
-void lbm_lattices_alloc(lbm_lattices* lat, size_t nl) {
+void lbm_lattices_alloc(lbm_lattices* lat, size_t nl) 
+{
     lat->ne = (double*) malloc ( sizeof(double)*nl );
     lat->e  = (double*) malloc ( sizeof(double)*nl );
     lat->se = (double*) malloc ( sizeof(double)*nl );
@@ -343,7 +290,8 @@ void lbm_lattices_alloc(lbm_lattices* lat, size_t nl) {
     lat->bw = (double*) malloc ( sizeof(double)*nl );
 }
 
-void lbm_lattices_cuda_alloc(lbm_lattices* lat, size_t nl) {
+void lbm_lattices_cuda_alloc(lbm_lattices* lat, size_t nl) 
+{
     HANDLE_ERROR(cudaMalloc(&lat->ne, sizeof(double)*nl ));
     HANDLE_ERROR(cudaMalloc(&lat->e , sizeof(double)*nl ));
     HANDLE_ERROR(cudaMalloc(&lat->se, sizeof(double)*nl ));
@@ -365,7 +313,8 @@ void lbm_lattices_cuda_alloc(lbm_lattices* lat, size_t nl) {
     HANDLE_ERROR(cudaMalloc(&lat->bw, sizeof(double)*nl ));
 }
 
-void lbm_lattices_dealloc(lbm_lattices* lat) {
+void lbm_lattices_dealloc(lbm_lattices* lat) 
+{
     free(lat->ne);
     free(lat->e );
     free(lat->se);
@@ -387,7 +336,8 @@ void lbm_lattices_dealloc(lbm_lattices* lat) {
     free(lat->bw);
 }
 
-void lbm_lattices_cuda_dealloc(lbm_lattices* lat) {
+void lbm_lattices_cuda_dealloc(lbm_lattices* lat) 
+{
     HANDLE_ERROR(cudaFree(lat->ne));
     HANDLE_ERROR(cudaFree(lat->e ));
     HANDLE_ERROR(cudaFree(lat->se));
@@ -415,28 +365,44 @@ void lbm_u_alloc(lbm_u* u, size_t nl) {
     u->u2 = (double*) malloc( sizeof(double)*nl );
 }
 
-void lbm_u_cuda_alloc(lbm_u* u, size_t nl) {
-    HANDLE_ERROR(cudaMalloc(&u->u0, sizeof(double)*nl ));
-    HANDLE_ERROR(cudaMalloc(&u->u1, sizeof(double)*nl ));
-    HANDLE_ERROR(cudaMalloc(&u->u2, sizeof(double)*nl ));
-}
-
 void lbm_u_dealloc(lbm_u* u) {
     free(u->u0);
     free(u->u1);
     free(u->u2);
 }
 
-void lbm_u_cuda_dealloc(lbm_u* u) {
-    HANDLE_ERROR(cudaFree(u->u0));
-    HANDLE_ERROR(cudaFree(u->u1));
-    HANDLE_ERROR(cudaFree(u->u2));
+lbm_u* lbm_u_create(size_t nx, size_t ny, size_t nz)
+{
+    lbm_u* u = (lbm_u*) malloc(sizeof(lbm_u));
+    lbm_u_alloc(u, nx*ny*nz);
+    return u;
 }
+
+void lbm_u_destroy(lbm_u* u)
+{
+    lbm_u_dealloc(u);
+    free(u);
+}
+
+void lbm_u_read(lbm_simulation* lbm_sim, lbm_u* u, size_t nx, size_t ny, size_t nz)
+{
+    size_t nl = nx*ny*nz;
+    HANDLE_ERROR(cudaMemcpy(u->u0, lbm_sim->d_vars.u.u0, sizeof(double)*nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(u->u1, lbm_sim->d_vars.u.u1, sizeof(double)*nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(u->u2, lbm_sim->d_vars.u.u2, sizeof(double)*nl, cudaMemcpyDeviceToHost));
+}
+
+
+void lbm_u_cuda_alloc(lbm_u* u, size_t nl) {
+    HANDLE_ERROR(cudaMalloc(&u->u0, sizeof(double)*nl ));
+    HANDLE_ERROR(cudaMalloc(&u->u1, sizeof(double)*nl ));
+    HANDLE_ERROR(cudaMalloc(&u->u2, sizeof(double)*nl ));
+}
+
 
 void lbm_vars_alloc(lbm_vars* vars, size_t nl)
 {
     vars->obstacles = (bool*) malloc( sizeof(bool)*nl);
-    lbm_u_alloc(&vars->u, nl);
     lbm_lattices_alloc(&vars->f0, nl);
     lbm_lattices_alloc(&vars->f1, nl);
 }
@@ -444,28 +410,25 @@ void lbm_vars_alloc(lbm_vars* vars, size_t nl)
 void lbm_vars_cuda_alloc(lbm_vars* vars, size_t nl)
 {
     HANDLE_ERROR(cudaMalloc(&vars->obstacles, sizeof(bool)*nl));
-    lbm_u_cuda_alloc(&vars->u, nl);
     lbm_lattices_cuda_alloc(&vars->f0, nl);
     lbm_lattices_cuda_alloc(&vars->f1, nl);
+    lbm_u_cuda_alloc(&vars->u, nl);
 }
 
 void lbm_vars_dealloc(lbm_vars* vars)
 {
     free(vars->obstacles);
-    lbm_u_dealloc(&vars->u);
     lbm_lattices_dealloc(&vars->f0);
     lbm_lattices_dealloc(&vars->f1);
+    lbm_u_dealloc(&vars->u);
 }
 
 void lbm_vars_cuda_dealloc(lbm_vars* vars)
 {
     HANDLE_ERROR(cudaFree(vars->obstacles));
-    lbm_u_cuda_dealloc(&vars->u);
     lbm_lattices_cuda_dealloc(&vars->f0);
     lbm_lattices_cuda_dealloc(&vars->f1);
 }
-
-void lbm_lattices_write(lbm_lattices* d_lat, lbm_lattices* h_lat, size_t nl);
 
 lbm_simulation* lbm_simulation_create(size_t nx, size_t ny, size_t nz, double omega)
 {
@@ -475,28 +438,13 @@ lbm_simulation* lbm_simulation_create(size_t nx, size_t ny, size_t nz, double om
     lbm_sim->ny = ny;
     lbm_sim->nz = nz;
     lbm_sim->omega = omega;
-   
-    lbm_vars_alloc(&lbm_sim->h_vars, nl);
-    initObstacles(lbm_sim->h_vars.obstacles, nx, ny, nz);
-
-    double vel[ny];
-    initVelocity(vel, ny);
-    
+           
     // Initialization of the populations at equilibrium with the given velocity.
     lbm_sim->switch_f0_f1 = false;
-    for (int z = 0; z < nz; z++) {
-        for (int y = 0; y < ny; y++) {
-            for (int x = 0; x < nx; x++) {
-                double rho = x == nx/2 && y == ny/2 && z == nz/2 ? 2.0 : 1.0;
-                h_equilibrium(&lbm_sim->h_vars.f0, IDX(x,y,z,nx,ny,nz), rho, vel[y], 0, -vel[y]);
-            }
-        }
-    }
 
     lbm_vars_cuda_alloc(&lbm_sim->d_vars, nl);
 
-    lbm_lattices_write(lbm_sim, &lbm_sim->h_vars.f0, nl);
-    HANDLE_ERROR(cudaMemcpy(lbm_sim->d_vars.obstacles, lbm_sim->h_vars.obstacles, sizeof(bool)*nl, cudaMemcpyHostToDevice));
+//    HANDLE_ERROR(cudaMemcpy(lbm_sim->d_vars.obstacles, lbm_sim->h_vars.obstacles, sizeof(bool)*nl, cudaMemcpyHostToDevice));
 
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, 0);
@@ -513,16 +461,15 @@ lbm_simulation* lbm_simulation_create(size_t nx, size_t ny, size_t nz, double om
 
     lbm_sim->shared_mem_size = 6 * sizeof(double) * BLOCK_SIZE;
 
-
     return lbm_sim;
 }
 
 void lbm_simulation_destroy(lbm_simulation* lbm_sim)
 {
-    lbm_vars_dealloc(&lbm_sim->h_vars);
     lbm_vars_cuda_dealloc(&lbm_sim->d_vars);
     free(lbm_sim);
 }
+
 void lbm_simulation_update(lbm_simulation* lbm_sim)
 {
     if (lbm_sim->switch_f0_f1) {
@@ -532,6 +479,31 @@ void lbm_simulation_update(lbm_simulation* lbm_sim)
     }
 
     lbm_sim->switch_f0_f1 = ! lbm_sim->switch_f0_f1;
+}
+
+void lbm_lattices_write(lbm_simulation* lbm_sim, lbm_lattices* h_lat, size_t nl)
+{
+    lbm_lattices* d_lat = lbm_sim->switch_f0_f1 ? &lbm_sim->d_vars.f1 : &lbm_sim->d_vars.f0;
+
+    HANDLE_ERROR(cudaMemcpy(d_lat->ne, h_lat->ne, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->e , h_lat->e , sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->se, h_lat->se, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->n , h_lat->n , sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->c , h_lat->c , sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->s , h_lat->s , sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->nw, h_lat->nw, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->w , h_lat->w , sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->sw, h_lat->sw, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->te, h_lat->te, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->tn, h_lat->tn, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->tc, h_lat->tc, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->ts, h_lat->ts, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->tw, h_lat->tw, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->be, h_lat->be, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->bn, h_lat->bn, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->bc, h_lat->bc, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->bs, h_lat->bs, sizeof(double)*nl, cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_lat->bw, h_lat->bw, sizeof(double)*nl, cudaMemcpyHostToDevice));
 }
 
 void lbm_lattices_read(lbm_simulation* lbm_sim, lbm_lattices* h_lat)
@@ -561,40 +533,6 @@ void lbm_lattices_read(lbm_simulation* lbm_sim, lbm_lattices* h_lat)
     HANDLE_ERROR(cudaMemcpy(h_lat->bw, d_lat->bw, sizeof(double)*nl, cudaMemcpyDeviceToHost));
 }
 
-void lbm_lattices_write(lbm_simulation* lbm_sim, lbm_lattices* h_lat, size_t nl)
-{
-    lbm_lattices* d_lat = lbm_sim->switch_f0_f1 ? &lbm_sim->d_vars.f1 : &lbm_sim->d_vars.f0;
-
-    HANDLE_ERROR(cudaMemcpy(d_lat->ne, h_lat->ne, sizeof(double)*nl, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(d_lat->e , h_lat->e , sizeof(double)*nl, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(d_lat->se, h_lat->se, sizeof(double)*nl, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(d_lat->n , h_lat->n , sizeof(double)*nl, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(d_lat->c , h_lat->c , sizeof(double)*nl, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(d_lat->s , h_lat->s , sizeof(double)*nl, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(d_lat->nw, h_lat->nw, sizeof(double)*nl, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(d_lat->w , h_lat->w , sizeof(double)*nl, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(d_lat->sw, h_lat->sw, sizeof(double)*nl, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(d_lat->te, h_lat->te, sizeof(double)*nl, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(d_lat->tn, h_lat->tn, sizeof(double)*nl, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(d_lat->tc, h_lat->tc, sizeof(double)*nl, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(d_lat->ts, h_lat->ts, sizeof(double)*nl, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(d_lat->tw, h_lat->tw, sizeof(double)*nl, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(d_lat->be, h_lat->be, sizeof(double)*nl, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(d_lat->bn, h_lat->bn, sizeof(double)*nl, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(d_lat->bc, h_lat->bc, sizeof(double)*nl, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(d_lat->bs, h_lat->bs, sizeof(double)*nl, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(d_lat->bw, h_lat->bw, sizeof(double)*nl, cudaMemcpyHostToDevice));
-}
-
-
-void lbm_u_read(lbm_simulation* lbm_sim, lbm_u* u, size_t nx, size_t ny, size_t nz)
-{
-    size_t nl = nx*ny*nz;
-    HANDLE_ERROR(cudaMemcpy(u->u0, lbm_sim->d_vars.u.u0, sizeof(double)*nl, cudaMemcpyDeviceToHost));
-    HANDLE_ERROR(cudaMemcpy(u->u1, lbm_sim->d_vars.u.u1, sizeof(double)*nl, cudaMemcpyDeviceToHost));
-    HANDLE_ERROR(cudaMemcpy(u->u2, lbm_sim->d_vars.u.u2, sizeof(double)*nl, cudaMemcpyDeviceToHost));
-}
-
 lbm_lattices* lbm_lattices_create(size_t nl)
 {
     lbm_lattices* lat = (lbm_lattices*) malloc(sizeof(lbm_lattices));
@@ -608,15 +546,4 @@ void lbm_lattices_destroy(lbm_lattices* lat)
     free(lat);
 }
 
-lbm_u* lbm_u_create(size_t nx, size_t ny, size_t nz)
-{
-    lbm_u* u = (lbm_u*) malloc(sizeof(lbm_u));
-    lbm_u_alloc(u, nx*ny*nz);
-    return u;
-}
 
-void lbm_u_destroy(lbm_u* u)
-{
-    lbm_u_dealloc(u);
-    free(u);
-}

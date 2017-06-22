@@ -1,14 +1,16 @@
 /*!
- * \file    lbmcuda.h
- * \brief   LBM cuda library
+ * \file    lbm.h
+ * \brief   Functions requierd by the lbmmain library to work properly.
  * \author  Adrien Python
- * \version 1.0
- * \date    14.06.2016
+ * \date    10.05.2017
  */
 
-#ifndef LBMCUDA_H
-#define LBMCUDA_H
+#ifndef LBM_SIMULATION
+#define LBM_SIMULATION
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
 #define IDX(x, y, z, nx, ny, nz) ((x+(nx))%(nx) + ((y+(ny))%(ny) + ( (z+(nz))%(nz) )*(ny))*(nx) )
 
@@ -37,23 +39,33 @@ typedef struct {
     double* bw;  // [-1, 0, -1]   1./36
 } lbm_lattices;
 
-typedef struct lbm_simulation lbm_simulation; 
+typedef struct {
+    double* u0;
+    double* u1;
+    double* u2;
+} lbm_u;
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+typedef struct lbm_simulation lbm_simulation;
 
-lbm_simulation* lbm_simulation_create(size_t nx, size_t ny, size_t nz, double omega);
+typedef struct lbm_lattice {
+    double ne, e, se, n, c, s, nw, w, sw, te, tn, tc, ts, tw, be, bn, bc, bs, bw;
+} lbm_lattice;
+
+lbm_simulation* lbm_simulation_create(size_t width, size_t height, size_t depth, double omega);
 void lbm_simulation_destroy(lbm_simulation* lbm_sim);
 void lbm_simulation_update(lbm_simulation* lbm_sim);
 
-lbm_lattices* lbm_lattices_create(size_t nl);
+lbm_lattices* lbm_lattices_create(size_t size);
 void lbm_lattices_destroy(lbm_lattices* lat);
+void lbm_lattices_read(lbm_simulation* lbm_sim, lbm_lattices* lat);
 void lbm_lattices_write(lbm_simulation* lbm_sim, lbm_lattices* h_lat, size_t nl);
-void lbm_lattices_read(lbm_simulation* lbm_sim, lbm_lattices* h_lat);
-    
+
+lbm_u* lbm_u_create(size_t width, size_t height, size_t depth);
+void lbm_u_destroy(lbm_u* u);
+void lbm_u_read(lbm_simulation* lbm_sim, lbm_u* u, size_t width, size_t height, size_t depth);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif /* LBMCUDA_H */
+#endif /* LBM_SIMULATION */
