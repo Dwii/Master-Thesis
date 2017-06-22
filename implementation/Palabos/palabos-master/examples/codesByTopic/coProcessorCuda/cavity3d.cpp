@@ -76,17 +76,17 @@ void writeGifs(BlockLatticeT& lattice,
     Box3D slice(0, nx-1, 0, ny-1, nz/2, nz/2);
     ImageWriter<T> imageWriter("leeloo");
 
-    imageWriter.writeScaledGif( createFileName("uz", iter, 6),
-                                *computeVelocityComponent (lattice, slice, zComponent),
-                                imSize, imSize );
+    //imageWriter.writeScaledGif( createFileName("uz", iter, 6),
+    //                            *computeVelocityComponent (lattice, slice, zComponent),
+    //                            imSize, imSize );
 
     imageWriter.writeScaledGif( createFileName("uNorm", iter, 6),
                                 *computeVelocityNorm (lattice, slice),
                                 imSize, imSize );
-    imageWriter.writeScaledGif( createFileName("omega", iter, 6),
-                                *computeNorm(*computeVorticity (
-                                        *computeVelocity(lattice) ), slice ),
-                                imSize, imSize );
+    //imageWriter.writeScaledGif( createFileName("omega", iter, 6),
+    //                            *computeNorm(*computeVorticity (
+    //                                    *computeVelocity(lattice) ), slice ),
+    //                            imSize, imSize );
 }
 
 template<class BlockLatticeT>
