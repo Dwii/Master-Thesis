@@ -174,6 +174,8 @@ int main(int argc, char* argv[]) {
     // contains no boundary area (i.e. only pure BGK), will then be off-loaded to
     // the co-processor.
     
+    pcout << "Taille du domaine: "
+          << parameters.getNx() << " x " << parameters.getNy() << " x " << parameters.getNz() << std::endl;
     // Here the 5x5x5 cover-up is instantiated.
     plint numBlocksX = 3;
     plint numBlocksY = 3;

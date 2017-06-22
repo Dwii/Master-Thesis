@@ -114,9 +114,21 @@ void initiateCoProcessors( MultiBlockLattice3D<T,Descriptor>& lattice,
             global::defaultCoProcessor3D<T>().addDomain (
                     domain.getNx(), domain.getNy(), domain.getNz(), omega, handle );
             coprocessors.insert(std::pair<plint,int>(blockId, handle));
+            if (printInfo) {
+                pcout << "Le domaine suivant est execute par l accelerateur: ("
+                      << domain.x0 << ", " << domain.x1 << "; "
+                      << domain.y0 << ", " << domain.y1 << "; "
+                      << domain.z0 << ", " << domain.z1 << ")" << std::endl;
+            }
         }
         else {
+            SmartBulk3D smartBulk(management, blockId);
+            Box3D domain(smartBulk.computeEnvelope());
             coprocessors.insert(std::pair<plint,int>(blockId, -1));
+            pcout << "Le domaine suivant est execute par Palabos: ("
+                  << domain.x0 << ", " << domain.x1 << "; "
+                  << domain.y0 << ", " << domain.y1 << "; "
+                  << domain.z0 << ", " << domain.z1 << ")" << std::endl;
         }
     }
     lattice.setCoProcessors(coprocessors);
