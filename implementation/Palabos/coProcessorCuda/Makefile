@@ -15,7 +15,7 @@
 #                optimFlags   = -O -finline-functions
 
 # Leading directory of the Palabos source code
-palabosRoot  = ../../..
+palabosRoot  = ../palabos-master
 # Name of source files in current directory to compile and link with Palabos
 projectFiles = cavity3d.cpp
 
@@ -37,9 +37,9 @@ usePOSIX     = true
 # Path to external source files (other than Palabos)
 srcPaths =
 # Path to external libraries (other than Palabos)
-libraryPaths = ../../../../lbmcuda
+libraryPaths = ../lbmcuda
 # Path to inlude directories (other than Palabos)
-includePaths = ../../../../lbmcuda
+includePaths = ../lbmcuda
 # Dynamic and static libraries (other than Palabos)
 libraries    = -llbmcuda
 
