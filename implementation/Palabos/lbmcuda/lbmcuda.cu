@@ -314,7 +314,6 @@ __global__ void lbm_computation(lbm_vars d_vars, lbm_lattices f0, lbm_lattices f
 struct lbm_simulation{
     lbm_vars h_vars, d_vars;
     dim3 dimComputationGrid, dimComputationBlock;
-    dim3 dimRightWallGrid, dimRightWallBlock;
     size_t shared_mem_size;
     bool switch_f0_f1;
     size_t nx, ny, nz;
@@ -506,10 +505,6 @@ lbm_simulation* lbm_simulation_create(size_t nx, size_t ny, size_t nz, double om
     lbm_sim->dimComputationGrid = dimComputationGrid;
     lbm_sim->dimComputationBlock = dimComputationBlock;
 
-    dim3 dimRightWallGrid(1, min((unsigned long)ny, (unsigned long)prop.maxGridSize[1]));
-    dim3 dimRightWallBlock(1);
-    lbm_sim->dimRightWallGrid = dimRightWallGrid;
-    lbm_sim->dimRightWallBlock = dimRightWallBlock;
 
     lbm_sim->shared_mem_size = 6 * sizeof(double) * BLOCK_SIZE;
 
