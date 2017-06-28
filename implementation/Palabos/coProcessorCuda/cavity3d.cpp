@@ -71,7 +71,7 @@ void writeGifs(BlockLatticeT& lattice,
     const plint nx = parameters.getNx();
     const plint ny = parameters.getNy();
     const plint nz = parameters.getNz();
-    const plint zComponent = 2;
+    //const plint zComponent = 2;
 
     Box3D slice(0, nx-1, 0, ny-1, nz/2, nz/2);
     ImageWriter<T> imageWriter("leeloo");
