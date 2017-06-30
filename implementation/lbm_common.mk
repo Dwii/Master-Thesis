@@ -13,11 +13,17 @@ define execute
 	[[ "$$timing" == "" ]] && timing=/dev/null; \
 	export DYLD_LIBRARY_PATH=$$DYLD_LIBRARY_PATH$(subst $(space):,:,$(addprefix :,$(1))); \
 	start=$$(date +%s); \
-	echo $$(eval $(2)) | sed -n 's/.*average lups: \(.*\).*/\1/p' > $$timing; \
+	echo $$(eval "$(2) | tee $(STD_FILE)" ) | sed -n 's/.*average lups: \(.*\).*/\1/p' > $$timing; \
 	end=$$(date +%s); \
 	T=$$(($$end-$$start)); \
 	printf "$$T" >> $$timing;
 endef
+
+# Rule .stdout: set STD_FILE as the standard output for execute
+.stdout: ;@:
+	$(eval STD_FILE=/dev/tty)
+
+.PHONY: .stdout
 
 # Binary arguments
 ITER=200000
