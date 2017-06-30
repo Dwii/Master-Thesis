@@ -60,10 +60,12 @@ output: all $(OUTDIR)
 	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
 	$(MAKE) outcpu outgpu -j 2 INTERVAL=$(INTERVAL)
 
-outcpu: 
+outcpu: all $(OUTDIR)
+	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
 	$(call execute, $(LIBDEP), "$(BINDIR)/$(CPUBIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(CPUPRE) -L", $(OUTDIR)/$(CPUPRE)$(ITER).timing)
 
-outgpu: 
+outgpu: all $(OUTDIR)
+	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
 	$(call execute, $(LIBDEP), "$(BINDIR)/$(GPUBIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(GPUPRE) -L", $(OUTDIR)/$(GPUPRE)$(ITER).timing)
 
 deltas: all $(OUTDIR)
