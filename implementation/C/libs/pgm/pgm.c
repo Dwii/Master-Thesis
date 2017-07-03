@@ -16,6 +16,7 @@
 
 #define IS_BETWEEN(n,min,max) ((n) >= (min) && (n) <= (max))
 
+#define PGM_TYPE_LEN 2
 #define PGM_TYPE "P2"
 #define EMPTY_COLOR 255
 
@@ -162,7 +163,7 @@ static void pgm_fill_holes(pgm_image* pgm, bool **filled)
 pgm_image* pgm_load(char* filename)
 {
     size_t len = 0;
-    char type[2], *comment = NULL;
+    char type[PGM_TYPE_LEN], *comment = NULL;
     
     FILE* fid = fopen(filename, "r");
 	
@@ -170,8 +171,8 @@ pgm_image* pgm_load(char* filename)
     
     pgm_image* pgm = malloc(sizeof(pgm_image));
 
-    if ( fread(type, sizeof(char), 3, fid) != 3)    goto load_type_error;
-    if ( strncmp(PGM_TYPE, type, 2) != 0)           goto file_type_error;
+    if ( fread(type, sizeof(char), PGM_TYPE_LEN, fid) != PGM_TYPE_LEN)    goto load_type_error;
+    if ( strncmp(PGM_TYPE, type, PGM_TYPE_LEN) != 0)                      goto file_type_error;
     if ( getline(&comment, &len, fid) == -1)        goto load_comment_error;
     if ( fscanf(fid, "%lu", &pgm->width) != 1)      goto load_size_error;
     if ( fscanf(fid, "%lu", &pgm->height) != 1)     goto load_size_error;
