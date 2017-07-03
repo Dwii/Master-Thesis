@@ -34,10 +34,10 @@ $(OBJDIR):
 -include $(OBJS:.o=.d)
 	
 $(OBJS): $(SRCS)
-	$(CC) -MMD $(CFLAGS) -o $@ -c $< $(INCS)
+	$(CC) -MMD $(CFLAGS) -fPIC -o $@ -c $< $(INCS)
 
 $(BIN): $(OBJS)
-	$(CC) $(FLAGS) -fPIC -shared $^ -o $@ $(LIBS) $(INCS) -Wl,-undefined,dynamic_lookup
+	$(CC) $(CFLAGS) -fPIC -shared $^ -o $@ $(LIBS) $(INCS) -Wl,-undefined,dynamic_lookup
 
 clean:
 	rm -rf $(OBJDIR) $(BIN)
