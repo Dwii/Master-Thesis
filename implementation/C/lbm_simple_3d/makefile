@@ -51,7 +51,7 @@ $(OBJDIR) $(BINDIR) $(OUTDIR):
 	mkdir -p $@
 
 $(BINDIR)/$(BIN): $(OBJS)
-	$(CC) $(CFLAGS) $< -o $@ $(LIBS) -L/Users/Dwii/Desktop -Wl,-rpath /Users/Dwii/Desktop
+	$(CC) $(CFLAGS) $< -o $@ $(LIBS)
 
 -include $(OBJS:.o=.d)
 
