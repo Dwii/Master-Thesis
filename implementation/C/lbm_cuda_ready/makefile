@@ -27,7 +27,7 @@ OBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.c=.o)))
 CFLAGS=-g -Wall -Wextra -pedantic -std=gnu99 -O3
 
 # Non-standard libraries
-LIBNAM=pgm array timing
+LIBNAM=pgm timing
 LIBDEP=$(addprefix $(LIBDIR)/,$(LIBNAM))
 INCS=$(addprefix -I,$(LIBDEP))
 LIBS=$(addprefix -L,$(LIBDEP)) $(addprefix -l,$(LIBNAM))

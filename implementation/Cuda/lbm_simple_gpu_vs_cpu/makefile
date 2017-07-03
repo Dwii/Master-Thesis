@@ -34,7 +34,7 @@ OBJS= $(GPUOBJS) $(CPUOBJS)
 NVCC_FLAGS=-Wno-deprecated-gpu-targets -O3
 
 # Non-standard libraries
-LIBNAM=pgm array timing
+LIBNAM=pgm timing
 LIBDEP=$(addprefix $(LIBDIR)/,$(LIBNAM))
 INCS=$(addprefix -I,$(LIBDEP))
 LIBS=$(addprefix -L,$(LIBDEP)) $(addprefix -l,$(LIBNAM))

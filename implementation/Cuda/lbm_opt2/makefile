@@ -28,7 +28,7 @@ CFLAGS=-g -Wall -Wextra -pedantic -O3
 NVCC_FLAGS=-Wno-deprecated-gpu-targets -O3 --ptxas-options=-v
 
 # Non-standard libraries and headers
-LIBNAM=pgm array timing lbmmain
+LIBNAM=pgm timing lbmmain
 LIBDEP=$(addprefix $(LIBDIR)/,$(LIBNAM))
 INCS=$(addprefix -I,$(LIBDEP))
 LIBS=$(addprefix -L,$(LIBDEP)) $(addprefix -l,$(LIBNAM))
