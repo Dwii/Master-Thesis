@@ -5,7 +5,10 @@
  * \date    10.05.2017
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include <math.h>
 #include <stdbool.h>
 #include <libgen.h>
