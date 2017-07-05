@@ -45,16 +45,15 @@ run: images
 
 images: all $(OUTDIR)
 	$(eval INTERVAL ?= $(DEFAULT_IMG_INTERVAL))
-	echo "$(BINDIR)/$(BIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -x $(NX) -y $(NY) -z $(NZ)"
-	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -x $(NX) -y $(NY) -z $(NZ)" )
+	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -x $(NX) -y $(NY) -z $(NZ) $(BINARGS)" )
 
 output: all $(OUTDIR) 
 	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
-	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -L -x $(NX) -y $(NY) -z $(NZ)", $(OUTDIR)/$(OUTPRE)$(ITER).timing)
+	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -x $(NX) -y $(NY) -z $(NZ) -L $(BINARGS)", $(OUTDIR)/$(OUTPRE)$(ITER).timing)
 
 outpal: all $(OUTDIR) 
 	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
-	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) -F -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -x $(NX) -y $(NY) -z $(NZ)")
+	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) -F -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -x $(NX) -y $(NY) -z $(NZ) $(BINARGS)")
 
 $(OBJDIR) $(BINDIR) $(OUTDIR): 
 	mkdir -p $@

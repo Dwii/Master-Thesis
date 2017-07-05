@@ -54,7 +54,7 @@ run: images
 
 images: all $(OUTDIR)
 	$(eval INTERVAL ?= $(DEFAULT_IMG_INTERVAL))
-	$(call execute, $(LIBDEP), "$(BINDIR)/$(CPUBIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE)")
+	$(call execute, $(LIBDEP), "$(BINDIR)/$(CPUBIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) $(BINARGS)")
 
 output: all $(OUTDIR) 
 	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
@@ -62,11 +62,11 @@ output: all $(OUTDIR)
 
 outcpu: all $(OUTDIR)
 	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
-	$(call execute, $(LIBDEP), "$(BINDIR)/$(CPUBIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(CPUPRE) -L", $(OUTDIR)/$(CPUPRE)$(ITER).timing)
+	$(call execute, $(LIBDEP), "$(BINDIR)/$(CPUBIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(CPUPRE) -L $(BINARGS)", $(OUTDIR)/$(CPUPRE)$(ITER).timing)
 
 outgpu: all $(OUTDIR)
 	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
-	$(call execute, $(LIBDEP), "$(BINDIR)/$(GPUBIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(GPUPRE) -L", $(OUTDIR)/$(GPUPRE)$(ITER).timing)
+	$(call execute, $(LIBDEP), "$(BINDIR)/$(GPUBIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(GPUPRE) -L $(BINARGS)", $(OUTDIR)/$(GPUPRE)$(ITER).timing)
 
 deltas: all $(OUTDIR)
 	$(eval INTERVAL ?= 1)
