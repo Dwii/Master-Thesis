@@ -367,6 +367,7 @@ int main(int argc, char * const argv[])
             if ( print_lups ) {
                 size_t iter_diff = out_interval? out_interval : (size_t)max_iter;
                 printf("lups: %.2f\n", get_lups(NX*NY, iter_diff, time_diff));
+                fflush(stdout);
             }
 
             HANDLE_ERROR(cudaMemcpy(h_vars, d_vars, sizeof(lbm_vars), cudaMemcpyDeviceToHost));
