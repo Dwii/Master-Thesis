@@ -5,8 +5,8 @@ space=$(noop) $(noop)
 # Description: Export list of libraries path, execute command and store the 
 #              execution time and LUPS of a LBM simulation if a timing file 
 #              path is provided.
-# Argument $1: LBM simulation command (in a string) to execute
-# Argument $2: File where the timing and lups are stored
+# Argument $1: Dynamic libraries paths (separated by spaces)
+# Argument $2: LBM simulation command (in a string) to execute
 # Argument $3: (optional) timing file path
 define execute
 	@timing=$$(echo "$(3)" | xargs); \
