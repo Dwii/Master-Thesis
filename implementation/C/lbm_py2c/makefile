@@ -16,9 +16,6 @@ LIBDIR=../libs
 # Binary default arguments
 OUTPRE=lbm_
 
-DEFAULT_IMG_INTERVAL=100
-DEFAULT_OUT_INTERVAL=0
-
 # Source and object files
 SRCS=$(wildcard $(SRCDIR)/*.c)
 OBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.c=.o)))
@@ -37,15 +34,19 @@ LIBS+=-lm
 
 all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(BIN)
 
-run: images
+# Targets addition arguments
+images: TRGTARGS=-p
+output: TRGTARGS=-f -L
 
-images: all $(OUTDIR)
-	$(eval INTERVAL ?= $(DEFAULT_IMG_INTERVAL))
-	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) $(BINARGS)")
+# Targets defaut intervals
+run output: INTERVAL?=0
+images: INTERVAL?=100
 
-output: all $(OUTDIR) 
-	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
-	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -L $(BINARGS)", $(OUTDIR)/$(OUTPRE)$(ITER).timing)
+# Targets timing file path (left unset if not required)
+output: TIMING=$(OUTDIR)/$(OUTPRE)$(ITER).timing
+
+run images output: all $(OUTDIR)
+	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) $(TRGTARGS) -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) $(BINARGS)", $(TIMING))
 
 $(OBJDIR) $(BINDIR) $(OUTDIR): 
 	mkdir -p $@

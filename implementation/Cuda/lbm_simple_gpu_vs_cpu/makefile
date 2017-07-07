@@ -21,9 +21,6 @@ OUTPRE=lbm_
 GPUPRE=gpu_$(OUTPRE)
 CPUPRE=cpu_$(OUTPRE)
 
-DEFAULT_IMG_INTERVAL=100
-DEFAULT_OUT_INTERVAL=0
-
 # Source and object files
 SRCS=$(wildcard $(SRCDIR)/*.cu)
 GPUOBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.cu=_gpu.o)))
@@ -50,27 +47,33 @@ OUT_SIZE=44226000
 
 all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(GPUBIN) $(BINDIR)/$(CPUBIN)
 
-run: images
+# Targets addition arguments
+images: TRGTARGS=-p
+outcpu outgpu: TRGTARGS=-f -L
 
-images: all $(OUTDIR)
-	$(eval INTERVAL ?= $(DEFAULT_IMG_INTERVAL))
-	$(call execute, $(LIBDEP), "$(BINDIR)/$(CPUBIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) $(BINARGS)")
+# Targets defaut intervals
+run output outcpu outgpu: INTERVAL?=0
+images: INTERVAL?=100
+deltas: INTERVAL?=1
 
-output: all $(OUTDIR) 
-	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
+# Targets timing file path (left unset if not required)
+outcpu: TIMING?=$(OUTDIR)/$(CPUPRE)$(ITER).timing
+outgpu: TIMING?=$(OUTDIR)/$(GPUPRE)$(ITER).timing
+
+# Targets binary and prefix path
+BIN=$(CPUBIN)
+XPUPRE=$(CPUPRE)
+outgpu: BIN=$(GPUBIN)
+outgpu: XPUPRE=$(GPUPRE)
+
+output: all $(OUTDIR)
 	$(MAKE) outcpu outgpu -j 2 INTERVAL=$(INTERVAL)
 
-outcpu: all $(OUTDIR)
-	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
-	$(call execute, $(LIBDEP), "$(BINDIR)/$(CPUBIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(CPUPRE) -L $(BINARGS)", $(OUTDIR)/$(CPUPRE)$(ITER).timing)
-
-outgpu: all $(OUTDIR)
-	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
-	$(call execute, $(LIBDEP), "$(BINDIR)/$(GPUBIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(GPUPRE) -L $(BINARGS)", $(OUTDIR)/$(GPUPRE)$(ITER).timing)
-
 deltas: all $(OUTDIR)
-	$(eval INTERVAL ?= 1)
-	$(MAKE) outcpu outgpu outdlt -j 3 INTERVAL=$(INTERVAL)
+	$(MAKE) outcpu outgpu outdlt -j 3 INTERVAL=$(INTERVAL) TIMING=/dev/null
+
+run images outcpu outgpu: all $(OUTDIR)
+	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) $(TRGTARGS) -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(XPUPRE) $(BINARGS)", $(TIMING))
 
 outdlt: $(DLT_FILE) $(DLT_ITERS)
 

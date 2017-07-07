@@ -19,9 +19,6 @@ NX=100
 NY=100
 NZ=10
 
-DEFAULT_IMG_INTERVAL=100
-DEFAULT_OUT_INTERVAL=0
-
 # Source and object files
 SRCS=$(wildcard $(SRCDIR)/*.cu)
 OBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.cu=.o)))
@@ -43,19 +40,20 @@ LIBS+=-lm
 
 all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(BIN)
 
-run: images
+# Targets addition arguments
+images: TRGTARGS=-p
+output: TRGTARGS=-f -L
+outpal: TRGTARGS=-F
 
-images: all $(OUTDIR)
-	$(eval INTERVAL ?= $(DEFAULT_IMG_INTERVAL))
-	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -x $(NX) -y $(NY) -z $(NZ) $(BINARGS)" )
+# Targets defaut intervals
+run output outpal: INTERVAL?=0
+images: INTERVAL?=100
 
-output: all $(OUTDIR) 
-	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
-	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -x $(NX) -y $(NY) -z $(NZ) -L $(BINARGS)", $(OUTDIR)/$(OUTPRE)$(ITER).timing)
+# Targets timing file path (left unset if not required)
+output: TIMING=$(OUTDIR)/$(OUTPRE)$(ITER).timing
 
-outpal: all $(OUTDIR) 
-	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
-	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) -F -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -x $(NX) -y $(NY) -z $(NZ) $(BINARGS)")
+run images output outpal: all $(OUTDIR)
+	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) $(TRGTARGS) -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -x $(NX) -y $(NY) -z $(NZ) $(BINARGS)", $(TIMING))
 
 $(OBJDIR) $(BINDIR) $(OUTDIR): 
 	mkdir -p $@

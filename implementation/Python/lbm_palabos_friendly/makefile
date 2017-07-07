@@ -12,18 +12,22 @@ SCRIPT=lbmFlowAroundCylinder.py
 # Script default arguments
 OUTPRE=lbm_
 
-DEFAULT_IMG_INTERVAL=100
-DEFAULT_OUT_INTERVAL=0
+all: images
 
-run: images
+# Targets addition arguments
+run:    TRGTARGS=NONE
+images: TRGTARGS=IMG
+output: TRGTARGS=OUT
 
-images: $(OUTDIR)
-	$(eval INTERVAL ?= $(DEFAULT_IMG_INTERVAL))
-	$(PY) $(SRCDIR)/$(SCRIPT) IMG $(ITER) $(INTERVAL) $(OUTDIR) $(OUTPRE)
+# Targets defaut intervals
+run output: INTERVAL?=0
+images:     INTERVAL?=100
 
-output: $(OUTDIR) 
-	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
-	$(call execute,, "$(PY) $(SRCDIR)/$(SCRIPT) OUT $(ITER) $(INTERVAL) $(OUTDIR) $(OUTPRE)", $(OUTDIR)/$(OUTPRE)$(ITER).timing)
+# Targets timing file path (left unset if not required)
+output: TIMING=$(OUTDIR)/$(OUTPRE)$(ITER).timing
+
+run images output: $(OUTDIR)
+	$(call execute,, "$(PY) $(SRCDIR)/$(SCRIPT) $(TRGTARGS) $(ITER) $(INTERVAL) $(OUTDIR) $(OUTPRE)", $(TIMING))
 
 $(OUTDIR):
 	mkdir -p $@
