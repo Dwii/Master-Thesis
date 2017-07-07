@@ -167,9 +167,16 @@ __device__ static void macroscopic(double ne, double e, double se, double n, dou
                                    double* rho, double* u0, double* u1, double* u2)
 {   
     *rho = ne + e  + se + n  + c  + s  + nw + w  + sw + te + tn + tc + ts + tw + be + bn + bc + bs + bw;
+#ifndef PALABOS_COMPATIBLE
+    double one_over_rho = 1. / *rho;
+    *u0 = (ne + e  + se - nw - w  - sw + te - tw + be - bw) * one_over_rho;
+    *u1 = (ne - se + n  - s  + nw - sw + tn - ts + bn - bs) * one_over_rho;
+    *u2 = (te + tn + tc + ts + tw - be - bn - bc - bs - bw) * one_over_rho;
+#else
     *u0 = (ne + e  + se - nw - w  - sw + te - tw + be - bw) / *rho;
     *u1 = (ne - se + n  - s  + nw - sw + tn - ts + bn - bs) / *rho;
     *u2 = (te + tn + tc + ts + tw - be - bn - bc - bs - bw) / *rho;
+#endif
 }
 
 __global__ void lbm_computation(lbm_vars d_vars, lbm_lattices f0, lbm_lattices f1, size_t nx, size_t ny, size_t nz)
