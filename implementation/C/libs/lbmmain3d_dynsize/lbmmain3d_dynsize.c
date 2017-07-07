@@ -140,7 +140,7 @@ int main(int argc, char * const argv[])
     }
 
     // check that execution mode is set (output images or fin values)
-    if (max_iter < 1 && width > 0 && height > 0 && depth > 0) {
+    if (max_iter < 1 || width <= 0 || height <= 0 || depth <= 0) {
     usage:
         fprintf(stderr, "usage: %s (-p | -f | -F) -i <iter> [-I <out_interval>] [-o <out_dir>] [-O <out_prefix>] [-l] [-L] -x <nx> -y <ny> -z <nz>\n", basename((char*)argv[0]));
         fprintf(stderr, "  -p : output pictures\n");
