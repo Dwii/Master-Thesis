@@ -27,8 +27,10 @@ SRCS=$(wildcard $(SRCDIR)/*.cu)
 OBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.cu=.o)))
 
 # Flags
+OPT_FLAG=-DPALABOS_COMPATIBLE
 CFLAGS=-g -Wall -Wextra -pedantic -O3
-NVCC_FLAGS=-Wno-deprecated-gpu-targets -O3 --ptxas-options=-v
+NVCC_FLAGS=-Wno-deprecated-gpu-targets -O3 --ptxas-options=-v $(OPT_FLAG)
+
 
 # Non-standard libraries and headers
 LIBNAM=pgm timing lbmmain3d_dynsize
@@ -71,5 +73,8 @@ clean:
 	rm -rf $(OBJDIR) $(BINDIR) $(OUTDIR)
 
 rebuild: clean all
+
+optimized: ;@:
+	$(eval OPT_FLAG=)
 
 .PHONY: all run images output clean rebuild
