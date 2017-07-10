@@ -24,10 +24,10 @@ SRCS=$(wildcard $(SRCDIR)/*.cu)
 OBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.cu=.o)))
 
 # Flags
+SSIZE_FLAG=$(if $(SHARED_MEM_SIZE),"-DSHARED_MEM_SIZE=$(SHARED_MEM_SIZE)",)
 OPT_FLAG=-DPALABOS_COMPATIBLE
 CFLAGS=-g -Wall -Wextra -pedantic -O3
-NVCC_FLAGS=-Wno-deprecated-gpu-targets -O3 --ptxas-options=-v $(OPT_FLAG)
-
+NVCC_FLAGS=-Wno-deprecated-gpu-targets -O3 --ptxas-options=-v $(OPT_FLAG) $(SSIZE_FLAG)
 
 # Non-standard libraries and headers
 LIBNAM=pgm timing lbmmain3d_dynsize
