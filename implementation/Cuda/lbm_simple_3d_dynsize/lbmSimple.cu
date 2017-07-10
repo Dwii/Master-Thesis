@@ -18,6 +18,10 @@
 
 #define BLOCK_SIZE 64
 
+#ifndef SHARED_MEM_SIZE
+#define SHARED_MEM_SIZE 0
+#endif
+
 #define SQUARE(a) ((a)*(a))
 #define GPU_SQUARE(a) __dmul_rn(a,a)
 
@@ -165,7 +169,6 @@ __device__ static void macroscopic(double ne, double e, double se, double n, dou
 
 __global__ void lbm_computation(lbm_vars d_vars, lbm_lattices f0, lbm_lattices f1, size_t nx, size_t ny, size_t nz)
 {
-    int tix = threadIdx.x;
     for (int z = blockIdx.z; z < nz; z+=gridDim.z) {
         for (int y = blockIdx.y; y < ny; y+=gridDim.y) {
             for (int x = threadIdx.x + blockIdx.x * blockDim.x; x < nx; x += blockDim.x * gridDim.x) {
@@ -177,6 +180,9 @@ __global__ void lbm_computation(lbm_vars d_vars, lbm_lattices f0, lbm_lattices f
                 double fout_ne, fout_e, fout_se, fout_n, fout_c, fout_s, fout_nw, fout_w, fout_sw,
                        fout_te, fout_tn, fout_tc, fout_ts, fout_tw, 
                        fout_be, fout_bn, fout_bc, fout_bs, fout_bw;
+                double feq_ne, feq_e, feq_se, feq_n, feq_c, feq_s, feq_nw, feq_w, feq_sw, 
+                       feq_te, feq_tn, feq_tc, feq_ts, feq_tw, 
+                       feq_be, feq_bn, feq_bc, feq_bs, feq_bw;
 
                 fin_ne = f0.ne[gi];
                 fin_e  = f0.e [gi];
@@ -206,15 +212,16 @@ __global__ void lbm_computation(lbm_vars d_vars, lbm_lattices f0, lbm_lattices f
                             &rho, &u0, &u1, &u2);
 
                 // Compute equilibrium
-                double feq_ne, feq_e, feq_se, feq_n, feq_c, feq_s, feq_nw, feq_w, feq_sw, 
-                       feq_te, feq_tn, feq_tc, feq_ts, feq_tw, 
-                       feq_be, feq_bn, feq_bc, feq_bs, feq_bw;
                 d_equilibrium(&feq_ne, &feq_e, &feq_se, &feq_n, &feq_c, &feq_s, &feq_nw, &feq_w, &feq_sw, 
                               &feq_te, &feq_tn, &feq_tc, &feq_ts, &feq_tw, 
                               &feq_be, &feq_bn, &feq_bc, &feq_bs, &feq_bw, 
                               rho, u0, u1, u2);       
+                
+                d_vars.u.u0[gi] = u0;
+                d_vars.u.u1[gi] = u1;
+                d_vars.u.u2[gi] = u2;
 
-                // Collision step
+                // Collision
                 fout_ne = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_ne, - feq_ne)), fin_ne);
                 fout_e  = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_e , - feq_e )), fin_e );
                 fout_se = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_se, - feq_se)), fin_se);
@@ -224,7 +231,6 @@ __global__ void lbm_computation(lbm_vars d_vars, lbm_lattices f0, lbm_lattices f
                 fout_nw = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_nw, - feq_nw)), fin_nw);
                 fout_w  = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_w , - feq_w )), fin_w );
                 fout_sw = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_sw, - feq_sw)), fin_sw);
-
                 fout_te = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_te, - feq_te)), fin_te);
                 fout_tn = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_tn, - feq_tn)), fin_tn);
                 fout_tc = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_tc, - feq_tc)), fin_tc);
@@ -236,52 +242,16 @@ __global__ void lbm_computation(lbm_vars d_vars, lbm_lattices f0, lbm_lattices f
                 fout_bs = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_bs, - feq_bs)), fin_bs);
                 fout_bw = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_bw, - feq_bw)), fin_bw);
 
-        		d_vars.u.u0[gi] = u0;
-        		d_vars.u.u1[gi] = u1;
-                d_vars.u.u2[gi] = u2;
-
-                // STREAMING
-
-                // shared variables for in-block propagation
-                __shared__ double fo_E [BLOCK_SIZE];
-                __shared__ double fo_W [BLOCK_SIZE];
-                __shared__ double fo_SE[BLOCK_SIZE];
-                __shared__ double fo_SW[BLOCK_SIZE];
-                __shared__ double fo_NE[BLOCK_SIZE];
-                __shared__ double fo_NW[BLOCK_SIZE];
-
-                // Center 'propagation' (global memory)
-                f1.c[gi] = fout_c;
-
-                // N + S propagation (global memory)
-                f1.s[IDX(x, y-1, z, nx,ny,nz)] = fout_s;
-                f1.n[IDX(x, y+1, z, nx,ny,nz)] = fout_n;
-
-                // E propagation in shared memory
-                if (tix < blockDim.x-1 && x < nx-1) {
-                    fo_E [tix+1] = fout_e;
-                    fo_NE[tix+1] = fout_ne;
-                    fo_SE[tix+1] = fout_se;
-                // E propagation in global memory (at block boundary)
-                } else {
-                    f1.e [IDX(x+1, y  , z, nx,ny,nz)] = fout_e;
-                    f1.se[IDX(x+1, y-1, z, nx,ny,nz)] = fout_se;
-                    f1.ne[IDX(x+1, y+1, z, nx,ny,nz)] = fout_ne;
-                }
-
-                // W propagation in shared memory
-                if (tix > 0) {
-                    fo_W [tix-1] = fout_w;
-                    fo_NW[tix-1] = fout_nw;
-                    fo_SW[tix-1] = fout_sw;
-                // W propagation in global memory (at block boundary)
-                } else {
-                    f1.w [IDX(x-1, y  , z, nx,ny,nz)] = fout_w;
-                    f1.sw[IDX(x-1, y-1, z, nx,ny,nz)] = fout_sw;
-                    f1.nw[IDX(x-1, y+1, z, nx,ny,nz)] = fout_nw;
-                }
-
-                // Top and Bottom propagation (global memory)
+                // Streaming
+                f1.c [IDX(x  , y  , z  , nx,ny,nz)] = fout_c;
+                f1.s [IDX(x  , y-1, z  , nx,ny,nz)] = fout_s;
+                f1.n [IDX(x  , y+1, z  , nx,ny,nz)] = fout_n;
+                f1.e [IDX(x+1, y  , z  , nx,ny,nz)] = fout_e;
+                f1.se[IDX(x+1, y-1, z  , nx,ny,nz)] = fout_se;
+                f1.ne[IDX(x+1, y+1, z  , nx,ny,nz)] = fout_ne;
+                f1.w [IDX(x-1, y  , z  , nx,ny,nz)] = fout_w;
+                f1.sw[IDX(x-1, y-1, z  , nx,ny,nz)] = fout_sw;
+                f1.nw[IDX(x-1, y+1, z  , nx,ny,nz)] = fout_nw;
                 f1.te[IDX(x+1, y  , z+1, nx,ny,nz)] = fout_te;
                 f1.tn[IDX(x  , y+1, z+1, nx,ny,nz)] = fout_tn;
                 f1.tc[IDX(x  , y  , z+1, nx,ny,nz)] = fout_tc;
@@ -292,24 +262,6 @@ __global__ void lbm_computation(lbm_vars d_vars, lbm_lattices f0, lbm_lattices f
                 f1.bc[IDX(x  , y  , z-1, nx,ny,nz)] = fout_bc;
                 f1.bs[IDX(x  , y-1, z-1, nx,ny,nz)] = fout_bs;
                 f1.bw[IDX(x-1, y  , z-1, nx,ny,nz)] = fout_bw;
-
-                __syncthreads();
-
-                // the leftmost thread is not updated in this block
-                if (tix > 0) {
-                    f1.e [gi                      ] = fo_E [tix];
-                    f1.se[IDX(x, y-1, z, nx,ny,nz)] = fo_SE[tix];
-                    f1.ne[IDX(x, y+1, z, nx,ny,nz)] = fo_NE[tix];
-                }
-
-                // the rightmost thread is not updated in this block
-                if (tix < blockDim.x-1 && x < nx-1) {
-                    f1.w [gi                      ] = fo_W [tix];
-                    f1.sw[IDX(x, y-1, z, nx,ny,nz)] = fo_SW[tix];
-                    f1.nw[IDX(x, y+1, z, nx,ny,nz)] = fo_NW[tix];
-                }
-
-                __syncthreads(); // only nessessary when NX % BLOCK_SIZE != 0 
            }
         }
     }
@@ -318,7 +270,6 @@ __global__ void lbm_computation(lbm_vars d_vars, lbm_lattices f0, lbm_lattices f
 struct lbm_simulation{
     lbm_vars h_vars, d_vars;
     dim3 dimComputationGrid, dimComputationBlock;
-    dim3 dimRightWallGrid, dimRightWallBlock;
     size_t shared_mem_size;
     bool switch_f0_f1;
     size_t nx, ny, nz;
@@ -502,13 +453,10 @@ lbm_simulation* lbm_simulation_create(size_t nx, size_t ny, size_t nz)
     lbm_sim->dimComputationGrid = dimComputationGrid;
     lbm_sim->dimComputationBlock = dimComputationBlock;
 
-    dim3 dimRightWallGrid(1, min((unsigned long)ny, (unsigned long)prop.maxGridSize[1]));
-    dim3 dimRightWallBlock(1);
-    lbm_sim->dimRightWallGrid = dimRightWallGrid;
-    lbm_sim->dimRightWallBlock = dimRightWallBlock;
+    lbm_sim->shared_mem_size = SHARED_MEM_SIZE;
 
-    lbm_sim->shared_mem_size = 6 * sizeof(double) * BLOCK_SIZE;
-
+    if ( cudaDeviceSetCacheConfig (cudaFuncCachePreferL1) != cudaSuccess)
+        fprintf(stderr, "cudaFuncSetCacheConfig failed\n");
 
     return lbm_sim;
 }
