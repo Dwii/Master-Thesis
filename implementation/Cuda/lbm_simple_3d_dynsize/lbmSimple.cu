@@ -55,7 +55,6 @@ struct lbm_u {
 };
 
 typedef struct {
-    bool* obstacles;  // Should reside in lbm_consts but is too big for constant memory
     lbm_u u;
     lbm_lattices f0;
     lbm_lattices f1;
@@ -76,21 +75,6 @@ do {                                         \
 /*    HANDLE_ERROR( cudaPeekAtLastError() );  */ \
 /*    HANDLE_ERROR( cudaDeviceSynchronize() );*/ \
 } while(0)
-
-/**
- * Setup: cylindrical obstacle and velocity inlet with perturbation
- * Creation of a mask with boolean values, defining the shape of the obstacle.
- */
-static void initObstacles(bool* obstacles, size_t nx, size_t ny, size_t nz)
-{
-    for (int x = 0; x < nx; x++) {
-        for (int y = 0; y < ny; y++) {
-            for (int z = 0; z < nz; z++) {
-                obstacles[IDX(x,y,z,nx,ny,nz)] = false;
-            }
-        }
-    }
-}
 
 /**
  * Initial velocity profile: almost zero, with a slight perturbation to trigger
@@ -230,52 +214,27 @@ __global__ void lbm_computation(lbm_vars d_vars, lbm_lattices f0, lbm_lattices f
                               &feq_be, &feq_bn, &feq_bc, &feq_bs, &feq_bw, 
                               rho, u0, u1, u2);       
 
-                if (d_vars.obstacles[IDX(x,y,z,nx,ny,nz)]) {
-                    // Bounce-back condition for obstacle
-                    fout_ne = fin_sw; 
-                    fout_e  = fin_w ; 
-                    fout_se = fin_nw; 
-                    fout_n  = fin_s ; 
-                    fout_c  = fin_c ; 
-                    fout_s  = fin_n ; 
-                    fout_nw = fin_se; 
-                    fout_w  = fin_e ; 
-                    fout_sw = fin_ne; 
+                // Collision step
+                fout_ne = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_ne, - feq_ne)), fin_ne);
+                fout_e  = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_e , - feq_e )), fin_e );
+                fout_se = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_se, - feq_se)), fin_se);
+                fout_n  = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_n , - feq_n )), fin_n );
+                fout_c  = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_c , - feq_c )), fin_c );
+                fout_s  = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_s , - feq_s )), fin_s );
+                fout_nw = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_nw, - feq_nw)), fin_nw);
+                fout_w  = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_w , - feq_w )), fin_w );
+                fout_sw = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_sw, - feq_sw)), fin_sw);
 
-                    fout_te = fin_bw;
-                    fout_tn = fin_bs;
-                    fout_tc = fin_bc;
-                    fout_ts = fin_bn;
-                    fout_tw = fin_be;
-                    fout_be = fin_tw;
-                    fout_bn = fin_ts;
-                    fout_bc = fin_tc;
-                    fout_bs = fin_tn;
-                    fout_bw = fin_tw;
-
-                } else {
-                    // Collision step
-                    fout_ne = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_ne, - feq_ne)), fin_ne);
-                    fout_e  = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_e , - feq_e )), fin_e );
-                    fout_se = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_se, - feq_se)), fin_se);
-                    fout_n  = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_n , - feq_n )), fin_n );
-                    fout_c  = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_c , - feq_c )), fin_c );
-                    fout_s  = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_s , - feq_s )), fin_s );
-                    fout_nw = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_nw, - feq_nw)), fin_nw);
-                    fout_w  = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_w , - feq_w )), fin_w );
-                    fout_sw = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_sw, - feq_sw)), fin_sw);
-
-                    fout_te = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_te, - feq_te)), fin_te);
-                    fout_tn = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_tn, - feq_tn)), fin_tn);
-                    fout_tc = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_tc, - feq_tc)), fin_tc);
-                    fout_ts = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_ts, - feq_ts)), fin_ts);
-                    fout_tw = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_tw, - feq_tw)), fin_tw);
-                    fout_be = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_be, - feq_be)), fin_be);
-                    fout_bn = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_bn, - feq_bn)), fin_bn);
-                    fout_bc = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_bc, - feq_bc)), fin_bc);
-                    fout_bs = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_bs, - feq_bs)), fin_bs);
-                    fout_bw = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_bw, - feq_bw)), fin_bw);
-                }
+                fout_te = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_te, - feq_te)), fin_te);
+                fout_tn = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_tn, - feq_tn)), fin_tn);
+                fout_tc = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_tc, - feq_tc)), fin_tc);
+                fout_ts = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_ts, - feq_ts)), fin_ts);
+                fout_tw = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_tw, - feq_tw)), fin_tw);
+                fout_be = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_be, - feq_be)), fin_be);
+                fout_bn = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_bn, - feq_bn)), fin_bn);
+                fout_bc = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_bc, - feq_bc)), fin_bc);
+                fout_bs = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_bs, - feq_bs)), fin_bs);
+                fout_bw = __dadd_rn(__dmul_rn(-OMEGA, __dadd_rn(fin_bw, - feq_bw)), fin_bw);
 
         		d_vars.u.u0[gi] = u0;
         		d_vars.u.u1[gi] = u1;
@@ -479,7 +438,6 @@ void lbm_u_cuda_dealloc(lbm_u* u) {
 
 void lbm_vars_alloc(lbm_vars* vars, size_t nl)
 {
-    vars->obstacles = (bool*) malloc( sizeof(bool)*nl);
     lbm_u_alloc(&vars->u, nl);
     lbm_lattices_alloc(&vars->f0, nl);
     lbm_lattices_alloc(&vars->f1, nl);
@@ -487,7 +445,6 @@ void lbm_vars_alloc(lbm_vars* vars, size_t nl)
 
 void lbm_vars_cuda_alloc(lbm_vars* vars, size_t nl)
 {
-    HANDLE_ERROR(cudaMalloc(&vars->obstacles, sizeof(bool)*nl));
     lbm_u_cuda_alloc(&vars->u, nl);
     lbm_lattices_cuda_alloc(&vars->f0, nl);
     lbm_lattices_cuda_alloc(&vars->f1, nl);
@@ -495,7 +452,6 @@ void lbm_vars_cuda_alloc(lbm_vars* vars, size_t nl)
 
 void lbm_vars_dealloc(lbm_vars* vars)
 {
-    free(vars->obstacles);
     lbm_u_dealloc(&vars->u);
     lbm_lattices_dealloc(&vars->f0);
     lbm_lattices_dealloc(&vars->f1);
@@ -503,7 +459,6 @@ void lbm_vars_dealloc(lbm_vars* vars)
 
 void lbm_vars_cuda_dealloc(lbm_vars* vars)
 {
-    HANDLE_ERROR(cudaFree(vars->obstacles));
     lbm_u_cuda_dealloc(&vars->u);
     lbm_lattices_cuda_dealloc(&vars->f0);
     lbm_lattices_cuda_dealloc(&vars->f1);
@@ -520,7 +475,6 @@ lbm_simulation* lbm_simulation_create(size_t nx, size_t ny, size_t nz)
     lbm_sim->nz = nz;
    
     lbm_vars_alloc(&lbm_sim->h_vars, nl);
-    initObstacles(lbm_sim->h_vars.obstacles, nx, ny, nz);
 
     double vel[ny];
     initVelocity(vel, ny);
@@ -539,7 +493,6 @@ lbm_simulation* lbm_simulation_create(size_t nx, size_t ny, size_t nz)
     lbm_vars_cuda_alloc(&lbm_sim->d_vars, nl);
 
     lbm_lattices_write(&lbm_sim->d_vars.f0, &lbm_sim->h_vars.f0, nl);
-    HANDLE_ERROR(cudaMemcpy(lbm_sim->d_vars.obstacles, lbm_sim->h_vars.obstacles, sizeof(bool)*nl, cudaMemcpyHostToDevice));
 
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, 0);
