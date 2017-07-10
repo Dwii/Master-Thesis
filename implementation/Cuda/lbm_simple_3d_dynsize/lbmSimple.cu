@@ -88,7 +88,7 @@ static void initVelocity(double* vel, size_t ny)
 }
 
 #define H_EQUILIBRIUM(rho, t, cu, usqr) ((rho) * (t) * ( 1 + (cu) + 0.5 * SQUARE(cu) - (usqr) ))
-#define D_EQUILIBRIUM(rho, t, cu, usqr) __dmul_rn(__dmul_rn(rho, (t)), __dadd_rn(__dadd_rn(__dadd_rn(1, cu) , __dmul_rn(0.5, GPU_SQUARE(cu))), - usqr) )
+#define D_EQUILIBRIUM(rho, t, cu, usqr) __dmul_rn(__dmul_rn(rho, t), __dadd_rn(__dadd_rn(__dadd_rn(1, cu) , __dmul_rn(0.5, GPU_SQUARE(cu))), - usqr) )
 
 
 __host__ static void h_equilibrium(lbm_lattices* f, int index, double rho, double u0, double u1, double u2)
