@@ -21,7 +21,7 @@ $(OBJDIR) $(BINDIR) $(IMGDIR):
 	mkdir -p $@
 
 $(BIN): $(OBJS)
-	$(CC) $(FLAGS) -fPIC -shared $^ -o $@ $(LIBS) $(INCS)
+	$(CC) $(CFLAGS) -fPIC -shared $^ -o $@ $(LIBS) $(INCS)
 
 -include $(OBJS:.o=.d)
 
