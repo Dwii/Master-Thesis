@@ -32,6 +32,52 @@
 
 namespace plb {
 
+inline std::vector<Box3D> generateSurfaces(Box3D bbox, plint envelopeWidth)
+{
+    std::vector<Box3D> surfaces;
+    PLB_ASSERT( surfaces.getNx()>=2 );
+    PLB_ASSERT( surfaces.getNy()>=2 );
+    PLB_ASSERT( surfaces.getNz()>=2 );
+
+    plint x0 = bbox.x0;
+    plint x1 = bbox.x1;
+    plint y0 = bbox.y0;
+    plint y1 = bbox.y1;
+    plint z0 = bbox.z0;
+    plint z1 = bbox.z1;
+
+    plint ew = envelopeWidth;
+
+    surfaces.push_back(x0, x1, y0, y1, z0, z0+ew-1);
+    surfaces.push_back(x0, x1, y0, y1, z1-ew+1, z1);
+    surfaces.push_back(x0, x1, y0, y0+ew-1, z0+ew, z1-ew);
+    surfaces.push_back(x0, x1, y1-ew+1, y1, z0+ew, z1-ew);
+}
+
+template<typename T, template<typename U> class Descriptor>
+void transferToCoProcessors(MultiBlockLattice3D<T,Descriptor>& lattice, plint envelopeWidth)
+{
+    MultiBlockManagement3D const& management = lattice.getMultiBlockManagement();
+    ThreadAttribution const& threadAttribution = management.getThreadAttribution();
+
+    std::vector<char> data;
+    for (pluint iBlock=0; iBlock<management.getLocalInfo().getBlocks().size(); ++iBlock) {
+        plint blockId = management.getLocalInfo().getBlocks()[iBlock];
+        plint handle = threadAttribution.getCoProcessorHandle(blockId);
+        if (handle>=0) {
+            BlockLattice3D<T,Descriptor>& component = lattice.getComponent(blockId);
+            std::vector<Box3D> surfaces = generateSurfaces(component.getBoundingBox(), envelopeWidth);
+            for (pluint iBox=0; iBox<surfaces.size(); ++iBox) {
+                data.clear();
+                component.getDataTransfer().send (
+                        surfaces[iBox], data, modif::staticVariables );
+                global::defaultCoProcessor3D<T>().send (
+                        handle, surfaces[iBox], data );
+            }
+        }
+    }
+}
+
 template<typename T, template<typename U> class Descriptor>
 void transferToCoProcessors(MultiBlockLattice3D<T,Descriptor>& lattice)
 {
@@ -51,6 +97,30 @@ void transferToCoProcessors(MultiBlockLattice3D<T,Descriptor>& lattice)
         }
     }
 
+}
+
+template<typename T, template<typename U> class Descriptor>
+void transferFromCoProcessors(MultiBlockLattice3D<T,Descriptor>& lattice, plint envelopeWidth)
+{
+    MultiBlockManagement3D const& management = lattice.getMultiBlockManagement();
+    ThreadAttribution const& threadAttribution = management.getThreadAttribution();
+
+    std::vector<char> data;
+    for (pluint iBlock=0; iBlock<management.getLocalInfo().getBlocks().size(); ++iBlock) {
+        plint blockId = management.getLocalInfo().getBlocks()[iBlock];
+        plint handle = threadAttribution.getCoProcessorHandle(blockId);
+        if (handle>=0) {
+            BlockLattice3D<T,Descriptor>& component = lattice.getComponent(blockId);
+            std::vector<Box3D> surfaces = generateSurfaces(component.getBoundingBox(), envelopeWidth);
+            for (pluint iBox=0; iBox<surfaces.size(); ++iBox) {
+                data.clear();
+                global::defaultCoProcessor3D<T>().receive (
+                        handle, surfaces[iBox], data );
+                component.getDataTransfer().receive (
+                        surfaces[iBox], data, modif::staticVariables );
+            }
+        }
+    }
 }
 
 template<typename T, template<typename U> class Descriptor>

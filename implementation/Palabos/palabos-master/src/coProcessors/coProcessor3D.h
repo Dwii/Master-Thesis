@@ -32,7 +32,9 @@
 #include "core/geometry3D.h"
 #include "atomicBlock/blockLattice3D.h"
 #include <map>
+#ifndef PLB_NO_CUDA
 #include <lbmcuda.h>
+#endif
 
 namespace plb {
 
@@ -132,6 +134,7 @@ private:
 };
 
 
+#ifndef PLB_NO_CUDA
 template<typename T>
 class D3Q19CudaCoProcessor3D : public CoProcessor3D<T>
 {
@@ -154,9 +157,11 @@ private:
     int nx, ny, nz, nl;
 
 };
+#endif
 
 namespace global {
 
+#ifndef PLB_NO_CUDA
 template<typename T>
 inline CoProcessor3D<T>& defaultCoProcessor3D() {
     /// @Tomasz: At this stage, I'd suggest that you simply replace the
@@ -166,6 +171,19 @@ inline CoProcessor3D<T>& defaultCoProcessor3D() {
     static D3Q19CudaCoProcessor3D<T> singleton;
     return singleton;
 };
+#endif
+
+#ifdef PLB_NO_CUDA
+template<typename T>
+inline CoProcessor3D<T>& defaultCoProcessor3D() {
+    /// @Tomasz: At this stage, I'd suggest that you simply replace the
+    //  D3Q19ExampleCoProcessor3D singleton by a
+    //  D3Q19CudaCoProcessor3D singleton to get your code running.
+    //static D3Q19ExampleCoProcessor3D<T> singleton;
+    static D3Q19ExampleCoProcessor3D<T> singleton;
+    return singleton;
+};
+#endif
 
 }
 

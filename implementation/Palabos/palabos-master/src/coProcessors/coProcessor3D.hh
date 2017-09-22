@@ -76,6 +76,8 @@ namespace plb {
         lattice.collideAndStream(lattice.getBoundingBox());
         return 1; // Success.
     }
+
+#ifndef PLB_NO_CUDA
     
     /**** Cuda coProcessor ****/
 
@@ -218,6 +220,7 @@ namespace plb {
         lattices_on_host = false;
         return 1;
     }
+#endif
     
 }  // namespace plb
 
