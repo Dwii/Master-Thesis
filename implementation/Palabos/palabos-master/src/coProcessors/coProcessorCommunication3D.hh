@@ -35,9 +35,9 @@ namespace plb {
 inline std::vector<Box3D> generateSurfaces(Box3D bbox, plint envelopeWidth)
 {
     std::vector<Box3D> surfaces;
-    //PLB_ASSERT( surfaces.getNx()>=2 );
-    //PLB_ASSERT( surfaces.getNy()>=2 );
-    //PLB_ASSERT( surfaces.getNz()>=2 );
+    PLB_ASSERT( bbox.getNx()>=2 );
+    PLB_ASSERT( bbox.getNy()>=2 );
+    PLB_ASSERT( bbox.getNz()>=2 );
 
     plint x0 = bbox.x0;
     plint x1 = bbox.x1;
@@ -46,12 +46,24 @@ inline std::vector<Box3D> generateSurfaces(Box3D bbox, plint envelopeWidth)
     plint z0 = bbox.z0;
     plint z1 = bbox.z1;
 
-    plint ew = envelopeWidth;
+    //plint ew = envelopeWidth;
+    //surfaces.push_back(Box3D(x0,      x1,      y0,      y1,      z0,      z0+ew-1));
+    //surfaces.push_back(Box3D(x0,      x1,      y0,      y1,      z1-ew+1, z1));
+    //surfaces.push_back(Box3D(x0,      x1,      y0,      y0+ew-1, z0+ew,   z1-ew));
+    //surfaces.push_back(Box3D(x0,      x1,      y1-ew+1, y1,      z0+ew,   z1-ew));
+    //surfaces.push_back(Box3D(x0,      x0+ew-1, y0+ew,   y1-ew,   z0+ew,   z1-ew));
+    //surfaces.push_back(Box3D(x1-ew+1, x1,      y0+ew,   y1-ew,   z0+ew,   z1-ew));
 
-    surfaces.push_back(Box3D(x0, x1, y0, y1, z0, z0+ew-1));
-    surfaces.push_back(Box3D(x0, x1, y0, y1, z1-ew+1, z1));
-    surfaces.push_back(Box3D(x0, x1, y0, y0+ew-1, z0+ew, z1-ew));
-    surfaces.push_back(Box3D(x0, x1, y1-ew+1, y1, z0+ew, z1-ew));
+    surfaces.push_back(Box3D(x0,      x1,      y0,      y1,      z0,      z0));
+    surfaces.push_back(Box3D(x0,      x1,      y0,      y1,      z1,      z1));
+    surfaces.push_back(Box3D(x0,      x1,      y0,      y0,      z0,      z1));
+    surfaces.push_back(Box3D(x0,      x1,      y1,      y1,      z0,      z1));
+    surfaces.push_back(Box3D(x0,      x0,      y0,      y1,      z0,      z1));
+    surfaces.push_back(Box3D(x1,      x1,      y0,      y1,      z0,      z1));
+
+    //surfaces.push_back(bbox);
+
+    return surfaces;
 }
 
 template<typename T, template<typename U> class Descriptor>
@@ -111,7 +123,8 @@ void transferFromCoProcessors(MultiBlockLattice3D<T,Descriptor>& lattice, plint 
         plint handle = threadAttribution.getCoProcessorHandle(blockId);
         if (handle>=0) {
             BlockLattice3D<T,Descriptor>& component = lattice.getComponent(blockId);
-            std::vector<Box3D> surfaces = generateSurfaces(component.getBoundingBox(), envelopeWidth);
+            Box3D reducedDomain = component.getBoundingBox().enlarge(-envelopeWidth);
+            std::vector<Box3D> surfaces = generateSurfaces(reducedDomain, envelopeWidth);
             for (pluint iBox=0; iBox<surfaces.size(); ++iBox) {
                 data.clear();
                 global::defaultCoProcessor3D<T>().receive (

@@ -218,11 +218,12 @@ int main(int argc, char* argv[]) {
 
     // @Tomasz: STEP 2
     // Here the co-processor is informed about the domains for which it will need to do computations.
-    //bool printInfo=true;
-    //initiateCoProcessors(lattice, BGKdynamics<T,DESCRIPTOR>(parameters.getOmega()).getId(), printInfo);
+    bool printInfo=true;
+    initiateCoProcessors(lattice, BGKdynamics<T,DESCRIPTOR>(parameters.getOmega()).getId(), printInfo);
 
     T previousIterationTime = T();
     // Loop over main time iteration.
+    transferToCoProcessors(lattice); // Transfer all data to co-processors initially.
     for (plint iT=0; iT<parameters.nStep(maxT); ++iT) {
         global::timer("mainLoop").restart();
 
@@ -249,9 +250,10 @@ int main(int argc, char* argv[]) {
         // simpler for now, for our first proof of concept.
 
         // Execute a time iteration.
-        transferToCoProcessors(lattice);
+        plint envelopeWidth=1;
+        transferToCoProcessors(lattice, envelopeWidth);
         lattice.collideAndStream();
-        transferFromCoProcessors(lattice);
+        transferFromCoProcessors(lattice, envelopeWidth);
         // After transferring back from co-processor to CPU memory, data in the envelopes
         // of the CPU blocks must be synchronized.
         lattice.duplicateOverlaps(modif::staticVariables);
@@ -260,6 +262,8 @@ int main(int argc, char* argv[]) {
         // Access averages from internal statistics ( their value is defined
         //   only after the call to lattice.collideAndStream() )
         if (iT%parameters.nStep(logT)==0) {
+            transferFromCoProcessors(lattice);
+            lattice.duplicateOverlaps(modif::staticVariables);
             pcout << "; av energy="
                   << setprecision(10) << computeAverageEnergy<T>(lattice)
                   << "; av rho="
