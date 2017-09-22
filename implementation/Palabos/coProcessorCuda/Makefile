@@ -48,7 +48,7 @@ serialCXX    = g++
 # Compiler to use with MPI parallelism
 parallelCXX  = mpicxx
 # General compiler flags (e.g. -Wall to turn on all warnings on g++)
-compileFlags = -Wall -Wnon-virtual-dtor -DPLB_MAC_OS_X
+compileFlags = -Wall -Wnon-virtual-dtor -DPLB_MAC_OS_X -Wno-deprecated
 #compileFlags = -DPLB_MAC_OS_X -Wno-deprecated-gpu-targets --ptxas-options=-v
 # General linker flags (don't put library includes into this flag)
 linkFlags    =
