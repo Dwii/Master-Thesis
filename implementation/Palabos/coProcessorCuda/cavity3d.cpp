@@ -218,8 +218,8 @@ int main(int argc, char* argv[]) {
 
     // @Tomasz: STEP 2
     // Here the co-processor is informed about the domains for which it will need to do computations.
-    //bool printInfo=true;
-    //initiateCoProcessors(lattice, BGKdynamics<T,DESCRIPTOR>(parameters.getOmega()).getId(), printInfo);
+    bool printInfo=true;
+    initiateCoProcessors(lattice, BGKdynamics<T,DESCRIPTOR>(parameters.getOmega()).getId(), printInfo);
 
     T previousIterationTime = T();
     // Loop over main time iteration.
