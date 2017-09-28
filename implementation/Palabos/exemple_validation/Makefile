@@ -26,9 +26,9 @@ debug        = true
 # Set profiling flags on/off
 profile      = false
 # Set MPI-parallel mode on/off (parallelism in cluster-like environment)
-MPIparallel  = true
+MPIparallel  = false
 # Set SMP-parallel mode on/off (shared-memory parallelism)
-SMPparallel  = true
+SMPparallel  = false
 # Decide whether to include calls to the POSIX API. On non-POSIX systems,
 #   including Windows, this flag must be false, unless a POSIX environment is
 #   emulated (such as with Cygwin).
@@ -37,11 +37,11 @@ usePOSIX     = true
 # Path to external source files (other than Palabos)
 srcPaths =
 # Path to external libraries (other than Palabos)
-libraryPaths =
+libraryPaths = ../lbmcuda
 # Path to inlude directories (other than Palabos)
-includePaths =
+includePaths = ../lbmcuda
 # Dynamic and static libraries (other than Palabos)
-libraries    =
+libraries    = -llbmcuda
 
 # Compiler to use without MPI parallelism
 serialCXX    = g++
