@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Compare two lists of floats and give their average delta.
+# Compare two lists of floats and give their biggest delta.
 #
 import sys
 import os.path
@@ -30,10 +30,8 @@ if mini != maxi:
 	print("amount of results differ")
 	exit(0)
 
-deltas = [0] * mini
+deltaMax = 0
 for i in range(mini):
-	deltas[i] = abs(results1[i] - results2[i])
+	deltaMax = max(deltaMax, abs(results1[i] - results2[i]))
 
-delta = abs(sum(deltas) / mini)
-
-print("{0:.60f}".format(delta))
+print("{0:.60f}".format(deltaMax))
