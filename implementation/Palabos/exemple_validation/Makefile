@@ -92,3 +92,6 @@ compile:
 clean:
 	python $(SCons) -c $(SConsArgs)
 	/bin/rm -vf `find $(palabosRoot) -name '*~'`
+
+run: compile
+	export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$(libraryPaths) && ./exemple_validation
