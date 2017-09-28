@@ -57,7 +57,10 @@ optimFlags   = -O3
 debugFlags   = -g
 # Compiler flags to use when profile mode is on
 profileFlags = -pg
-
+# (DY)LD_LIBRARY_PATH variable name according to the running OS
+llp_var=$(if $(filter $(shell uname),Darwin),DYLD_LIBRARY_PATH,LD_LIBRARY_PATH)
+# Dollar sign
+D=$$
 
 ##########################################################################
 # All code below this line is just about forwarding the options
@@ -94,4 +97,4 @@ clean:
 	/bin/rm -vf `find $(palabosRoot) -name '*~'`
 
 run: compile
-	export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$(libraryPaths) && ./exemple_validation
+	export $(llp_var)=$(D)$(llp_var):$(libraryPaths) && ./exemple_validation
