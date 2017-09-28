@@ -95,7 +95,7 @@ int main(int argc, char * const argv[])
         fprintf(stderr, "  -p : output pictures\n");
         fprintf(stderr, "  -f : output populations\n");
         fprintf(stderr, "  -i : number of iterations\n");
-        fprintf(stderr, "  -I : output interval; (0 if only the last iteration output in required)\n");
+        fprintf(stderr, "  -I : output interval; (0 if only the last iteration output is required)\n");
         fprintf(stderr, "  -o : output file directory\n");
         fprintf(stderr, "  -O : output filename prefix\n");
         fprintf(stderr, "  -l : print lups at each output interval\n");
