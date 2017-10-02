@@ -29,7 +29,7 @@
   * discontinuities on corner nodes.
   **/
 
-//#define PLB_NO_CUDA
+#define PLB_NO_CUDA
 
 #include "palabos3D.h"
 #include "palabos3D.hh"
@@ -227,12 +227,16 @@ int main(int argc, char* argv[]) {
     for (plint iT=0; iT<parameters.nStep(maxT); ++iT) {
         global::timer("mainLoop").restart();
 
-        if (iT%parameters.nStep(imSave)==0) {
+        //if (iT%parameters.nStep(imSave)==0) {
+            transferFromCoProcessors(lattice);
+            lattice.duplicateOverlaps(modif::staticVariables);
             pcout << "Writing Gif ..." << endl;
             writeGifs(lattice, parameters, iT);
-        }
+        //}
 
         if (iT%parameters.nStep(vtkSave)==0 && iT>0) {
+            transferFromCoProcessors(lattice);
+            lattice.duplicateOverlaps(modif::staticVariables);
             pcout << "Saving VTK file ..." << endl;
             writeVTK(lattice, parameters, iT);
         }
