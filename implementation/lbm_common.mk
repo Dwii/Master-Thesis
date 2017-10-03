@@ -13,7 +13,7 @@ define execute
 	@timing=$$(echo "$(3)" | xargs); \
 	llp_var=$(if $(filter $(shell uname),Darwin),"DYLD_LIBRARY_PATH","LD_LIBRARY_PATH"); \
 	[[ "$$timing" == "" ]] && timing=/dev/null; \
-	eval "export $$llp_var=$$$$llp_var$(subst $(space):,:,$(addprefix :,$(1)))"; \
+	eval "export $$llp_var=$${!llp_var}$(subst $(space):,:,$(addprefix :,$(1)))"; \
 	start=$$(date +%s); \
 	echo $$(eval "$(2) | tee $(STD_FILE)" ) | sed -n 's/.*average lups: \(.*\).*/\1/p' > $$timing; \
 	end=$$(date +%s); \
