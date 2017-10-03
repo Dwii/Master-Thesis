@@ -62,6 +62,11 @@ profileFlags = -pg
 llp_var=$(if $(filter $(shell uname),Darwin),DYLD_LIBRARY_PATH,LD_LIBRARY_PATH)
 # Dollar sign
 D=$$
+# Binary filename
+BIN=$(shell filename=$(projectFiles); echo $${filename%.*})
+# Directories
+OUTDIR=tmp
+BINDIR=bin
 
 ##########################################################################
 # All code below this line is just about forwarding the options
@@ -90,12 +95,18 @@ SConsArgs = palabosRoot=$(palabosRoot) \
             includePaths="$(includePaths)" \
             libraries="$(libraries)"
 
-compile:
-	python $(SCons) $(SConsArgs)
+compile: $(BINDIR)
+	python $(SCons) $(SConsArgs) && mv $(BIN) $(BINDIR)
 
 clean:
 	python $(SCons) -c $(SConsArgs)
 	/bin/rm -vf `find $(palabosRoot) -name '*~'`
+	/bin/rm -rf $(OUTDIR)
+	/bin/rm -rf $(BINDIR)
+	/bin/rm -f *.o
 
-run: compile
-	export $(llp_var)=$(D)$(llp_var):$(libraryPaths) && ./cavity3d
+$(OUTDIR) $(BINDIR):
+	mkdir -p $@
+
+run: compile $(OUTDIR)
+	export $(llp_var)=$(D)$(llp_var):$(libraryPaths) && $(BINDIR)/$(BIN)
