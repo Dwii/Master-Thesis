@@ -157,10 +157,6 @@ int main(int argc, char * const argv[])
         fprintf(stderr, "  -z : depth\n");
         return EXIT_FAILURE;
     }
-
-    printf("width  = %lu\n", width);
-    printf("height = %lu\n", height);
-    printf("depth  = %lu\n", depth);
     
     if (out == OUT_NONE) {
         fprintf(stderr, "No output mode specified.\n");
