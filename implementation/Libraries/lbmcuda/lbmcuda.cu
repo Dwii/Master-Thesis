@@ -468,6 +468,7 @@ void lbm_lattices_write(lbm_lattices* d_lat, lbm_lattices* h_lat, size_t nl);
 
 lbm_simulation* lbm_simulation_create(size_t nx, size_t ny, size_t nz, double omega)
 {
+//    printf("lbm_simulation_create\n");
     lbm_simulation* lbm_sim = (lbm_simulation*) malloc (sizeof(lbm_simulation));
     size_t nl = nx*ny*nz;
     lbm_sim->nx = nx;
@@ -483,18 +484,18 @@ lbm_simulation* lbm_simulation_create(size_t nx, size_t ny, size_t nz, double om
     
     // Initialization of the populations at equilibrium with the given velocity.
     lbm_sim->switch_f0_f1 = false;
-    for (int z = 0; z < nz; z++) {
-        for (int y = 0; y < ny; y++) {
-            for (int x = 0; x < nx; x++) {
-                double rho = x == nx/2 && y == ny/2 && z == nz/2 ? 2.0 : 1.0;
-                h_equilibrium(&lbm_sim->h_vars.f0, IDX(x,y,z,nx,ny,nz), rho, vel[y], 0, -vel[y]);
-            }
-        }
-    }
+//    for (int z = 0; z < nz; z++) {
+//        for (int y = 0; y < ny; y++) {
+//            for (int x = 0; x < nx; x++) {
+//                double rho = x == nx/2 && y == ny/2 && z == nz/2 ? 2.0 : 1.0;
+//                h_equilibrium(&lbm_sim->h_vars.f0, IDX(x,y,z,nx,ny,nz), rho, vel[y], 0, -vel[y]);
+//            }
+//        }
+//    }
 
     lbm_vars_cuda_alloc(&lbm_sim->d_vars, nl);
 
-    lbm_lattices_write(lbm_sim, &lbm_sim->h_vars.f0, nl);
+//    lbm_lattices_write(lbm_sim, &lbm_sim->h_vars.f0, nl);
     HANDLE_ERROR(cudaMemcpy(lbm_sim->d_vars.obstacles, lbm_sim->h_vars.obstacles, sizeof(bool)*nl, cudaMemcpyHostToDevice));
 
     cudaDeviceProp prop;

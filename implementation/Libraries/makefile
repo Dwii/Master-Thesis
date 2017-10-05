@@ -1,4 +1,4 @@
-all: array pgm timing lbmmain lbmmain3d lbmmain3d_dynsize
+all: array pgm timing lbmmain lbmmain3d lbmmain3d_dynsize lbmcuda
 
 array: 
 	$(MAKE) -C array
@@ -18,6 +18,9 @@ lbmmain3d:
 lbmmain3d_dynsize:
 	$(MAKE) -C lbmmain3d_dynsize 
 
+lbmcuda:
+	$(MAKE) -C lbmcuda 
+
 clean:
 	$(MAKE) -C array clean
 	$(MAKE) -C pgm clean
@@ -25,5 +28,6 @@ clean:
 	$(MAKE) -C lbmmain clean
 	$(MAKE) -C lbmmain3d clean
 	$(MAKE) -C lbmmain3d_dynsize clean
+	$(MAKE) -C lbmcuda clean
 
-.PHONY: array pgm timing lbmmain lbmmain3d lbmmain3d_dynsize clean
+.PHONY: array pgm timing lbmmain lbmmain3d lbmmain3d_dynsize lbmcuda clean

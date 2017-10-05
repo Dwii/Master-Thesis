@@ -37,9 +37,9 @@ usePOSIX     = true
 # Path to external source files (other than Palabos)
 srcPaths =
 # Path to external libraries (other than Palabos)
-libraryPaths = ../lbmcuda
+libraryPaths = ../../Libraries/lbmcuda
 # Path to inlude directories (other than Palabos)
-includePaths = ../lbmcuda
+includePaths = ../../Libraries/lbmcuda
 # Dynamic and static libraries (other than Palabos)
 libraries    = -llbmcuda
 
