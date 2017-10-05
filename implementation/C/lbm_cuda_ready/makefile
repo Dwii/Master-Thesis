@@ -11,7 +11,7 @@ SRCDIR=.
 OBJDIR=obj
 BINDIR=bin
 OUTDIR=out
-LIBDIR=../libs
+LIBDIR=../../Libraries
 
 # Binary default arguments
 OUTPRE=lbm_

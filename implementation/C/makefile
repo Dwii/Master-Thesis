@@ -6,7 +6,7 @@ DEFAULT_ITER=1
 # Flags
 MAKEFLAGS=--no-print-directory
 
-all: libs $(PROJECTS)
+all: $(PROJECTS)
 
 vars:
 ifeq ($(strip $(ITER)),)
@@ -16,14 +16,11 @@ endif
 output: vars all
 	@$(foreach project, $(PROJECTS), $(MAKE) -C $(project) output $(MAKEFLAGS);)
 
-libs: 
-	$(MAKE) -C libs
-
 $(PROJECTS): 
 	$(MAKE) -C $@ $(MAKEFLAGS)
 
 clean:
-	$(MAKE) -C libs clean
+	$(MAKE) -C clean
 	@$(foreach project, $(PROJECTS), $(MAKE) -C $(project) clean;)
 
-.PHONY: all vars output libs $(PROJECTS) clean
+.PHONY: all vars output $(PROJECTS) clean
