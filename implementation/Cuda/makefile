@@ -1,4 +1,4 @@
-PROJECTS=lbm_float_gpu_vs_cpu lbm_c2cuda lbm_simple_gpu_vs_cpu lbm_opt1 lbm_sailfish_hist lbm_opt2 lbm_simple_3d lbm_simple_3d_dynsize
+PROJECTS=lbm_float_gpu_vs_cpu lbm_c2cuda lbm_simple_gpu_vs_cpu lbm_opt1 lbm_sailfish_hist lbm_opt2 lbm_simple_3d lbm_simple_3d_dynsize lbm_simple_lbmcuda
 
 # Default variables values
 DEFAULT_ITER=1

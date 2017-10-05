@@ -86,6 +86,7 @@ print_test: vars
 	@$(call check,lbm_simple_3d (CPU)               , Python/lbm_simple_3d/out/$(OUT),           C/lbm_simple_3d/out/$(OUT),               C/lbm_simple_3d/out/$(TIMING)              )
 	@$(call check,lbm_simple_3d (GPU)               , Python/lbm_simple_3d/out/$(OUT),           Cuda/lbm_simple_3d/out/$(OUT),            Cuda/lbm_simple_3d/out/$(TIMING)           )
 	@$(call check,lbm_simple_3d_dynsize (GPU)       , Python/lbm_simple_3d/out/$(OUT),           Cuda/lbm_simple_3d_dynsize/out/$(OUT),    Cuda/lbm_simple_3d_dynsize/out/$(TIMING)   )
+	@$(call check,lbm_simple_lbmcuda                , Python/lbm_simple_3d/out/$(OUT),           Cuda/lbm_simple_lbmcuda/out/$(OUT),       Cuda/lbm_simple_lbmcuda/out/$(TIMING)      )
 
 test: vars output print_test
 
