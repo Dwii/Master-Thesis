@@ -46,7 +46,10 @@ DLT_ITERS=$(if $(subst 0,,$(INTERVAL)), $(shell seq $(INTERVAL) $(INTERVAL) $(IT
 OUT_SIZE=44226000 
 # OUT_SIZE = NX * NY * F * Print digits (64+the dot) = 420*180*9*65
 
-all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(GPUBIN) $(BINDIR)/$(CPUBIN)
+all: libraries $(OBJDIR) $(BINDIR) $(BINDIR)/$(GPUBIN) $(BINDIR)/$(CPUBIN)
+
+libraries: 
+	@$(foreach library, $(LIBDEP), $(MAKE) -C $(library) | grep -v 'Nothing to be done' || $$true;)
 
 # Targets addition arguments
 images: TRGTARGS=-p

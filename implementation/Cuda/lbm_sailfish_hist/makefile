@@ -29,7 +29,10 @@ LIBS=$(addprefix -L,$(LIBDEP)) $(addprefix -l,$(LIBNAM))
 
 CXXFLAGS=-O2
 
-all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(GPUBIN) $(BINDIR)/$(CPUBIN)
+all: libraries $(OBJDIR) $(BINDIR) $(BINDIR)/$(GPUBIN) $(BINDIR)/$(CPUBIN)
+
+libraries: 
+	@$(foreach library, $(LIBDEP), $(MAKE) -C $(library) | grep -v 'Nothing to be done' || $$true;)
 
 images: all $(OUTDIR)
 	$(call execute, $(LIBDEP), "$(BINDIR)/$(GPUBIN) $(ITER) $(OUTDIR) $(GPUPRE)")

@@ -32,7 +32,10 @@ LIBS=$(addprefix -L,$(LIBDEP)) $(addprefix -l,$(LIBNAM))
 # Standard libraries
 LIBS+=-lm
 
-all: $(OBJDIR) $(BINDIR) $(BINDIR)/$(BIN)
+all: libraries $(OBJDIR) $(BINDIR) $(BINDIR)/$(BIN)
+
+libraries: 
+	@$(foreach library, $(LIBDEP), $(MAKE) -C $(library) | grep -v 'Nothing to be done' || $$true;)
 
 # Targets addition arguments
 images: TRGTARGS=-p
