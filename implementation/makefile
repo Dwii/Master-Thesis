@@ -94,5 +94,6 @@ $(LANGS):
 
 clean:
 	@$(foreach lang, $(LANGS), $(MAKE) -C $(lang) clean;)
+	$(MAKE) -C Libraries clean
 
 .PHONY: all vars output $(LANGS) clean
