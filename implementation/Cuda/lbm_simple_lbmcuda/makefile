@@ -27,7 +27,7 @@ SRCS=$(wildcard $(SRCDIR)/*.c)
 OBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.c=.o)))
 
 # Flags
-CFLAGS=-g -Wall -Wextra -pedantic -O3
+CFLAGS=-g -Wall -Wextra -pedantic -std=gnu99 -O3
 
 # Non-standard libraries and headers
 LIBNAM=pgm timing lbmcuda
