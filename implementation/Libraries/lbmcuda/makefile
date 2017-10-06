@@ -12,7 +12,7 @@ SRCS=$(wildcard *.cu)
 OBJS=$(addprefix $(OBJDIR)/,$(SRCS:.cu=.o))
 
 # Flags
-NVCC_FLAGS=--compiler-options '-fPIC' 
+NVCC_FLAGS=--compiler-options '-fPIC' -Wno-deprecated-gpu-targets -O3 --ptxas-options=-v -Xptxas -dlcm=cg
 
 all: $(OBJDIR) $(BIN)
 
