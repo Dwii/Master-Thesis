@@ -12,7 +12,7 @@ SRCS=$(wildcard *.cu)
 OBJS=$(addprefix $(OBJDIR)/,$(SRCS:.cu=.o))
 
 # Flags
-NVCC_FLAGS=
+NVCC_FLAGS=--compiler-options '-fPIC' 
 
 all: $(OBJDIR) $(BIN)
 
@@ -20,7 +20,7 @@ $(OBJDIR) $(BINDIR) $(IMGDIR):
 	mkdir -p $@
 
 $(BIN): $(OBJS)
-	$(NVCC) $(NVCC_FLAGS) --compiler-options '-fPIC' -shared $^ -o $@
+	$(NVCC) $(NVCC_FLAGS) -shared $^ -o $@
 
 -include $(OBJS:.o=.d)
 
