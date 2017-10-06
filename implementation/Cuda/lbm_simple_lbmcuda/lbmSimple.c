@@ -5,7 +5,9 @@
  * \date    06.10.2017
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <timing.h>
 #include <pgm.h>
