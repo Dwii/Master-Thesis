@@ -1,7 +1,7 @@
 include ../../lbm_common.mk
 
 # Compiler
-NVCC=nvcc
+CC=gcc
 
 # Binary target
 BIN=lbmSimple
@@ -28,7 +28,6 @@ OBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.c=.o)))
 
 # Flags
 CFLAGS=-g -Wall -Wextra -pedantic -O3
-NVCC_FLAGS=-Wno-deprecated-gpu-targets -O3 --ptxas-options=-v
 
 # Non-standard libraries and headers
 LIBNAM=pgm timing lbmcuda
@@ -36,8 +35,6 @@ LIBDEP=$(addprefix $(LIBDIR)/,$(LIBNAM))
 INCS=$(addprefix -I,$(LIBDEP))
 LIBS=$(addprefix -L,$(LIBDEP)) $(addprefix -l,$(LIBNAM))
 
-INCS+=-I../../Palabos/lbmcuda
-LIBS+=-L../../Palabos/lbmcuda -llbmcuda
 # Standard libraries
 LIBS+=-lm
 
@@ -65,13 +62,12 @@ $(OBJDIR) $(BINDIR) $(OUTDIR):
 	mkdir -p $@
 
 $(BINDIR)/$(BIN): $(OBJS)
-	$(NVCC) $(NVCC_FLAGS) $< -o $@ $(LIBS)
+	$(CC) $(CFLAGS) $< -o $@ -Bdynamic $(LIBS)
 
 -include $(OBJS:.o=.d)
 
 $(OBJS): $(SRCS)
-	$(NVCC) -M $(NVCC_FLAGS) $< -odir $(OBJDIR) $(INCS) > $(@:.o=.d) 
-	$(NVCC) $(NVCC_FLAGS) -o $@ -c $< $(INCS)
+	$(CC) -MMD $(CFLAGS) -o $@ -c $< $(INCS)
 
 clean:
 	rm -rf $(OBJDIR) $(BINDIR) $(OUTDIR)
