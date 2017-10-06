@@ -86,9 +86,9 @@ void lbm_simulation_init(lbm_simulation* lbm_sim, size_t width, size_t height, s
     lbm_lattices* fin = lbm_lattices_create(nl);
 
     // Initialization of the populations at equilibrium with the given velocity.
-    for (int z = 0; z < depth; z++) {
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
+    for (size_t z = 0; z < depth; z++) {
+        for (size_t y = 0; y < height; y++) {
+            for (size_t x = 0; x < width; x++) {
                 double rho = x == width/2 && y == height/2 && z == depth/2 ? 2.0 : 1.0;
                 equilibrium(fin, IDX(x,y,z,width,height,depth), rho, 0, 0, 0);
             }
