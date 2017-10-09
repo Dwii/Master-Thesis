@@ -15,7 +15,7 @@ define execute
 	[[ "$$info" == "" ]] && info=/dev/null; \
 	eval "export $$llp_var=$${!llp_var}$(subst $(space):,:,$(addprefix :,$(1)))"; \
 	start=$$(date +%s); \
-	echo $$(eval $(2) | tee $(STD_FILE) ) > $$info; \
+	echo $$(eval $(2) | tee $(STD_FILE) > $$info ) ; \
 	end=$$(date +%s); \
 	T=$$(($$end-$$start)); \
 	printf "execution time: $$T" >> $$info;
