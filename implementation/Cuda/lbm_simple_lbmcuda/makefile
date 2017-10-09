@@ -19,9 +19,6 @@ NX=100
 NY=100
 NZ=10
 
-DEFAULT_IMG_INTERVAL=100
-DEFAULT_OUT_INTERVAL=0
-
 # Source and object files
 SRCS=$(wildcard $(SRCDIR)/*.c)
 OBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.c=.o)))
@@ -43,20 +40,20 @@ all: libraries $(OBJDIR) $(BINDIR) $(BINDIR)/$(BIN)
 libraries: 
 	@$(foreach library, $(LIBDEP), $(MAKE) -C $(library) | grep -v 'Nothing to be done' || $$true;)
 
-run: images
+# Targets addition arguments
+images: TRGTARGS=-p
+output: TRGTARGS=-f -L
+outpal: TRGTARGS=-F
 
-images: all $(OUTDIR)
-	$(eval INTERVAL ?= $(DEFAULT_IMG_INTERVAL))
-	echo "$(BINDIR)/$(BIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -x $(NX) -y $(NY) -z $(NZ)"
-	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) -p -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -x $(NX) -y $(NY) -z $(NZ)" )
+# Targets defaut intervals
+run output outpal: INTERVAL?=0
+images: INTERVAL?=100
 
-output: all $(OUTDIR) 
-	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
-	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) -f -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -L -x $(NX) -y $(NY) -z $(NZ)", $(OUTDIR)/$(OUTPRE)$(ITER).timing)
+# Targets timing file path (left unset if not required)
+output: INFO=$(OUTDIR)/$(OUTPRE)$(ITER).info
 
-outpal: all $(OUTDIR) 
-	$(eval INTERVAL ?= $(DEFAULT_OUT_INTERVAL))
-	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) -F -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -x $(NX) -y $(NY) -z $(NZ)")
+run images output outpal: all $(OUTDIR)
+	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) $(TRGTARGS) -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -x $(NX) -y $(NY) -z $(NZ) $(BINARGS)", $(INFO))
 
 $(OBJDIR) $(BINDIR) $(OUTDIR): 
 	mkdir -p $@
