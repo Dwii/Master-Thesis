@@ -28,4 +28,4 @@ endef
 .PHONY: .stdout
 
 # Binary arguments
-ITER=200000
+ITER=3000
