@@ -47,12 +47,12 @@ inline std::vector<Box3D> generateSurfaces(Box3D bbox, plint envelopeWidth)
     plint z1 = bbox.z1;
 
     plint ew = envelopeWidth;
-    surfaces.push_back(Box3D(x0,      x1,      y0,      y1,      z0,      z0+ew-1));
-    surfaces.push_back(Box3D(x0,      x1,      y0,      y1,      z1-ew+1, z1));
-    surfaces.push_back(Box3D(x0,      x1,      y0,      y0+ew-1, z0+ew,   z1-ew));
-    surfaces.push_back(Box3D(x0,      x1,      y1-ew+1, y1,      z0+ew,   z1-ew));
-    surfaces.push_back(Box3D(x0,      x0+ew-1, y0+ew,   y1-ew,   z0+ew,   z1-ew));
-    surfaces.push_back(Box3D(x1-ew+1, x1,      y0+ew,   y1-ew,   z0+ew,   z1-ew));
+    surfaces.push_back(Box3D(x0,      x1,        y0,      y0+ew-1,    z0,      z1));
+    surfaces.push_back(Box3D(x0,      x1,        y1-ew+1, y1,         z0,      z1));
+    surfaces.push_back(Box3D(x0,      x1,        y0+ew,   y1-ew,      z0,      z0+ew-1));
+    surfaces.push_back(Box3D(x0,      x1,        y0+ew,   y1-ew,      z1-ew+1, z1));
+    surfaces.push_back(Box3D(x0,      x0+ew-1,   y0+ew,   y1-ew,      z0+ew,   z1-ew));
+    surfaces.push_back(Box3D(x1-ew+1, x1,        y0+ew,   y1-ew,      z0+ew,   z1-ew));
 
     return surfaces;
 }
