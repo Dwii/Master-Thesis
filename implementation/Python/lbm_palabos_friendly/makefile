@@ -23,11 +23,11 @@ output: TRGTARGS=OUT
 run output: INTERVAL?=0
 images:     INTERVAL?=100
 
-# Targets timing file path (left unset if not required)
-output: TIMING=$(OUTDIR)/$(OUTPRE)$(ITER).timing
+# Targets info file path (left unset if not required)
+output: INFO=$(OUTDIR)/$(OUTPRE)$(ITER).info
 
 run images output: $(OUTDIR)
-	$(call execute,, "$(PY) $(SRCDIR)/$(SCRIPT) $(TRGTARGS) $(ITER) $(INTERVAL) $(OUTDIR) $(OUTPRE)", $(TIMING))
+	$(call execute,, "$(PY) $(SRCDIR)/$(SCRIPT) $(TRGTARGS) $(ITER) $(INTERVAL) $(OUTDIR) $(OUTPRE)", $(INFO))
 
 $(OUTDIR):
 	mkdir -p $@

@@ -40,10 +40,10 @@ images: all $(OUTDIR)
 output: all $(OUTDIR) outcpu outgpu
 
 outcpu: 
-	$(call execute, $(LIBDEP), "$(BINDIR)/$(CPUBIN) $(ITER)", $(OUTDIR)/$(CPUPRE)$(ITER).timing)
+	$(call execute, $(LIBDEP), "$(BINDIR)/$(CPUBIN) $(ITER)", $(OUTDIR)/$(CPUPRE)$(ITER).info)
 
 outgpu: 
-	$(call execute, $(LIBDEP), "$(BINDIR)/$(GPUBIN) $(ITER)", $(OUTDIR)/$(GPUPRE)$(ITER).timing)
+	$(call execute, $(LIBDEP), "$(BINDIR)/$(GPUBIN) $(ITER)", $(OUTDIR)/$(GPUPRE)$(ITER).info)
 
 $(OBJDIR)/%.o: %.cpp $(OBJDIR)
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(INCS)

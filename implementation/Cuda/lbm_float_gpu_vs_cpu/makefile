@@ -60,9 +60,9 @@ run output outcpu outgpu: INTERVAL?=0
 images: INTERVAL?=100
 deltas: INTERVAL?=1
 
-# Targets timing file path (left unset if not required)
-outcpu: TIMING?=$(OUTDIR)/$(CPUPRE)$(ITER).timing
-outgpu: TIMING?=$(OUTDIR)/$(GPUPRE)$(ITER).timing
+# Targets info file path (left unset if not required)
+outcpu: INFO?=$(OUTDIR)/$(CPUPRE)$(ITER).info
+outgpu: INFO?=$(OUTDIR)/$(GPUPRE)$(ITER).info
 
 # Targets binary and prefix path
 BIN=$(CPUBIN)
@@ -74,10 +74,10 @@ output: all $(OUTDIR)
 	$(MAKE) outcpu outgpu -j 2 INTERVAL=$(INTERVAL)
 
 deltas: all $(OUTDIR)
-	$(MAKE) outcpu outgpu outdlt -j 3 INTERVAL=$(INTERVAL) TIMING=/dev/null
+	$(MAKE) outcpu outgpu outdlt -j 3 INTERVAL=$(INTERVAL) INFO=/dev/null
 
 run images outcpu outgpu: all $(OUTDIR)
-	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) $(TRGTARGS) -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(XPUPRE) $(BINARGS)", $(TIMING))
+	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) $(TRGTARGS) -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(XPUPRE) $(BINARGS)", $(INFO))
 
 outdlt: $(DLT_FILE) $(DLT_ITERS)
 

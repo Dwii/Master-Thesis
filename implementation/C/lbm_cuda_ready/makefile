@@ -45,11 +45,11 @@ output: TRGTARGS=-f -L
 run output: INTERVAL?=0
 images: INTERVAL?=100
 
-# Targets timing file path (left unset if not required)
-output: TIMING=$(OUTDIR)/$(OUTPRE)$(ITER).timing
+# Targets info file path (left unset if not required)
+output: INFO=$(OUTDIR)/$(OUTPRE)$(ITER).info
 
 run images output: all $(OUTDIR)
-	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) $(TRGTARGS) -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) $(BINARGS)", $(TIMING))
+	$(call execute, $(LIBDEP), "$(BINDIR)/$(BIN) $(TRGTARGS) -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) $(BINARGS)", $(INFO))
 
 $(OBJDIR) $(BINDIR) $(OUTDIR): 
 	mkdir -p $@
