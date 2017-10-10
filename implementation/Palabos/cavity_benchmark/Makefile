@@ -121,6 +121,5 @@ $(OUTDIR) $(BINDIR):
 	mkdir -p $@
 
 run: compile .stdout $(OUTDIR)
-	$(call execute, $(libraryPaths), "$(BINDIR)/$(BIN) -p -e -N $(N) -x $(SNX) -y $(SNY) -z $(SNZ) -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -L -b", tmp/output3.info)
-	$(call execute, $(libraryPaths), "$(BINDIR)/$(BIN) -p -e -N $(N) -x $(SNX) -y $(SNY) -z $(SNZ) -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -L", tmp/output4.info)
-	vimdiff tmp/output1.info tmp/output2.info tmp/output3.info tmp/output4.info
+	$(call execute, $(libraryPaths), "$(BINDIR)/$(BIN) -p -e -N $(N) -x $(SNX) -y $(SNY) -z $(SNZ) -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -L -b")
+
