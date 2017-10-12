@@ -61,17 +61,15 @@ debugFlags   = -g
 # Compiler flags to use when profile mode is on
 profileFlags = -pg
 
-# (DY)LD_LIBRARY_PATH variable name according to the running OS
-llp_var=$(if $(filter $(shell uname),Darwin),DYLD_LIBRARY_PATH,LD_LIBRARY_PATH)
-# Makfile stuff
-D=$$
-noop=
-space=$(noop) $(noop)
-# Binary filename
-BIN=$(shell filename=$(projectFiles); echo $${filename%.*})
+# Binary filename output by SCons (first project file without its extension)
+OUTBIN=$(shell outbin="$(projectFiles)"; echo $${outbin%%.*})
+# Final binaries names
+CPUBIN=$(OUTBIN)_cpu
+GPUBIN=$(OUTBIN)_gpu
 # Directories
-OUTDIR=tmp
+OUTDIR=out
 BINDIR=bin
+
 # Binary default arguments
 N = 30
 SNX = 16
@@ -79,6 +77,19 @@ SNY = 16
 SNZ = 16
 INTERVAL=300
 OUTPRE=lbm_
+BOUNDARY=true
+BOUNDARY_FLAG=$(subst true,,$(subst $(BOUNDARY),-b,true))
+XPU=cpu
+
+# Makfile stuff
+D=$$
+noop=
+space=$(noop) $(noop)
+quote='
+define newline
+
+
+endef
 
 ##########################################################################
 # All code below this line is just about forwarding the options
@@ -87,28 +98,39 @@ OUTPRE=lbm_
 
 SCons     = $(palabosRoot)/scons/scons.py -j 6 -f $(palabosRoot)/SConstruct
 
-SConsArgs = palabosRoot=$(palabosRoot) \
-            projectFiles="$(projectFiles)" \
-            optimize=$(optimize) \
-            debug=$(debug) \
-            profile=$(profile) \
-            MPIparallel=$(MPIparallel) \
-            SMPparallel=$(SMPparallel) \
-            usePOSIX=$(usePOSIX) \
-            serialCXX=$(serialCXX) \
-            parallelCXX=$(parallelCXX) \
-            compileFlags="$(compileFlags)" \
-            linkFlags="$(linkFlags)" \
-            optimFlags="$(optimFlags)" \
-            debugFlags="$(debugFlags)" \
-            profileFlags="$(profileFlags)" \
-            srcPaths="$(srcPaths)" \
-            libraryPaths="$(libraryPaths)" \
-            includePaths="$(includePaths)" \
-            libraries="$(libraries)"
+define SConsArgsDefinition
+palabosRoot=$(palabosRoot)
+projectFiles="$(projectFiles)"
+optimize=$(optimize)
+debug=$(debug)
+profile=$(profile)
+MPIparallel=$(MPIparallel)
+SMPparallel=$(SMPparallel)
+usePOSIX=$(usePOSIX)
+serialCXX=$(serialCXX)
+parallelCXX=$(parallelCXX)
+compileFlags="$(compileFlags)"
+linkFlags="$(linkFlags)"
+optimFlags="$(optimFlags)"
+debugFlags="$(debugFlags)"
+profileFlags="$(profileFlags)"
+srcPaths="$(srcPaths)"
+libraryPaths="$(libraryPaths)"
+includePaths="$(includePaths)"
+libraries="$(libraries)"
+endef
 
-compile: $(BINDIR)
-	python $(SCons) $(SConsArgs) && mv $(BIN) $(BINDIR)
+define SConsArgs
+	$(shell printf '$(subst $(newline),\n,${SConsArgsDefinition})')
+endef
+
+compile: $(BINDIR)/$(GPUBIN) $(BINDIR)/$(CPUBIN)
+
+$(BINDIR)/$(CPUBIN): compileFlags += -DPLB_NO_CUDA
+$(BINDIR)/$(GPUBIN) $(BINDIR)/$(CPUBIN): $(projectFiles) | $(BINDIR)
+	python $(SCons) $(SConsArgs) && mv $(OUTBIN) $@ 
+
+rebuild: clean compile
 
 clean:
 	python $(SCons) -c $(SConsArgs)
@@ -118,8 +140,15 @@ clean:
 	/bin/rm -f *.o
 
 $(OUTDIR) $(BINDIR):
-	mkdir -p $@
+	@mkdir -p $@
 
-run: compile .stdout $(OUTDIR)
-	$(call execute, $(libraryPaths), "$(BINDIR)/$(BIN) -p -e -N $(N) -x $(SNX) -y $(SNY) -z $(SNZ) -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -L -b")
+setbin:
+	$(eval BIN=$(if $(subst $(strip $(XPU)),,cpu),$(BIN),$(BINDIR)/$(CPUBIN)))
+	$(eval BIN=$(if $(subst $(strip $(XPU)),,gpu),$(BIN),$(BINDIR)/$(GPUBIN)))
+	$(if $(strip $(BIN)),,echo "Unset binary..."; exit 1)
 
+run: BINARGS?=-p -e
+run: compile setbin .stdout $(OUTDIR)
+	$(call execute, $(libraryPaths), "$(BIN) -N $(N) -x $(SNX) -y $(SNY) -z $(SNZ) -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -L $(BINARGS) $(BOUNDARY_FLAG)")
+
+.PHONY: compile rebuild clean setbin run 
