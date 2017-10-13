@@ -18,7 +18,7 @@ define execute
 	eval $(2) | tee $(STD_FILE) > $$info ; \
 	end=$$(date +%s); \
 	T=$$(($$end-$$start)); \
-	printf "execution time: $$T" >> $$info;
+	printf "execution time: $$T\n" >> $$info;
 endef
 
 # Rule .stdout: set STD_FILE as the standard output for execute
