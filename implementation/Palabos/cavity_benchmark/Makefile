@@ -69,6 +69,7 @@ GPUBIN=$(OUTBIN)_gpu
 # Directories
 OUTDIR=out
 BINDIR=bin
+BENDIR=benchmarks
 
 # Binary default arguments
 N = 30
@@ -80,6 +81,15 @@ OUTPRE=lbm_
 BOUNDARY=true
 BOUNDARY_FLAG=$(subst true,,$(subst $(BOUNDARY),-b,true))
 XPU=cpu
+
+# Benchmarks
+BENDATPREF=$(XPU)_$(subst true,,$(subst $(BOUNDARY),boundary_,true))
+BENCHMARKS=$(wildcard $(BENDIR)/*.ben)
+BENCHDATAS=${subst $(BENDIR)/,$(OUTDIR)/$(BENDATPREF),$(BENCHMARKS:.ben=.dat)}
+# Measures per benchmark setup
+MPS=2
+# Measure extention
+MEXT=out
 
 # Makfile stuff
 D=$$
@@ -151,4 +161,67 @@ run: BINARGS?=-p -e
 run: compile setbin .stdout $(OUTDIR)
 	$(call execute, $(libraryPaths), "$(BIN) -N $(N) -x $(SNX) -y $(SNY) -z $(SNZ) -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -L $(BINARGS) $(BOUNDARY_FLAG)")
 
-.PHONY: compile rebuild clean setbin run 
+# Function:    measure
+# Description: execute and store a measure (lups and energy) 
+# Arguments:   NXZY, measure name, expected energy (optional)
+define measure
+	$(eval nxyz=$(shell printf ' -N %d -x %d -y %d -z %d' $(1)))
+	$(eval measure_file=$(2).$(MEXT))
+	$(call execute, $(libraryPaths), "$(BIN) -e -L $(BOUNDARY_FLAG) $(nxyz) -i $(ITER) -I 0 2> /dev/null | grep -E 'energy|lups'", $(measure_file))
+	$(if $(strip $(3)),
+		@cat $(measure_file) | sed -n 's/.*energy: \(.*\).*/\1/p' | grep $(3) > /dev/null || (echo "energy differ for $(measure_file)" && exit 1)
+	)
+endef
+
+# Function:    measure
+# Description: execute measure function X times
+# Arguments:   NXZY separated with spaces, measures name, X, expected energy (optional)
+define repeat_measure
+	$(eval I=$(shell echo $$(seq $(3))))
+	$(foreach i, $(I), $(call measure, $(1), $(2)_$(i), $(4)))
+endef
+
+# Function:    run_benchmark
+# Description: execute benchmark measurements X times
+# Arguments:   benchmark file, measures name, X, energy file (optional)
+define run_benchmark
+	$(eval I=$(shell seq $$(cat $(1) | wc -l)))
+	@$(foreach i, $(I), $(call repeat_measure, $$(sed '$(i)q;d' $(1)), $(2)_$(i), $(3), $(if $(strip $(4)), $$(sed '$(i)q;d' $(4))))) 
+endef
+
+benchmark: INTERVAL=0
+benchmark: setbin compile $(OUTDIR) $(BENCHDATAS)
+
+.PRECIOUS: $(BENDIR)/%.nrg
+
+$(BENDIR)/%.nrg: BIN=$(BINDIR)/$(CPUBIN)
+$(BENDIR)/%.nrg: $(BENDIR)/%.ben 
+	$(eval benchmark_name=${subst $(BENDIR),$(OUTDIR),$(<:.ben=)}_nrg)
+	$(call run_benchmark, $<, $(benchmark_name), 1)
+
+	@expected_count=$$(cat $< | wc -l); \
+	nrg_count=$$(cat $(benchmark_name)*_1.out | grep energy | wc -l); \
+	test $$nrg_count -eq $$expected_count || ( \
+		printf "Wrong number of energies: %d/%d\n" $$nrg_count $$expected_count; \
+		exit 1 \
+	)
+
+	@cat $(benchmark_name)*_1.out | sed -n 's/.*energy: \(.*\).*/\1/p' > $@
+
+$(OUTDIR)/$(BENDATPREF)%.dat: $(BENDIR)/%.ben $(BENDIR)/%.nrg
+	$(eval benchmark_name=$(@:.dat=))
+	$(eval nrg_file=$(^:.ben=.nrg))
+	$(call run_benchmark, $<, $(benchmark_name), $(MPS), $(nrg_file))
+	$(eval NI=$(shell cat $< | wc -l))
+	$(eval I=$(shell seq $(NI)))
+
+	@expected_count=$$(echo '$(NI) * $(MPS)' | bc ); \
+	output_count=$$(grep -l -E "lups|energy" $(benchmark_name)*.out | wc -l); \
+	test $$output_count -eq $$expected_count || ( \
+		printf "Wrong number of valid output: %d/%d\n" $$output_count $$expected_count; \
+		exit 1 \
+	)
+
+	@$(foreach i, $(I), echo "($$(cat $(benchmark_name)_$(i)*.$(MEXT) | sed -n 's/average lups: \(.*\).*/\1/p' | paste -s -d+ -))" / $(MPS) | bc >> $@; )
+
+.PHONY: compile rebuild clean run 
