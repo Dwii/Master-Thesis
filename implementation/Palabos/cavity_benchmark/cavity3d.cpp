@@ -210,7 +210,7 @@ int main(int argc, char * argv[])
     bool print_lups = false;
     bool print_avg_lups = false;
     size_t width, height, depth, domain_size;
-    width = height = depth = 0;
+    width = height = depth = domain_size = 0;
     bool print_avg_energy = false;
     bool copy_boundaries_only = false;
     
