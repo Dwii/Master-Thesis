@@ -29,8 +29,6 @@
   * discontinuities on corner nodes.
   **/
 
-//#define PLB_NO_CUDA
-
 #include "palabos3D.h"
 #include "palabos3D.hh"
 #include <vector>
