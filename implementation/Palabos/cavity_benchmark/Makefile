@@ -39,11 +39,11 @@ usePOSIX     = true
 # Path to external source files (other than Palabos)
 srcPaths =
 # Path to external libraries (other than Palabos)
-libraryPaths = ../../Libraries/lbmcuda ../../Libraries/timing
+libraryPaths = ../../Libraries/timing
 # Path to inlude directories (other than Palabos)
-includePaths = ../../Libraries/lbmcuda ../../Libraries/timing
+includePaths = ../../Libraries/timing
 # Dynamic and static libraries (other than Palabos)
-libraries    = -llbmcuda -ltiming
+libraries    = -ltiming
 
 # Compiler to use without MPI parallelism
 serialCXX    = g++
@@ -137,6 +137,9 @@ endef
 compile: $(BINDIR)/$(GPUBIN) $(BINDIR)/$(CPUBIN)
 
 $(BINDIR)/$(CPUBIN): compileFlags += -DPLB_NO_CUDA
+$(BINDIR)/$(GPUBIN): libraries += -llbmcuda
+$(BINDIR)/$(GPUBIN): libraryPaths += ../../Libraries/lbmcuda 
+$(BINDIR)/$(GPUBIN): includePaths += ../../Libraries/lbmcuda 
 $(BINDIR)/$(GPUBIN) $(BINDIR)/$(CPUBIN): $(projectFiles) | $(BINDIR)
 	python $(SCons) $(SConsArgs) && mv $(OUTBIN) $@ 
 
