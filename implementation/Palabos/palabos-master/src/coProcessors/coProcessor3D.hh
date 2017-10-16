@@ -172,7 +172,7 @@ namespace plb {
             }
         }
 
-        lbm_lattices_write(lbm_sim, lattices, nl);
+        lbm_lattices_write(lbm_sim, lattices);
 
         return 1;
     }

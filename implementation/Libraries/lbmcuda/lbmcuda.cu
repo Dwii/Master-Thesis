@@ -187,7 +187,7 @@ struct lbm_simulation{
     dim3 dimComputationGrid, dimComputationBlock;
     size_t shared_mem_size;
     bool switch_f0_f1;
-    size_t nx, ny, nz;
+    size_t nx, ny, nz, nl;
     double omega;
 };
 
@@ -331,23 +331,22 @@ void lbm_vars_cuda_dealloc(lbm_vars* vars)
     lbm_lattices_cuda_dealloc(&vars->f1);
 }
 
-void lbm_lattices_write(lbm_lattices* d_lat, lbm_lattices* h_lat, size_t nl);
-
 lbm_simulation* lbm_simulation_create(size_t nx, size_t ny, size_t nz, double omega)
 {
-//    printf("lbm_simulation_create\n");
     lbm_simulation* lbm_sim = (lbm_simulation*) malloc (sizeof(lbm_simulation));
-    size_t nl = nx*ny*nz;
+
     lbm_sim->nx = nx;
     lbm_sim->ny = ny;
     lbm_sim->nz = nz;
+    lbm_sim->nl = nx * ny * nz;
+
     lbm_sim->omega = omega;
    
-    lbm_vars_alloc(&lbm_sim->h_vars, nl);
+    lbm_vars_alloc(&lbm_sim->h_vars, lbm_sim->nl);
     
     lbm_sim->switch_f0_f1 = false;
 
-    lbm_vars_cuda_alloc(&lbm_sim->d_vars, nl);
+    lbm_vars_cuda_alloc(&lbm_sim->d_vars, lbm_sim->nl);
 
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, 0);
@@ -384,7 +383,7 @@ void lbm_simulation_update(lbm_simulation* lbm_sim)
 
 void lbm_lattices_read(lbm_simulation* lbm_sim, lbm_lattices* h_lat)
 {
-    size_t nl = lbm_sim->nx * lbm_sim->ny * lbm_sim->nz;
+    size_t nl = lbm_sim->nl;
 
     lbm_lattices* d_lat = lbm_sim->switch_f0_f1 ? &lbm_sim->d_vars.f1 : &lbm_sim->d_vars.f0;
 
@@ -409,8 +408,10 @@ void lbm_lattices_read(lbm_simulation* lbm_sim, lbm_lattices* h_lat)
     HANDLE_ERROR(cudaMemcpy(h_lat->bw, d_lat->bw, sizeof(double)*nl, cudaMemcpyDeviceToHost));
 }
 
-void lbm_lattices_write(lbm_simulation* lbm_sim, lbm_lattices* h_lat, size_t nl)
+void lbm_lattices_write(lbm_simulation* lbm_sim, lbm_lattices* h_lat)
 {
+    size_t nl = lbm_sim->nl;
+
     lbm_lattices* d_lat = lbm_sim->switch_f0_f1 ? &lbm_sim->d_vars.f1 : &lbm_sim->d_vars.f0;
 
     HANDLE_ERROR(cudaMemcpy(d_lat->ne, h_lat->ne, sizeof(double)*nl, cudaMemcpyHostToDevice));
@@ -435,12 +436,11 @@ void lbm_lattices_write(lbm_simulation* lbm_sim, lbm_lattices* h_lat, size_t nl)
 }
 
 
-void lbm_u_read(lbm_simulation* lbm_sim, lbm_u* u, size_t nx, size_t ny, size_t nz)
+void lbm_u_read(lbm_simulation* lbm_sim, lbm_u* u)
 {
-    size_t nl = nx*ny*nz;
-    HANDLE_ERROR(cudaMemcpy(u->u0, lbm_sim->d_vars.u.u0, sizeof(double)*nl, cudaMemcpyDeviceToHost));
-    HANDLE_ERROR(cudaMemcpy(u->u1, lbm_sim->d_vars.u.u1, sizeof(double)*nl, cudaMemcpyDeviceToHost));
-    HANDLE_ERROR(cudaMemcpy(u->u2, lbm_sim->d_vars.u.u2, sizeof(double)*nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(u->u0, lbm_sim->d_vars.u.u0, sizeof(double)*lbm_sim->nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(u->u1, lbm_sim->d_vars.u.u1, sizeof(double)*lbm_sim->nl, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy(u->u2, lbm_sim->d_vars.u.u2, sizeof(double)*lbm_sim->nl, cudaMemcpyDeviceToHost));
 }
 
 lbm_lattices* lbm_lattices_create(size_t nl)

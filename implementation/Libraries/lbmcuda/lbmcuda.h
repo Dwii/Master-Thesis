@@ -58,11 +58,11 @@ void lbm_simulation_update(lbm_simulation* lbm_sim);
 lbm_lattices* lbm_lattices_create(size_t size);
 void lbm_lattices_destroy(lbm_lattices* lat);
 void lbm_lattices_read(lbm_simulation* lbm_sim, lbm_lattices* lat);
-void lbm_lattices_write(lbm_simulation* lbm_sim, lbm_lattices* h_lat, size_t nl);
+void lbm_lattices_write(lbm_simulation* lbm_sim, lbm_lattices* h_lat);
 
 lbm_u* lbm_u_create(size_t width, size_t height, size_t depth);
 void lbm_u_destroy(lbm_u* u);
-void lbm_u_read(lbm_simulation* lbm_sim, lbm_u* u, size_t width, size_t height, size_t depth);
+void lbm_u_read(lbm_simulation* lbm_sim, lbm_u* u);
 
 #ifdef __cplusplus
 }

@@ -97,7 +97,7 @@ void lbm_simulation_init(lbm_simulation* lbm_sim, size_t width, size_t height, s
         }
     }
     
-    lbm_lattices_write(lbm_sim, fin, nl);
+    lbm_lattices_write(lbm_sim, fin);
     
     lbm_lattices_destroy(fin);
 }
@@ -275,7 +275,7 @@ int main(int argc, char * const argv[])
             char* filename;
             
             if ( out == OUT_IMG ) {
-                lbm_u_read(lbm_sim, u, width, height, depth);
+                lbm_u_read(lbm_sim, u);
                 
                 if ( asprintf(&filename, "%s/%s%d.pgm", out_path, out_pref, iter) != -1 ) {
                     output_image(filename, width, height, depth, depth/2, u);
