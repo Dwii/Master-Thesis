@@ -41,7 +41,7 @@ libraryPaths = ../../Libraries/lbmcuda
 # Path to inlude directories (other than Palabos)
 includePaths = ../../Libraries/lbmcuda
 # Dynamic and static libraries (other than Palabos)
-libraries    = -llbmcuda
+libraries    = $(if $(filter $(shell uname),Linux),-lrt) -llbmcuda
 
 # Compiler to use without MPI parallelism
 serialCXX    = g++
