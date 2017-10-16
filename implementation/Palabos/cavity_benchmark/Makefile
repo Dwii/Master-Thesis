@@ -43,7 +43,7 @@ libraryPaths = ../../Libraries/timing
 # Path to inlude directories (other than Palabos)
 includePaths = ../../Libraries/timing
 # Dynamic and static libraries (other than Palabos)
-libraries    = -ltiming
+libraries    = -ltiming $(if $(filter $(shell uname),Linux),-lrt)
 
 # Compiler to use without MPI parallelism
 serialCXX    = g++
