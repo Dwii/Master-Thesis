@@ -134,21 +134,25 @@ define SConsArgs
 	$(shell printf '$(subst $(newline),\n,${SConsArgsDefinition})')
 endef
 
+LBMCUDA_PATH=../../Libraries/lbmcuda 
+
 compile: $(BINDIR)/$(GPUBIN) $(BINDIR)/$(CPUBIN)
 
 $(BINDIR)/$(CPUBIN): compileFlags += -DPLB_NO_CUDA
 $(BINDIR)/$(GPUBIN): libraries += -llbmcuda
-$(BINDIR)/$(GPUBIN): libraryPaths += ../../Libraries/lbmcuda 
-$(BINDIR)/$(GPUBIN): includePaths += ../../Libraries/lbmcuda 
+$(BINDIR)/$(GPUBIN): libraryPaths += $(LBMCUDA_PATH)
+$(BINDIR)/$(GPUBIN): includePaths += $(LBMCUDA_PATH)
 $(BINDIR)/$(GPUBIN) $(BINDIR)/$(CPUBIN): $(projectFiles) | $(BINDIR)
 	python $(SCons) $(SConsArgs) && mv $(OUTBIN) $@ 
 
-rebuild: clean compile
+rebuild: clean_bin compile
 
-clean:
+clean: clean_bin
 	python $(SCons) -c $(SConsArgs)
 	/bin/rm -vf `find $(palabosRoot) -name '*~'`
 	/bin/rm -rf $(OUTDIR)
+
+clean_bin:
 	/bin/rm -rf $(BINDIR)
 	/bin/rm -f *.o
 
@@ -158,6 +162,7 @@ $(OUTDIR) $(BINDIR):
 setbin:
 	$(eval BIN=$(if $(subst $(strip $(XPU)),,cpu),$(BIN),$(BINDIR)/$(CPUBIN)))
 	$(eval BIN=$(if $(subst $(strip $(XPU)),,gpu),$(BIN),$(BINDIR)/$(GPUBIN)))
+	$(eval libraryPaths+=$(if $(subst $(strip $(XPU)),,gpu),,$(LBMCUDA_PATH)))
 	$(if $(strip $(BIN)),,echo "Unset binary..."; exit 1)
 
 run: BINARGS?=-p -e
@@ -227,4 +232,4 @@ $(OUTDIR)/$(BENDATPREF)%.dat: $(BENDIR)/%.ben $(BENDIR)/%.nrg
 
 	@$(foreach i, $(I), echo "($$(cat $(benchmark_name)_$(i)*.$(MEXT) | sed -n 's/average lups: \(.*\).*/\1/p' | paste -s -d+ -))" / $(MPS) | bc >> $@; )
 
-.PHONY: compile rebuild clean run 
+.PHONY: compile rebuild clean clean_bin set_bin run benchmark
