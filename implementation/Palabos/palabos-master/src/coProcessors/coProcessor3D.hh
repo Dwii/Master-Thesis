@@ -119,8 +119,6 @@ namespace plb {
         }
         lattices = lbm_lattices_create(nl);
 
-        lattices_on_host = false;
-
         return 1;
     }
     
@@ -128,12 +126,6 @@ namespace plb {
     int D3Q19CudaCoProcessor3D<T>::send(int domainHandle, Box3D const& subDomain, std::vector<char> const& data)
     {
         T const* pal_lattices = (const double *)&data[0];
-
-        if ( ! lattices_on_host ) 
-        {
-            lbm_lattices_read(lbm_sim, lattices);
-            lattices_on_host = true;
-        }
 
         long snx = std::abs(subDomain.x0 - subDomain.x1) + 1;
         long sny = std::abs(subDomain.y0 - subDomain.y1) + 1;
@@ -172,7 +164,8 @@ namespace plb {
             }
         }
 
-        lbm_lattices_write(lbm_sim, lattices);
+        lbm_box_3d subdomain = {subDomain.x0, subDomain.x1, subDomain.y0, subDomain.y1, subDomain.z0, subDomain.z1};
+        lbm_lattices_write_subdomain(lbm_sim, lattices, subdomain);
 
         return 1;
     }
@@ -183,16 +176,12 @@ namespace plb {
         long sny = std::abs(subDomain.y0 - subDomain.y1) + 1;
         long snz = std::abs(subDomain.z0 - subDomain.z1) + 1;
         data.resize(snx*sny*snz*19*sizeof(T));
-        
+
         T* pal_lattices = (double *)&data[0];
-
-        if ( ! lattices_on_host ) 
-        {
-            lbm_lattices_read(lbm_sim, lattices);
-            bool answer = true;
-            memcpy((void*)&this->lattices_on_host, (const void*)&answer, sizeof(bool));
-        }
-
+        
+        lbm_box_3d subdomain = {subDomain.x0, subDomain.x1, subDomain.y0, subDomain.y1, subDomain.z0, subDomain.z1};
+        lbm_lattices_read_subdomain(lbm_sim, lattices, subdomain);
+        
         for (plint x = subDomain.x0; x <= subDomain.x1; x++) {
             for (plint y = subDomain.y0; y <= subDomain.y1; y++) {
                 for (plint z = subDomain.z0; z <= subDomain.z1; z++) {
@@ -201,7 +190,7 @@ namespace plb {
                     size_t px = x - subDomain.x0;
                     size_t py = y - subDomain.y0;
                     size_t pz = z - subDomain.z0;
-                    size_t pbi = PBIDX(px,py,pz,snx,sny,snz); // base index
+                    size_t pbi = PBIDX(px,py,pz,snx,sny,snz); // palabos data base index
 
                     pal_lattices[pbi +  0] = lattices->c [gi] - 1./3 ;
                     pal_lattices[pbi +  1] = lattices->w [gi] - 1./18;
@@ -233,7 +222,6 @@ namespace plb {
     int D3Q19CudaCoProcessor3D<T>::collideAndStream(int domainHandle)
     {
         lbm_simulation_update(lbm_sim);
-        lattices_on_host = false;
         return 1;
     }
 #endif
