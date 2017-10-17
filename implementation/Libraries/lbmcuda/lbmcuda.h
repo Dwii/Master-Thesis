@@ -12,7 +12,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#define IDX(x, y, z, nx, ny, nz) ((x+(nx))%(nx) + ((y+(ny))%(ny) + ( (z+(nz))%(nz) )*(ny))*(nx) )
+#define IDX(x, y, z, nx, ny, nz) ((x+(nx))%(nx) + ((z+(nz))%(nz) + ( (y+(ny))%(ny) )*(nz))*(nx) )
 
 typedef struct {
     // Middle plane
