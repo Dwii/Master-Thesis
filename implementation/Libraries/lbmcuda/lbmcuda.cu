@@ -7,7 +7,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <math.h>
 #include <stdbool.h>
 #include "lbmcuda.h"
 
@@ -381,6 +380,116 @@ void lbm_simulation_update(lbm_simulation* lbm_sim)
     lbm_sim->switch_f0_f1 = ! lbm_sim->switch_f0_f1;
 }
 
+void lbm_lattices_read_subdomain(lbm_simulation* lbm_sim, lbm_lattices* h_lat, lbm_box_3d subdomain)
+{
+    lbm_lattices* d_lat = lbm_sim->switch_f0_f1 ? &lbm_sim->d_vars.f1 : &lbm_sim->d_vars.f0;
+    size_t snx = std::abs(subdomain.x0 - subdomain.x1) + 1;
+    size_t sny = std::abs(subdomain.y0 - subdomain.y1) + 1;
+    size_t snz = std::abs(subdomain.z0 - subdomain.z1) + 1;
+
+    // Extend sub domain range to reduce cudaMemcpy calls
+    if (snx >= lbm_sim->nx-4 && snz > 1) {
+        snx = lbm_sim->nx;
+        subdomain.x0 = 0;
+        subdomain.x1 = lbm_sim->nx-1;
+
+        if (snz >= lbm_sim->nz-4) {
+            snz = lbm_sim->nz;
+            subdomain.z0 = 0;
+            subdomain.z1 = lbm_sim->nz-1;
+        }
+    }
+
+    // Number of contiguous cells
+    size_t ncc = snx; 
+
+    int x = subdomain.x0;
+
+    if (snx == lbm_sim->nx) {
+        // (Partial ?) contiguous plane XZ axis
+        ncc *= snz;
+        int z = subdomain.z0;
+
+        if ( snz == lbm_sim->nz ) {
+            // contiguous planes on XZ axis
+            ncc *= sny;
+            int y = subdomain.y0;
+
+            // Read (#sny) contiguous planes 
+            int gi = IDX(x,y,z,lbm_sim->nx,lbm_sim->ny,lbm_sim->nz);
+            HANDLE_ERROR(cudaMemcpy(&h_lat->ne[gi], &d_lat->ne[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+            HANDLE_ERROR(cudaMemcpy(&h_lat->e [gi], &d_lat->e [gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+            HANDLE_ERROR(cudaMemcpy(&h_lat->se[gi], &d_lat->se[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+            HANDLE_ERROR(cudaMemcpy(&h_lat->n [gi], &d_lat->n [gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+            HANDLE_ERROR(cudaMemcpy(&h_lat->c [gi], &d_lat->c [gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+            HANDLE_ERROR(cudaMemcpy(&h_lat->s [gi], &d_lat->s [gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+            HANDLE_ERROR(cudaMemcpy(&h_lat->nw[gi], &d_lat->nw[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+            HANDLE_ERROR(cudaMemcpy(&h_lat->w [gi], &d_lat->w [gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+            HANDLE_ERROR(cudaMemcpy(&h_lat->sw[gi], &d_lat->sw[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+            HANDLE_ERROR(cudaMemcpy(&h_lat->te[gi], &d_lat->te[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+            HANDLE_ERROR(cudaMemcpy(&h_lat->tn[gi], &d_lat->tn[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+            HANDLE_ERROR(cudaMemcpy(&h_lat->tc[gi], &d_lat->tc[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+            HANDLE_ERROR(cudaMemcpy(&h_lat->ts[gi], &d_lat->ts[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+            HANDLE_ERROR(cudaMemcpy(&h_lat->tw[gi], &d_lat->tw[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+            HANDLE_ERROR(cudaMemcpy(&h_lat->be[gi], &d_lat->be[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+            HANDLE_ERROR(cudaMemcpy(&h_lat->bn[gi], &d_lat->bn[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+            HANDLE_ERROR(cudaMemcpy(&h_lat->bc[gi], &d_lat->bc[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+            HANDLE_ERROR(cudaMemcpy(&h_lat->bs[gi], &d_lat->bs[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+            HANDLE_ERROR(cudaMemcpy(&h_lat->bw[gi], &d_lat->bw[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+        } else {
+            // Read (#sny) partial planes
+            for (int y = subdomain.y0; y <= subdomain.y1; y++) {
+                int gi = IDX(x,y,z,lbm_sim->nx,lbm_sim->ny,lbm_sim->nz);
+                HANDLE_ERROR(cudaMemcpy(&h_lat->ne[gi], &d_lat->ne[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->e [gi], &d_lat->e [gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->se[gi], &d_lat->se[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->n [gi], &d_lat->n [gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->c [gi], &d_lat->c [gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->s [gi], &d_lat->s [gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->nw[gi], &d_lat->nw[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->w [gi], &d_lat->w [gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->sw[gi], &d_lat->sw[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->te[gi], &d_lat->te[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->tn[gi], &d_lat->tn[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->tc[gi], &d_lat->tc[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->ts[gi], &d_lat->ts[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->tw[gi], &d_lat->tw[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->be[gi], &d_lat->be[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->bn[gi], &d_lat->bn[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->bc[gi], &d_lat->bc[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->bs[gi], &d_lat->bs[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->bw[gi], &d_lat->bw[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+            }
+        }
+    } else {
+        // Read (#sny*snz) partial contiguous lines
+        for (int y = subdomain.y0; y <= subdomain.y1; y++) {
+            for (int z = subdomain.z0; z <= subdomain.z1; z++) {
+                int gi = IDX(x,y,z,lbm_sim->nx,lbm_sim->ny,lbm_sim->nz);
+                HANDLE_ERROR(cudaMemcpy(&h_lat->ne[gi], &d_lat->ne[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->e [gi], &d_lat->e [gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->se[gi], &d_lat->se[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->n [gi], &d_lat->n [gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->c [gi], &d_lat->c [gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->s [gi], &d_lat->s [gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->nw[gi], &d_lat->nw[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->w [gi], &d_lat->w [gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->sw[gi], &d_lat->sw[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->te[gi], &d_lat->te[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->tn[gi], &d_lat->tn[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->tc[gi], &d_lat->tc[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->ts[gi], &d_lat->ts[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->tw[gi], &d_lat->tw[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->be[gi], &d_lat->be[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->bn[gi], &d_lat->bn[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->bc[gi], &d_lat->bc[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->bs[gi], &d_lat->bs[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+                HANDLE_ERROR(cudaMemcpy(&h_lat->bw[gi], &d_lat->bw[gi], sizeof(double)*ncc, cudaMemcpyDeviceToHost));
+            }
+        }
+    }
+}
+
 void lbm_lattices_read(lbm_simulation* lbm_sim, lbm_lattices* h_lat)
 {
     size_t nl = lbm_sim->nl;
@@ -406,6 +515,122 @@ void lbm_lattices_read(lbm_simulation* lbm_sim, lbm_lattices* h_lat)
     HANDLE_ERROR(cudaMemcpy(h_lat->bc, d_lat->bc, sizeof(double)*nl, cudaMemcpyDeviceToHost));
     HANDLE_ERROR(cudaMemcpy(h_lat->bs, d_lat->bs, sizeof(double)*nl, cudaMemcpyDeviceToHost));
     HANDLE_ERROR(cudaMemcpy(h_lat->bw, d_lat->bw, sizeof(double)*nl, cudaMemcpyDeviceToHost));
+}
+
+void lbm_lattices_write_subdomain(lbm_simulation* lbm_sim, lbm_lattices* h_lat, lbm_box_3d subdomain)
+{
+    lbm_lattices* d_lat = lbm_sim->switch_f0_f1 ? &lbm_sim->d_vars.f1 : &lbm_sim->d_vars.f0;
+    size_t snx = std::abs(subdomain.x0 - subdomain.x1) + 1;
+    size_t sny = std::abs(subdomain.y0 - subdomain.y1) + 1;
+    size_t snz = std::abs(subdomain.z0 - subdomain.z1) + 1;
+
+    // Extend sub domain range to reduce cudaMemcpy calls
+    if (snx >= lbm_sim->nx-4 && snz > 1) {
+        snx = lbm_sim->nx;
+        subdomain.x0 = 0;
+        subdomain.x1 = lbm_sim->nx-1;
+
+        if (snz >= lbm_sim->nz-4) {
+            snz = lbm_sim->nz;
+            subdomain.z0 = 0;
+            subdomain.z1 = lbm_sim->nz-1;
+        }
+    }
+
+
+    // number of contiguous cells
+    size_t ncc = snx; 
+
+    int x = subdomain.x0;
+
+    if (snx == lbm_sim->nx) {
+        // Partial contiguous place XZ axis
+        ncc *= snz;
+        int z = subdomain.z0;
+
+        if ( snz == lbm_sim->nz ) {
+            // contiguous planes on XZ axis
+            ncc *= sny;
+
+ //         if ( sny == lbm_sim->ny ) {
+ //             // Read domain (all planes)
+ //             lbm_lattices_write(lbm_sim, h_lat);
+ //         } else {
+                // Read (#sny) contiguous planes 
+                int y = subdomain.y0;
+                int gi = IDX(x,y,z,lbm_sim->nx,lbm_sim->ny,lbm_sim->nz);
+                HANDLE_ERROR(cudaMemcpy(&d_lat->ne[gi], &h_lat->ne[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->e [gi], &h_lat->e [gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->se[gi], &h_lat->se[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->n [gi], &h_lat->n [gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->c [gi], &h_lat->c [gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->s [gi], &h_lat->s [gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->nw[gi], &h_lat->nw[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->w [gi], &h_lat->w [gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->sw[gi], &h_lat->sw[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->te[gi], &h_lat->te[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->tn[gi], &h_lat->tn[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->tc[gi], &h_lat->tc[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->ts[gi], &h_lat->ts[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->tw[gi], &h_lat->tw[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->be[gi], &h_lat->be[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->bn[gi], &h_lat->bn[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->bc[gi], &h_lat->bc[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->bs[gi], &h_lat->bs[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->bw[gi], &h_lat->bw[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+//            }
+        } else {
+            // Read (#sny) partial planes
+            for (int y = subdomain.y0; y <= subdomain.y1; y++) {
+                int gi = IDX(x,y,z,lbm_sim->nx,lbm_sim->ny,lbm_sim->nz);
+                HANDLE_ERROR(cudaMemcpy(&d_lat->ne[gi], &h_lat->ne[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->e [gi], &h_lat->e [gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->se[gi], &h_lat->se[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->n [gi], &h_lat->n [gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->c [gi], &h_lat->c [gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->s [gi], &h_lat->s [gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->nw[gi], &h_lat->nw[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->w [gi], &h_lat->w [gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->sw[gi], &h_lat->sw[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->te[gi], &h_lat->te[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->tn[gi], &h_lat->tn[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->tc[gi], &h_lat->tc[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->ts[gi], &h_lat->ts[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->tw[gi], &h_lat->tw[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->be[gi], &h_lat->be[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->bn[gi], &h_lat->bn[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->bc[gi], &h_lat->bc[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->bs[gi], &h_lat->bs[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->bw[gi], &h_lat->bw[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+            }
+        }
+    } else {
+        // Read (#sny*snz) partial contiguous lines
+        for (int y = subdomain.y0; y <= subdomain.y1; y++) {
+            for (int z = subdomain.z0; z <= subdomain.z1; z++) {
+                int gi = IDX(x,y,z,lbm_sim->nx,lbm_sim->ny,lbm_sim->nz);
+                HANDLE_ERROR(cudaMemcpy(&d_lat->ne[gi], &h_lat->ne[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->e [gi], &h_lat->e [gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->se[gi], &h_lat->se[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->n [gi], &h_lat->n [gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->c [gi], &h_lat->c [gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->s [gi], &h_lat->s [gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->nw[gi], &h_lat->nw[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->w [gi], &h_lat->w [gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->sw[gi], &h_lat->sw[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->te[gi], &h_lat->te[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->tn[gi], &h_lat->tn[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->tc[gi], &h_lat->tc[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->ts[gi], &h_lat->ts[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->tw[gi], &h_lat->tw[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->be[gi], &h_lat->be[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->bn[gi], &h_lat->bn[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->bc[gi], &h_lat->bc[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->bs[gi], &h_lat->bs[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+                HANDLE_ERROR(cudaMemcpy(&d_lat->bw[gi], &h_lat->bw[gi], sizeof(double)*ncc, cudaMemcpyHostToDevice));
+            }
+        }
+    }
 }
 
 void lbm_lattices_write(lbm_simulation* lbm_sim, lbm_lattices* h_lat)

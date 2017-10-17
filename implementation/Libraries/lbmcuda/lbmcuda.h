@@ -45,6 +45,13 @@ typedef struct {
     double* u2;
 } lbm_u;
 
+
+typedef struct {
+    ssize_t x0, x1;
+    ssize_t y0, y1;
+    ssize_t z0, z1;
+} lbm_box_3d;
+
 typedef struct lbm_simulation lbm_simulation;
 
 typedef struct lbm_lattice {
@@ -64,6 +71,8 @@ lbm_u* lbm_u_create(size_t width, size_t height, size_t depth);
 void lbm_u_destroy(lbm_u* u);
 void lbm_u_read(lbm_simulation* lbm_sim, lbm_u* u);
 
+void lbm_lattices_read_subdomain(lbm_simulation* lbm_sim, lbm_lattices* h_lat, lbm_box_3d subdomain);
+void lbm_lattices_write_subdomain(lbm_simulation* lbm_sim, lbm_lattices* h_lat, lbm_box_3d subdomain);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
