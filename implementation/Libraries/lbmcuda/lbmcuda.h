@@ -73,6 +73,10 @@ void lbm_u_read(lbm_simulation* lbm_sim, lbm_u* u);
 
 void lbm_lattices_read_subdomain(lbm_simulation* lbm_sim, lbm_lattices* h_lat, lbm_box_3d subdomain);
 void lbm_lattices_write_subdomain(lbm_simulation* lbm_sim, lbm_lattices* h_lat, lbm_box_3d subdomain);
+
+void lbm_read_palabos_subdomain(lbm_simulation* lbm_sim, double* pal_lat, lbm_box_3d subdomain);
+void lbm_write_palabos_subdomain(lbm_simulation* lbm_sim, const double* pal_lat, lbm_box_3d subdomain);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
