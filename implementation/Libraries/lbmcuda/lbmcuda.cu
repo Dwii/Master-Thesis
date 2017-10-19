@@ -80,6 +80,81 @@ __device__ static void macroscopic(double ne, double e, double se, double n, dou
     *u2 = (te + tn + tc + ts + tw - be - bn - bc - bs - bw) / *rho;
 }
 
+
+#define PBIDX(x, y, z, nx, ny, nz) ( ( x*(nz*ny) + y*(nz) + z) * 19)
+
+__global__ void lbm_load_subdomain_to_gpu(lbm_lattices lat, double* pal_lat, lbm_box_3d subdomain, size_t snx, size_t sny, size_t snz, size_t nx, size_t ny, size_t nz)
+{
+    for (int z = subdomain.z0 + blockIdx.z; z <= subdomain.z1; z+=gridDim.z) {
+        for (int y = subdomain.y0 + blockIdx.y; y <= subdomain.y1; y+=gridDim.y) {
+            for (int x = subdomain.x0 + threadIdx.x + blockIdx.x * blockDim.x; x <= subdomain.x1; x += blockDim.x * gridDim.x) {
+                size_t gi = IDX(x,y,z,nx,ny,nz);
+
+                size_t px = x - subdomain.x0;
+                size_t py = y - subdomain.y0;
+                size_t pz = z - subdomain.z0;
+                size_t pbi = PBIDX(px,py,pz,snx,sny,snz); // palabos data base index
+
+                lat.c [gi] = pal_lat[pbi +  0] + 1./3 ;
+                lat.w [gi] = pal_lat[pbi +  1] + 1./18;
+                lat.s [gi] = pal_lat[pbi +  2] + 1./18;
+                lat.bc[gi] = pal_lat[pbi +  3] + 1./18;
+                lat.sw[gi] = pal_lat[pbi +  4] + 1./36;
+                lat.nw[gi] = pal_lat[pbi +  5] + 1./36;
+                lat.bw[gi] = pal_lat[pbi +  6] + 1./36;
+                lat.tw[gi] = pal_lat[pbi +  7] + 1./36;
+                lat.bs[gi] = pal_lat[pbi +  8] + 1./36;
+                lat.ts[gi] = pal_lat[pbi +  9] + 1./36;
+                lat.e [gi] = pal_lat[pbi + 10] + 1./18;
+                lat.n [gi] = pal_lat[pbi + 11] + 1./18;
+                lat.tc[gi] = pal_lat[pbi + 12] + 1./18;
+                lat.ne[gi] = pal_lat[pbi + 13] + 1./36;
+                lat.se[gi] = pal_lat[pbi + 14] + 1./36;
+                lat.te[gi] = pal_lat[pbi + 15] + 1./36;
+                lat.be[gi] = pal_lat[pbi + 16] + 1./36;
+                lat.tn[gi] = pal_lat[pbi + 17] + 1./36;
+                lat.bn[gi] = pal_lat[pbi + 18] + 1./36;
+            }
+        }
+    }
+}
+
+__global__ void lbm_load_subdomain_from_gpu(lbm_lattices lat, double* pal_lat, lbm_box_3d subdomain, size_t snx, size_t sny, size_t snz, size_t nx, size_t ny, size_t nz)
+{
+     for (int z = subdomain.z0 + blockIdx.z; z <= subdomain.z1; z+=gridDim.z) {
+        for (int y = subdomain.y0 + blockIdx.y; y <= subdomain.y1; y+=gridDim.y) {
+            for (int x = subdomain.x0 + threadIdx.x + blockIdx.x * blockDim.x; x <= subdomain.x1; x += blockDim.x * gridDim.x) {
+                size_t gi = IDX(x,y,z,nx,ny,nz);
+
+                size_t px = x - subdomain.x0;
+                size_t py = y - subdomain.y0;
+                size_t pz = z - subdomain.z0;
+                size_t pbi = PBIDX(px,py,pz,snx,sny,snz); // palabos data base index
+
+                pal_lat[pbi +  0] = lat.c [gi] - 1./3 ;
+                pal_lat[pbi +  1] = lat.w [gi] - 1./18;
+                pal_lat[pbi +  2] = lat.s [gi] - 1./18;
+                pal_lat[pbi +  3] = lat.bc[gi] - 1./18;
+                pal_lat[pbi +  4] = lat.sw[gi] - 1./36;
+                pal_lat[pbi +  5] = lat.nw[gi] - 1./36;
+                pal_lat[pbi +  6] = lat.bw[gi] - 1./36;
+                pal_lat[pbi +  7] = lat.tw[gi] - 1./36;
+                pal_lat[pbi +  8] = lat.bs[gi] - 1./36;
+                pal_lat[pbi +  9] = lat.ts[gi] - 1./36;
+                pal_lat[pbi + 10] = lat.e [gi] - 1./18;
+                pal_lat[pbi + 11] = lat.n [gi] - 1./18;
+                pal_lat[pbi + 12] = lat.tc[gi] - 1./18;
+                pal_lat[pbi + 13] = lat.ne[gi] - 1./36;
+                pal_lat[pbi + 14] = lat.se[gi] - 1./36;
+                pal_lat[pbi + 15] = lat.te[gi] - 1./36;
+                pal_lat[pbi + 16] = lat.be[gi] - 1./36;
+                pal_lat[pbi + 17] = lat.tn[gi] - 1./36;
+                pal_lat[pbi + 18] = lat.bn[gi] - 1./36;
+            }
+        }
+    }
+}
+
 __global__ void lbm_computation(lbm_vars d_vars, lbm_lattices f0, lbm_lattices f1, size_t nx, size_t ny, size_t nz, double omega)
 {
     for (int z = blockIdx.z; z < nz; z+=gridDim.z) {
@@ -183,11 +258,13 @@ __global__ void lbm_computation(lbm_vars d_vars, lbm_lattices f0, lbm_lattices f
 
 struct lbm_simulation{
     lbm_vars h_vars, d_vars;
+    double* d_pal_lat;
     dim3 dimComputationGrid, dimComputationBlock;
     size_t shared_mem_size;
     bool switch_f0_f1;
     size_t nx, ny, nz, nl;
     double omega;
+    cudaDeviceProp prop;
 };
 
 void lbm_lattices_alloc(lbm_lattices* lat, size_t nl) {
@@ -347,10 +424,11 @@ lbm_simulation* lbm_simulation_create(size_t nx, size_t ny, size_t nz, double om
 
     lbm_vars_cuda_alloc(&lbm_sim->d_vars, lbm_sim->nl);
 
-    cudaDeviceProp prop;
-    cudaGetDeviceProperties(&prop, 0);
+    HANDLE_ERROR(cudaMalloc(&lbm_sim->d_pal_lat, sizeof(double)*lbm_sim->nl*19 ));
 
-    dim3 dimComputationGrid(max((unsigned long)1, (unsigned long)nx/BLOCK_SIZE), min((unsigned long)ny, (unsigned long)prop.maxGridSize[1]), min((unsigned long)nz, (unsigned long)prop.maxGridSize[2]));
+    cudaGetDeviceProperties(&lbm_sim->prop, 0);
+
+    dim3 dimComputationGrid(max((unsigned long)1, (unsigned long)nx/BLOCK_SIZE), min((unsigned long)ny, (unsigned long)lbm_sim->prop.maxGridSize[1]), min((unsigned long)nz, (unsigned long)lbm_sim->prop.maxGridSize[2]));
     dim3 dimComputationBlock(BLOCK_SIZE);
     lbm_sim->dimComputationGrid = dimComputationGrid;
     lbm_sim->dimComputationBlock = dimComputationBlock;
@@ -367,6 +445,7 @@ void lbm_simulation_destroy(lbm_simulation* lbm_sim)
 {
     lbm_vars_dealloc(&lbm_sim->h_vars);
     lbm_vars_cuda_dealloc(&lbm_sim->d_vars);
+    HANDLE_ERROR(cudaFree(lbm_sim->d_pal_lat));
     free(lbm_sim);
 }
 void lbm_simulation_update(lbm_simulation* lbm_sim)
@@ -455,6 +534,58 @@ inline void lbm_lattices_cuda_memcpy_subdomain(lbm_simulation* lbm_sim, lbm_latt
             lbm_lattices_cuda_memcpy(lat0, lat1, gi, gi, ncc, kind);
         }
     }
+}
+
+void lbm_read_palabos_subdomain(lbm_simulation* lbm_sim, double* pal_lat, lbm_box_3d subdomain)
+{
+    size_t snx = std::abs(subdomain.x0 - subdomain.x1) + 1;
+    size_t sny = std::abs(subdomain.y0 - subdomain.y1) + 1;
+    size_t snz = std::abs(subdomain.z0 - subdomain.z1) + 1;
+    lbm_lattices* d_lat = lbm_sim->switch_f0_f1 ? &lbm_sim->d_vars.f1 : &lbm_sim->d_vars.f0;
+    
+    dim3 dimGrid(
+        max((unsigned long)1, (unsigned long)snx/BLOCK_SIZE), 
+        min((unsigned long)sny, (unsigned long)lbm_sim->prop.maxGridSize[1]), 
+        min((unsigned long)snz, (unsigned long)lbm_sim->prop.maxGridSize[2])
+    );
+    dim3 dimBlock(BLOCK_SIZE);
+
+    HANDLE_KERNEL_ERROR(lbm_load_subdomain_from_gpu<<<dimGrid, dimBlock, lbm_sim->shared_mem_size>>>(
+        *d_lat, 
+        lbm_sim->d_pal_lat, 
+        subdomain, 
+        snx, sny, snz, 
+        lbm_sim->nx, lbm_sim->ny, lbm_sim->nz)
+    );
+    size_t size = sizeof(double) * snx * sny * snz * 19;
+
+    HANDLE_ERROR(cudaMemcpy(pal_lat, lbm_sim->d_pal_lat, size, cudaMemcpyDeviceToHost));
+}
+
+void lbm_write_palabos_subdomain(lbm_simulation* lbm_sim, const double* pal_lat, lbm_box_3d subdomain)
+{
+    size_t snx = std::abs(subdomain.x0 - subdomain.x1) + 1;
+    size_t sny = std::abs(subdomain.y0 - subdomain.y1) + 1;
+    size_t snz = std::abs(subdomain.z0 - subdomain.z1) + 1;
+    lbm_lattices* d_lat = lbm_sim->switch_f0_f1 ? &lbm_sim->d_vars.f1 : &lbm_sim->d_vars.f0;
+    
+    dim3 dimGrid(
+        max((unsigned long)1, (unsigned long)snx/BLOCK_SIZE), 
+        min((unsigned long)sny, (unsigned long)lbm_sim->prop.maxGridSize[1]), 
+        min((unsigned long)snz, (unsigned long)lbm_sim->prop.maxGridSize[2])
+    );
+    dim3 dimBlock(BLOCK_SIZE);
+
+    size_t size = sizeof(double) * snx * sny * snz * 19;
+    HANDLE_ERROR(cudaMemcpy(lbm_sim->d_pal_lat, pal_lat, size, cudaMemcpyHostToDevice));
+
+    HANDLE_KERNEL_ERROR(lbm_load_subdomain_to_gpu<<<dimGrid, dimBlock, lbm_sim->shared_mem_size>>>(
+        *d_lat, 
+        lbm_sim->d_pal_lat, 
+        subdomain, 
+        snx, sny, snz, 
+        lbm_sim->nx, lbm_sim->ny, lbm_sim->nz)
+    );
 }
 
 void lbm_lattices_read_subdomain(lbm_simulation* lbm_sim, lbm_lattices* h_lat, lbm_box_3d subdomain)

@@ -29,6 +29,8 @@
 #include "basicDynamics/isoThermalDynamics.h"
 #include <limits>
 
+#define USE_KERNEL_COPY
+
 namespace plb {
     
     template<typename T>
@@ -121,15 +123,20 @@ namespace plb {
 
         return 1;
     }
-    
+
     template<typename T>
     int D3Q19CudaCoProcessor3D<T>::send(int domainHandle, Box3D const& subDomain, std::vector<char> const& data)
     {
-        T const* pal_lattices = (const double *)&data[0];
+        lbm_box_3d subdomain = {subDomain.x0, subDomain.x1, subDomain.y0, subDomain.y1, subDomain.z0, subDomain.z1};
 
+#ifdef USE_KERNEL_COPY
+        lbm_write_palabos_subdomain(lbm_sim, (double *)data.data(), subdomain);
+#else
         long snx = std::abs(subDomain.x0 - subDomain.x1) + 1;
         long sny = std::abs(subDomain.y0 - subDomain.y1) + 1;
         long snz = std::abs(subDomain.z0 - subDomain.z1) + 1;
+
+        T const* pal_lattices = (const double *)&data[0];
 
         for (plint x = subDomain.x0; x <= subDomain.x1; x++) {
             for (plint y = subDomain.y0; y <= subDomain.y1; y++) {
@@ -164,8 +171,9 @@ namespace plb {
             }
         }
 
-        lbm_box_3d subdomain = {subDomain.x0, subDomain.x1, subDomain.y0, subDomain.y1, subDomain.z0, subDomain.z1};
         lbm_lattices_write_subdomain(lbm_sim, lattices, subdomain);
+
+#endif
 
         return 1;
     }
@@ -177,9 +185,13 @@ namespace plb {
         long snz = std::abs(subDomain.z0 - subDomain.z1) + 1;
         data.resize(snx*sny*snz*19*sizeof(T));
 
-        T* pal_lattices = (double *)&data[0];
-        
         lbm_box_3d subdomain = {subDomain.x0, subDomain.x1, subDomain.y0, subDomain.y1, subDomain.z0, subDomain.z1};
+
+#ifdef USE_KERNEL_COPY
+        lbm_read_palabos_subdomain(lbm_sim, (double *)data.data(), subdomain);
+#else
+        T* pal_lattices = (double *)&data[0];
+ 
         lbm_lattices_read_subdomain(lbm_sim, lattices, subdomain);
         
         for (plint x = subDomain.x0; x <= subDomain.x1; x++) {
@@ -214,6 +226,7 @@ namespace plb {
                 }
             }
         }
+#endif
 
         return 1;
     }
