@@ -83,9 +83,9 @@ BOUNDARY_FLAG=$(subst true,,$(subst $(BOUNDARY),-b,true))
 XPU=cpu
 
 # Benchmarks
-BENDATPREF=$(XPU)_$(subst true,,$(subst $(BOUNDARY),boundary_,true))
+BENPRE=$(XPU)_$(subst true,,$(subst $(BOUNDARY),boundary_,true))
 BENCHMARKS=$(wildcard $(BENDIR)/*.ben)
-BENCHDATAS=${subst $(BENDIR)/,$(OUTDIR)/$(BENDATPREF),$(BENCHMARKS:.ben=.dat)}
+BENCHDATAS=${subst $(BENDIR)/,$(OUTDIR)/$(BENPRE),$(BENCHMARKS:.ben=.dat)}
 # Measures per benchmark setup
 MPS=2
 # Measure extention
@@ -167,12 +167,12 @@ setbin:
 
 run: BINARGS?=-p -e
 
-info: INFO_FILE=$(OUTDIR)/$(OUTPRE)$(ITER).info
+info: INFO=$(OUTDIR)/$(OUTPRE)$(ITER).info
 info: BINARGS?=-e
 
 info run: compile setbin .stdout $(OUTDIR)
 	@echo $(XPU) libs: $(libraryPaths)
-	$(call execute, $(libraryPaths), "$(BIN) -N $(N) -x $(SNX) -y $(SNY) -z $(SNZ) -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -L $(BINARGS) $(BOUNDARY_FLAG)", $(INFO_FILE))
+	$(call execute, $(libraryPaths), "$(BIN) -N $(N) -x $(SNX) -y $(SNY) -z $(SNZ) -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -L $(BINARGS) $(BOUNDARY_FLAG)", $(INFO))
 
 
 # Function:    measure
@@ -222,7 +222,7 @@ $(BENDIR)/%.nrg: $(BENDIR)/%.ben
 
 	@cat $(benchmark_name)*_1.out | sed -n 's/.*energy: \(.*\).*/\1/p' > $@
 
-$(OUTDIR)/$(BENDATPREF)%.dat: $(BENDIR)/%.ben $(BENDIR)/%.nrg
+$(OUTDIR)/$(BENPRE)%.dat: $(BENDIR)/%.ben $(BENDIR)/%.nrg
 	$(eval benchmark_name=$(@:.dat=))
 	$(eval nrg_file=$(^:.ben=.nrg))
 	$(call run_benchmark, $<, $(benchmark_name), $(MPS), $(nrg_file))
