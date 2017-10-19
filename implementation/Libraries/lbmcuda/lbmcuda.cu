@@ -598,7 +598,7 @@ void lbm_lattices_read(lbm_simulation* lbm_sim, lbm_lattices* h_lat)
 {
     size_t nl = lbm_sim->nl;
     lbm_lattices* d_lat = lbm_sim->switch_f0_f1 ? &lbm_sim->d_vars.f1 : &lbm_sim->d_vars.f0;
-    lbm_lattices_cuda_memcpy(h_lat, d_lat, 0, 0, sizeof(double)*nl, cudaMemcpyDeviceToHost);
+    lbm_lattices_cuda_memcpy(h_lat, d_lat, 0, 0, nl, cudaMemcpyDeviceToHost);
 }
 
 void lbm_lattices_write_subdomain(lbm_simulation* lbm_sim, lbm_lattices* h_lat, lbm_box_3d subdomain)
