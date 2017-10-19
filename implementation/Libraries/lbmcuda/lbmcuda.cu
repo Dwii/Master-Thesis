@@ -404,9 +404,8 @@ inline void lbm_lattices_cuda_memcpy(lbm_lattices* lat0, lbm_lattices* lat1, siz
     HANDLE_ERROR(cudaMemcpy(&lat0->bw[gi0], &lat1->bw[gi1], size, kind));
 }
 
-void lbm_lattices_read_subdomain(lbm_simulation* lbm_sim, lbm_lattices* h_lat, lbm_box_3d subdomain)
+inline void lbm_lattices_cuda_memcpy_subdomain(lbm_simulation* lbm_sim, lbm_lattices* lat0, lbm_lattices* lat1, lbm_box_3d subdomain, enum cudaMemcpyKind kind)
 {
-    lbm_lattices* d_lat = lbm_sim->switch_f0_f1 ? &lbm_sim->d_vars.f1 : &lbm_sim->d_vars.f0;
     size_t snx = std::abs(subdomain.x0 - subdomain.x1) + 1;
     size_t sny = std::abs(subdomain.y0 - subdomain.y1) + 1;
     size_t snz = std::abs(subdomain.z0 - subdomain.z1) + 1;
@@ -440,12 +439,12 @@ void lbm_lattices_read_subdomain(lbm_simulation* lbm_sim, lbm_lattices* h_lat, l
             int y = subdomain.y0;
 
             int gi = IDX(x,y,z,lbm_sim->nx,lbm_sim->ny,lbm_sim->nz);
-            lbm_lattices_cuda_memcpy(h_lat, d_lat, gi, gi, ncc, cudaMemcpyDeviceToHost);
+            lbm_lattices_cuda_memcpy(lat0, lat1, gi, gi, ncc, kind);
         } else {
             // Read (#sny) partial planes
             for (int y = subdomain.y0; y <= subdomain.y1; y++) {
                 int gi = IDX(x,y,z,lbm_sim->nx,lbm_sim->ny,lbm_sim->nz);
-                lbm_lattices_cuda_memcpy(h_lat, d_lat, gi, gi, ncc, cudaMemcpyDeviceToHost);
+                lbm_lattices_cuda_memcpy(lat0, lat1, gi, gi, ncc, kind);
             }
         }
     } else {
@@ -453,10 +452,16 @@ void lbm_lattices_read_subdomain(lbm_simulation* lbm_sim, lbm_lattices* h_lat, l
         for (int y = subdomain.y0; y <= subdomain.y1; y++) {
             for (int z = subdomain.z0; z <= subdomain.z1; z++) {
                 int gi = IDX(x,y,z,lbm_sim->nx,lbm_sim->ny,lbm_sim->nz);
-                lbm_lattices_cuda_memcpy(h_lat, d_lat, gi, gi, ncc, cudaMemcpyDeviceToHost);
+                lbm_lattices_cuda_memcpy(lat0, lat1, gi, gi, ncc, kind);
             }
         }
     }
+}
+
+void lbm_lattices_read_subdomain(lbm_simulation* lbm_sim, lbm_lattices* h_lat, lbm_box_3d subdomain)
+{
+    lbm_lattices* d_lat = lbm_sim->switch_f0_f1 ? &lbm_sim->d_vars.f1 : &lbm_sim->d_vars.f0;
+    lbm_lattices_cuda_memcpy_subdomain(lbm_sim, h_lat, d_lat, subdomain, cudaMemcpyDeviceToHost);
 }
 
 void lbm_lattices_read(lbm_simulation* lbm_sim, lbm_lattices* h_lat)
@@ -469,57 +474,7 @@ void lbm_lattices_read(lbm_simulation* lbm_sim, lbm_lattices* h_lat)
 void lbm_lattices_write_subdomain(lbm_simulation* lbm_sim, lbm_lattices* h_lat, lbm_box_3d subdomain)
 {
     lbm_lattices* d_lat = lbm_sim->switch_f0_f1 ? &lbm_sim->d_vars.f1 : &lbm_sim->d_vars.f0;
-    size_t snx = std::abs(subdomain.x0 - subdomain.x1) + 1;
-    size_t sny = std::abs(subdomain.y0 - subdomain.y1) + 1;
-    size_t snz = std::abs(subdomain.z0 - subdomain.z1) + 1;
-
-    // Extend sub domain range to reduce cudaMemcpy calls
-    if (snx >= lbm_sim->nx-4 && snz > 1) {
-        snx = lbm_sim->nx;
-        subdomain.x0 = 0;
-        subdomain.x1 = lbm_sim->nx-1;
-
-        if (snz >= lbm_sim->nz-4) {
-            snz = lbm_sim->nz;
-            subdomain.z0 = 0;
-            subdomain.z1 = lbm_sim->nz-1;
-        }
-    }
-
-
-    // number of contiguous cells
-    size_t ncc = snx; 
-
-    int x = subdomain.x0;
-
-    if (snx == lbm_sim->nx) {
-        // (Partial ?) contiguous plane XZ axis
-        ncc *= snz;
-        int z = subdomain.z0;
-
-        if ( snz == lbm_sim->nz ) {
-            // Write (#sny) contiguous planes on XZ axis
-            ncc *= sny;
-            int y = subdomain.y0;
-
-            int gi = IDX(x,y,z,lbm_sim->nx,lbm_sim->ny,lbm_sim->nz);
-            lbm_lattices_cuda_memcpy(d_lat, h_lat, gi, gi, ncc, cudaMemcpyHostToDevice);
-        } else {
-            // Write (#sny) partial planes
-            for (int y = subdomain.y0; y <= subdomain.y1; y++) {
-                int gi = IDX(x,y,z,lbm_sim->nx,lbm_sim->ny,lbm_sim->nz);
-                lbm_lattices_cuda_memcpy(d_lat, h_lat, gi, gi, ncc, cudaMemcpyHostToDevice);
-            }
-        }
-    } else {
-        // Write (#sny*snz) partial contiguous lines
-        for (int y = subdomain.y0; y <= subdomain.y1; y++) {
-            for (int z = subdomain.z0; z <= subdomain.z1; z++) {
-                int gi = IDX(x,y,z,lbm_sim->nx,lbm_sim->ny,lbm_sim->nz);
-                lbm_lattices_cuda_memcpy(d_lat, h_lat, gi, gi, ncc, cudaMemcpyHostToDevice);
-            }
-        }
-    }
+    lbm_lattices_cuda_memcpy_subdomain(lbm_sim, d_lat, h_lat, subdomain, cudaMemcpyHostToDevice);
 }
 
 void lbm_lattices_write(lbm_simulation* lbm_sim, lbm_lattices* h_lat)
