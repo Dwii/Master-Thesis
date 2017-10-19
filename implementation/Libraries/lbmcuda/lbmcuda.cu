@@ -406,6 +406,7 @@ inline void lbm_lattices_cuda_memcpy(lbm_lattices* lat0, lbm_lattices* lat1, siz
 
 inline void lbm_lattices_cuda_memcpy_subdomain(lbm_simulation* lbm_sim, lbm_lattices* lat0, lbm_lattices* lat1, lbm_box_3d subdomain, enum cudaMemcpyKind kind)
 {
+    int y1, z1;
     size_t snx = std::abs(subdomain.x0 - subdomain.x1) + 1;
     size_t sny = std::abs(subdomain.y0 - subdomain.y1) + 1;
     size_t snz = std::abs(subdomain.z0 - subdomain.z1) + 1;
@@ -426,34 +427,32 @@ inline void lbm_lattices_cuda_memcpy_subdomain(lbm_simulation* lbm_sim, lbm_latt
     // Number of contiguous cells
     size_t ncc = snx; 
 
-    int x = subdomain.x0;
-
     if (snx == lbm_sim->nx) {
         // (Partial ?) contiguous plane XZ axis
         ncc *= snz;
-        int z = subdomain.z0;
+        z1 = subdomain.z0;
 
         if ( snz == lbm_sim->nz ) {
-            // Read (#sny) contiguous planes on XZ axis
+            // Contiguous planes on XZ axis
             ncc *= sny;
-            int y = subdomain.y0;
-
-            int gi = IDX(x,y,z,lbm_sim->nx,lbm_sim->ny,lbm_sim->nz);
-            lbm_lattices_cuda_memcpy(lat0, lat1, gi, gi, ncc, kind);
+            y1 = subdomain.y0; 
         } else {
-            // Read (#sny) partial planes
-            for (int y = subdomain.y0; y <= subdomain.y1; y++) {
-                int gi = IDX(x,y,z,lbm_sim->nx,lbm_sim->ny,lbm_sim->nz);
-                lbm_lattices_cuda_memcpy(lat0, lat1, gi, gi, ncc, kind);
-            }
+            // Partial planes  on XZ axis
+            y1 = subdomain.y1;
         }
     } else {
-        // Read (#sny*snz) partial contiguous lines
-        for (int y = subdomain.y0; y <= subdomain.y1; y++) {
-            for (int z = subdomain.z0; z <= subdomain.z1; z++) {
-                int gi = IDX(x,y,z,lbm_sim->nx,lbm_sim->ny,lbm_sim->nz);
-                lbm_lattices_cuda_memcpy(lat0, lat1, gi, gi, ncc, kind);
-            }
+        // (#sny*snz) Partial contiguous lines on X axis
+        y1 = subdomain.y1;
+        z1 = subdomain.z1;
+    }
+
+    // Copy
+    int x = subdomain.x0;
+
+    for (int y = subdomain.y0; y <= y1; y++) {
+        for (int z = subdomain.z0; z <= z1; z++) {
+            int gi = IDX(x,y,z,lbm_sim->nx,lbm_sim->ny,lbm_sim->nz);
+            lbm_lattices_cuda_memcpy(lat0, lat1, gi, gi, ncc, kind);
         }
     }
 }
