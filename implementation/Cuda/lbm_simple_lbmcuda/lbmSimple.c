@@ -250,18 +250,86 @@ int main(int argc, char * const argv[])
     
     lbm_simulation* lbm_sim = lbm_simulation_create(width, height, depth, OMEGA);
     lbm_simulation_init(lbm_sim, width, height, depth);
-    
-    long time_diff, total_time_diff = 0;
-    start_time_t start_time;
-    timing_start(&start_time);
-    
+
     lbm_u* u = lbm_u_create(width, height, depth);
     lbm_lattices* fin = lbm_lattices_create(width * height * depth);
     
+#define READ_WRITE
+#define BOUNDARY
+#define USE_KERNEL_COPY
+
+#if defined(READ_WRITE) && defined(BOUNDARY)
+    lbm_box_3d subdomain0w = {       0, width-1,        0,        0,        0, depth-1 };
+    lbm_box_3d subdomain1w = {       0, width-1, height-1, height-1,        0, depth-1 };
+    lbm_box_3d subdomain2w = {       0, width-1,        1, height-2,        0,       0 };
+    lbm_box_3d subdomain3w = {       0, width-1,        1, height-2,  depth-1, depth-1 };
+    lbm_box_3d subdomain4w = {       0,       0,        1, height-2,        1, depth-2 };
+    lbm_box_3d subdomain5w = { width-1, width-1,        1, height-2,        1, depth-2 };
+
+    lbm_box_3d subdomain0r = {       1, width-2,        1,        1,        1, depth-2 };
+    lbm_box_3d subdomain1r = {       1, width-2, height-2, height-2,        1, depth-2 };
+    lbm_box_3d subdomain2r = {       1, width-2,        2, height-3,        1,       1 };
+    lbm_box_3d subdomain3r = {       1, width-2,        2, height-3,  depth-2, depth-2 };
+    lbm_box_3d subdomain4r = {       1,       1,        2, height-3,        2, depth-3 };
+    lbm_box_3d subdomain5r = { width-2, width-2,        2, height-3,        2, depth-3 };
+
+#ifdef USE_KERNEL_COPY
+    double* data = malloc(width*height*depth*sizeof(double)*19);
+#endif
+
+#endif
+
+    long time_diff, total_time_diff = 0;
+    start_time_t start_time;
+    timing_start(&start_time);
+
     for (int iter = 1; iter <= max_iter; iter++) {
+        
+#ifdef READ_WRITE
+#ifdef BOUNDARY
+#ifdef USE_KERNEL_COPY
+        lbm_write_palabos_subdomain(lbm_sim, data, subdomain0w);
+        lbm_write_palabos_subdomain(lbm_sim, data, subdomain1w);
+        lbm_write_palabos_subdomain(lbm_sim, data, subdomain2w);
+        lbm_write_palabos_subdomain(lbm_sim, data, subdomain3w);
+        lbm_write_palabos_subdomain(lbm_sim, data, subdomain4w);
+        lbm_write_palabos_subdomain(lbm_sim, data, subdomain5w);
+#else
+        lbm_lattices_write_subdomain(lbm_sim, fin, subdomain0w);
+        lbm_lattices_write_subdomain(lbm_sim, fin, subdomain1w);
+        lbm_lattices_write_subdomain(lbm_sim, fin, subdomain2w);
+        lbm_lattices_write_subdomain(lbm_sim, fin, subdomain3w);
+        lbm_lattices_write_subdomain(lbm_sim, fin, subdomain4w);
+        lbm_lattices_write_subdomain(lbm_sim, fin, subdomain5w);
+#endif
+#else
+    lbm_lattices_write(lbm_sim, fin);
+#endif
+#endif
         
         lbm_simulation_update(lbm_sim);
         
+#ifdef READ_WRITE
+#ifdef BOUNDARY
+#ifdef USE_KERNEL_COPY
+        lbm_read_palabos_subdomain(lbm_sim, data, subdomain0w);
+        lbm_read_palabos_subdomain(lbm_sim, data, subdomain1w);
+        lbm_read_palabos_subdomain(lbm_sim, data, subdomain2w);
+        lbm_read_palabos_subdomain(lbm_sim, data, subdomain3w);
+        lbm_read_palabos_subdomain(lbm_sim, data, subdomain4w);
+        lbm_read_palabos_subdomain(lbm_sim, data, subdomain5w);
+#else
+        lbm_lattices_read_subdomain(lbm_sim, fin, subdomain0r);
+        lbm_lattices_read_subdomain(lbm_sim, fin, subdomain1r);
+        lbm_lattices_read_subdomain(lbm_sim, fin, subdomain2r);
+        lbm_lattices_read_subdomain(lbm_sim, fin, subdomain3r);
+        lbm_lattices_read_subdomain(lbm_sim, fin, subdomain4r);
+        lbm_lattices_read_subdomain(lbm_sim, fin, subdomain5r);
+#endif
+#else
+        lbm_lattices_read(lbm_sim, fin);
+#endif
+#endif
         if ( (!out_interval && iter == max_iter) || (out_interval && iter % out_interval == 0) ) {
             
             time_diff = timing_stop(&start_time);
@@ -310,7 +378,11 @@ int main(int argc, char * const argv[])
     if ( print_avg_lups ) {
         printf("average lups: %.2f\n", get_lups(width*height*depth, max_iter, total_time_diff));
     }
-    
+
+#if defined(READ_WRITE) && defined(BOUNDARY) && defined(USE_KERNEL_COPY)
+    free(data);
+#endif
+
     lbm_u_destroy(u);
     lbm_lattices_destroy(fin);
     lbm_simulation_destroy(lbm_sim);
