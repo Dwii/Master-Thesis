@@ -90,6 +90,7 @@ BENCHDATAS=${subst $(BENDIR)/,$(OUTDIR)/$(BENPRE),$(BENCHMARKS:.ben=.dat)}
 MPS=2
 # Measure extention
 MEXT=out
+PLOTSCRIPT=plot_benchmark.py
 
 # Makfile stuff
 D=$$
@@ -237,5 +238,19 @@ $(OUTDIR)/$(BENPRE)%.dat: $(BENDIR)/%.ben $(BENDIR)/%.nrg
 	)
 
 	@$(foreach i, $(I), echo "($$(cat $(benchmark_name)_$(i)*.$(MEXT) | sed -n 's/average lups: \(.*\).*/\1/p' | paste -s -d+ -))" / $(MPS) | bc >> $@; )
+
+
+define get_dat_legend
+	$(eval xpu=$(shell echo $(1) | grep -q gpu && echo "GPU" || echo "CPU")) \
+	$(eval transfert=$(shell echo $(1) | grep -q boundary && echo "boundaries" || echo "full domain")) \
+	'$(xpu) ($(transfert))'
+endef
+
+benchplot: 
+	@$(foreach benchmark, $(BENCHMARKS), \
+		$(eval image=${subst $(BENDIR)/,$(OUTDIR)/,$(benchmark:.ben=.pdf)}) \
+		$(eval dats=$(shell echo ${subst $(BENDIR)/,$(OUTDIR)/*,$(benchmark:.ben=.dat)})) \
+		python3 $(PLOTSCRIPT) $(benchmark) $(image) $(foreach dat, $(dats), $(dat) $(call get_dat_legend, $(dat)) ); \
+	)	
 
 .PHONY: compile rebuild clean clean_bin set_bin run benchmark
