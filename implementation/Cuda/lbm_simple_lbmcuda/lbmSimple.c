@@ -312,12 +312,12 @@ int main(int argc, char * const argv[])
 #ifdef READ_WRITE
 #ifdef BOUNDARY
 #ifdef USE_KERNEL_COPY
-        lbm_read_palabos_subdomain(lbm_sim, data, subdomain0w);
-        lbm_read_palabos_subdomain(lbm_sim, data, subdomain1w);
-        lbm_read_palabos_subdomain(lbm_sim, data, subdomain2w);
-        lbm_read_palabos_subdomain(lbm_sim, data, subdomain3w);
-        lbm_read_palabos_subdomain(lbm_sim, data, subdomain4w);
-        lbm_read_palabos_subdomain(lbm_sim, data, subdomain5w);
+        lbm_read_palabos_subdomain(lbm_sim, data, subdomain0r);
+        lbm_read_palabos_subdomain(lbm_sim, data, subdomain1r);
+        lbm_read_palabos_subdomain(lbm_sim, data, subdomain2r);
+        lbm_read_palabos_subdomain(lbm_sim, data, subdomain3r);
+        lbm_read_palabos_subdomain(lbm_sim, data, subdomain4r);
+        lbm_read_palabos_subdomain(lbm_sim, data, subdomain5r);
 #else
         lbm_lattices_read_subdomain(lbm_sim, fin, subdomain0r);
         lbm_lattices_read_subdomain(lbm_sim, fin, subdomain1r);
