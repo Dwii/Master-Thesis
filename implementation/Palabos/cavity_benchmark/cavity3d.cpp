@@ -211,10 +211,12 @@ int main(int argc, char * argv[])
     width = height = depth = domain_size = 0;
     bool print_avg_energy = false;
     bool copy_boundaries_only = false;
-    
+    bool print_time = false;
+    bool print_total_time = false;
+
     // Read arguments
     while (optind < argc) {
-        switch (getopt(argc, argv, "pfFi:I:o:O:lLx:y:z:N:eb")) {
+        switch (getopt(argc, argv, "pfFi:I:o:O:lLtTx:y:z:N:eb")) {
             case 'p': { out = OUT_IMG; break; }
 //            case 'f': { out = OUT_FIN; break; }
             case 'F': { out = OUT_FINP; break; }
@@ -224,6 +226,8 @@ int main(int argc, char * argv[])
             case 'O': { out_pref = optarg; break; }
             case 'l': { print_lups = true; break; }
             case 'L': { print_avg_lups = true; break; }
+            case 't': { print_time = true; break; }
+            case 'T': { print_total_time = true; break; }
             case 'x': { width  = strtol(optarg, NULL, 10); break; }
             case 'y': { height = strtol(optarg, NULL, 10); break; }
             case 'z': { depth  = strtol(optarg, NULL, 10); break; }
@@ -237,7 +241,7 @@ int main(int argc, char * argv[])
     // check that execution mode is set (output images or fin values)
     if (max_iter < 1 || width <= 0 || height <= 0 || depth <= 0 || width > domain_size || height > domain_size || depth > domain_size) {
     usage:
-        fprintf(stderr, "usage: %s (-p | -f | -F) -i <iter> [-I <out_interval>] [-o <out_dir>] [-O <out_prefix>] [-l] [-L] -x <nx> -y <ny> -z <nz> -N <N> [-e] [-b]\n", basename((char*)argv[0]));
+        fprintf(stderr, "usage: %s (-p | -f | -F) -i <iter> [-I <out_interval>] [-o <out_dir>] [-O <out_prefix>] [-l] [-L] [-t] [-T] -x <nx> -y <ny> -z <nz> -N <N> [-e] [-b]\n", basename((char*)argv[0]));
         fprintf(stderr, "  -p : output pictures\n");
         fprintf(stderr, "  -f : output populations (UNAVAILABLE)\n");
         fprintf(stderr, "  -F : output populations formated like Palabos\n");
@@ -247,12 +251,14 @@ int main(int argc, char * argv[])
         fprintf(stderr, "  -O : output filename prefix\n");
         fprintf(stderr, "  -l : print lups at each output interval\n");
         fprintf(stderr, "  -L : print average lups at the end\n");
+        fprintf(stderr, "  -t : print computation time (in ns) at each output interval\n");
+        fprintf(stderr, "  -T : print total computation time  (in ns) at the end\n");
         fprintf(stderr, "  -x : subdomain width\n");
         fprintf(stderr, "  -y : subdomain height\n");
         fprintf(stderr, "  -z : subdomain depth\n");
         fprintf(stderr, "  -N : domain size (NxNxN)\n");        
         fprintf(stderr, "  -e : print average energy\n");
-        fprintf(stderr, "  -b : copy only the boundaries between palabos and the coprocessor\n");        
+        fprintf(stderr, "  -b : copy only the boundaries between palabos and the coprocessor\n");
         return EXIT_FAILURE;
     }
     
@@ -321,6 +327,10 @@ int main(int argc, char * argv[])
                 fflush(stdout);
             }
 
+            if (print_time) {
+                printf("time: %lu\n", time_diff);
+            }
+
             if ( out || print_avg_energy ) {
 
                 if ( copy_boundaries_only ) {
@@ -329,7 +339,7 @@ int main(int argc, char * argv[])
                 }
 
                 if ( print_avg_energy ) {
-                    pcout << "average energy: " << setprecision(10) << computeAverageEnergy<T>(lattice) << std::endl;
+                    pcout << "average energy: " << std::setprecision(10) << computeAverageEnergy<T>(lattice) << std::endl;
                 }
                 
                 if ( out == OUT_IMG ) {
@@ -348,6 +358,10 @@ int main(int argc, char * argv[])
 
     if ( print_avg_lups ) {
         printf("average lups: %.2f\n", get_lups(CUBE(domain_size), max_iter, total_time_diff));
+    }
+
+    if (print_total_time) {
+        printf("time: %lu\n", total_time_diff);
     }
 
     delete boundaryCondition;
