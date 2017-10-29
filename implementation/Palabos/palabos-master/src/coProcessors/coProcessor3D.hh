@@ -31,6 +31,19 @@
 
 #define USE_KERNEL_COPY
 
+#ifndef REPEAT_SEND
+#define REPEAT_SEND 1
+#endif
+
+#ifndef REPEAT_RECEIVE
+#define REPEAT_RECEIVE 1
+#endif
+
+#ifndef REPEAT_CNS
+#define REPEAT_CNS 1
+#endif
+
+
 namespace plb {
     
     template<typename T>
@@ -49,33 +62,39 @@ namespace plb {
     template<typename T>
     int D3Q19ExampleCoProcessor3D<T>::send(int domainHandle, Box3D const& subDomain, std::vector<char> const& data)
     {
-        typename std::map<int, BlockLattice3D<T,descriptors::D3Q19Descriptor> >::iterator it
-        = domains.find(domainHandle);
-        PLB_ASSERT( it != domains.end() );
-        BlockLattice3D<T,descriptors::D3Q19Descriptor>& lattice = it->second;
-        lattice.getDataTransfer().receive(subDomain, data, modif::staticVariables);
+        for (int i = 0; i < REPEAT_SEND; i++) {
+            typename std::map<int, BlockLattice3D<T,descriptors::D3Q19Descriptor> >::iterator it
+            = domains.find(domainHandle);
+            PLB_ASSERT( it != domains.end() );
+            BlockLattice3D<T,descriptors::D3Q19Descriptor>& lattice = it->second;
+            lattice.getDataTransfer().receive(subDomain, data, modif::staticVariables);
+        }
         return 1; // Success.
     }
     
     template<typename T>
     int D3Q19ExampleCoProcessor3D<T>::receive(int domainHandle, Box3D const& subDomain, std::vector<char>& data) const
     {
-        typename std::map<int, BlockLattice3D<T,descriptors::D3Q19Descriptor> >::const_iterator it
-        = domains.find(domainHandle);
-        PLB_ASSERT( it != domains.end() );
-        BlockLattice3D<T,descriptors::D3Q19Descriptor> const& lattice = it->second;
-        lattice.getDataTransfer().send(subDomain, data, modif::staticVariables);
+        for (int i = 0; i < REPEAT_RECEIVE; i++) {
+            typename std::map<int, BlockLattice3D<T,descriptors::D3Q19Descriptor> >::const_iterator it
+            = domains.find(domainHandle);
+            PLB_ASSERT( it != domains.end() );
+            BlockLattice3D<T,descriptors::D3Q19Descriptor> const& lattice = it->second;
+            lattice.getDataTransfer().send(subDomain, data, modif::staticVariables);
+        }
         return 1; // Success.
     }
     
     template<typename T>
     int D3Q19ExampleCoProcessor3D<T>::collideAndStream(int domainHandle)
     {
-        typename std::map<int, BlockLattice3D<T,descriptors::D3Q19Descriptor> >::iterator it
-        = domains.find(domainHandle);
-        PLB_ASSERT( it != domains.end() );
-        BlockLattice3D<T,descriptors::D3Q19Descriptor>& lattice = it->second;
-        lattice.collideAndStream(lattice.getBoundingBox());
+        for (int i = 0; i < REPEAT_CNS; i++) {
+            typename std::map<int, BlockLattice3D<T,descriptors::D3Q19Descriptor> >::iterator it
+            = domains.find(domainHandle);
+            PLB_ASSERT( it != domains.end() );
+            BlockLattice3D<T,descriptors::D3Q19Descriptor>& lattice = it->second;
+            lattice.collideAndStream(lattice.getBoundingBox());
+        }
         return 1; // Success.
     }
 
@@ -129,54 +148,57 @@ namespace plb {
     {
         lbm_box_3d subdomain = {subDomain.x0, subDomain.x1, subDomain.y0, subDomain.y1, subDomain.z0, subDomain.z1};
 
+        for (int i = 0; i < REPEAT_SEND; i++) {
+
 #ifdef USE_KERNEL_COPY
-        lbm_write_palabos_subdomain(lbm_sim, (double *)data.data(), subdomain);
+            lbm_write_palabos_subdomain(lbm_sim, (double *)data.data(), subdomain);
 #else
-        long snx = std::abs(subDomain.x0 - subDomain.x1) + 1;
-        long sny = std::abs(subDomain.y0 - subDomain.y1) + 1;
-        long snz = std::abs(subDomain.z0 - subDomain.z1) + 1;
+            long snx = std::abs(subDomain.x0 - subDomain.x1) + 1;
+            long sny = std::abs(subDomain.y0 - subDomain.y1) + 1;
+            long snz = std::abs(subDomain.z0 - subDomain.z1) + 1;
 
-        T const* pal_lattices = (const double *)&data[0];
+            T const* pal_lattices = (const double *)&data[0];
 
-        for (plint x = subDomain.x0; x <= subDomain.x1; x++) {
-            for (plint y = subDomain.y0; y <= subDomain.y1; y++) {
-                for (plint z = subDomain.z0; z <= subDomain.z1; z++) {
-                    size_t gi = IDX(x,y,z,nx,ny,nz);
+            for (plint x = subDomain.x0; x <= subDomain.x1; x++) {
+                for (plint y = subDomain.y0; y <= subDomain.y1; y++) {
+                    for (plint z = subDomain.z0; z <= subDomain.z1; z++) {
+                        size_t gi = IDX(x,y,z,nx,ny,nz);
 
-                    size_t px = x - subDomain.x0;
-                    size_t py = y - subDomain.y0;
-                    size_t pz = z - subDomain.z0;
-                    size_t pbi = PBIDX(px,py,pz,snx,sny,snz); // base index
+                        size_t px = x - subDomain.x0;
+                        size_t py = y - subDomain.y0;
+                        size_t pz = z - subDomain.z0;
+                        size_t pbi = PBIDX(px,py,pz,snx,sny,snz); // base index
 
-                    lattices->c [gi] = pal_lattices[pbi +  0] + 1./3 ;
-                    lattices->w [gi] = pal_lattices[pbi +  1] + 1./18;
-                    lattices->s [gi] = pal_lattices[pbi +  2] + 1./18;
-                    lattices->bc[gi] = pal_lattices[pbi +  3] + 1./18;
-                    lattices->sw[gi] = pal_lattices[pbi +  4] + 1./36;
-                    lattices->nw[gi] = pal_lattices[pbi +  5] + 1./36;
-                    lattices->bw[gi] = pal_lattices[pbi +  6] + 1./36;
-                    lattices->tw[gi] = pal_lattices[pbi +  7] + 1./36;
-                    lattices->bs[gi] = pal_lattices[pbi +  8] + 1./36;
-                    lattices->ts[gi] = pal_lattices[pbi +  9] + 1./36;
-                    lattices->e [gi] = pal_lattices[pbi + 10] + 1./18;
-                    lattices->n [gi] = pal_lattices[pbi + 11] + 1./18;
-                    lattices->tc[gi] = pal_lattices[pbi + 12] + 1./18;
-                    lattices->ne[gi] = pal_lattices[pbi + 13] + 1./36;
-                    lattices->se[gi] = pal_lattices[pbi + 14] + 1./36;
-                    lattices->te[gi] = pal_lattices[pbi + 15] + 1./36;
-                    lattices->be[gi] = pal_lattices[pbi + 16] + 1./36;
-                    lattices->tn[gi] = pal_lattices[pbi + 17] + 1./36;
-                    lattices->bn[gi] = pal_lattices[pbi + 18] + 1./36;
+                        lattices->c [gi] = pal_lattices[pbi +  0] + 1./3 ;
+                        lattices->w [gi] = pal_lattices[pbi +  1] + 1./18;
+                        lattices->s [gi] = pal_lattices[pbi +  2] + 1./18;
+                        lattices->bc[gi] = pal_lattices[pbi +  3] + 1./18;
+                        lattices->sw[gi] = pal_lattices[pbi +  4] + 1./36;
+                        lattices->nw[gi] = pal_lattices[pbi +  5] + 1./36;
+                        lattices->bw[gi] = pal_lattices[pbi +  6] + 1./36;
+                        lattices->tw[gi] = pal_lattices[pbi +  7] + 1./36;
+                        lattices->bs[gi] = pal_lattices[pbi +  8] + 1./36;
+                        lattices->ts[gi] = pal_lattices[pbi +  9] + 1./36;
+                        lattices->e [gi] = pal_lattices[pbi + 10] + 1./18;
+                        lattices->n [gi] = pal_lattices[pbi + 11] + 1./18;
+                        lattices->tc[gi] = pal_lattices[pbi + 12] + 1./18;
+                        lattices->ne[gi] = pal_lattices[pbi + 13] + 1./36;
+                        lattices->se[gi] = pal_lattices[pbi + 14] + 1./36;
+                        lattices->te[gi] = pal_lattices[pbi + 15] + 1./36;
+                        lattices->be[gi] = pal_lattices[pbi + 16] + 1./36;
+                        lattices->tn[gi] = pal_lattices[pbi + 17] + 1./36;
+                        lattices->bn[gi] = pal_lattices[pbi + 18] + 1./36;
+                    }
                 }
             }
-        }
 
-        lbm_lattices_write_subdomain(lbm_sim, lattices, subdomain);
-
+            lbm_lattices_write_subdomain(lbm_sim, lattices, subdomain);
 #endif
+        }
 
         return 1;
     }
+
     template<typename T>
     int D3Q19CudaCoProcessor3D<T>::receive(int domainHandle, Box3D const& subDomain, std::vector<char>& data) const
     {
@@ -187,46 +209,49 @@ namespace plb {
 
         lbm_box_3d subdomain = {subDomain.x0, subDomain.x1, subDomain.y0, subDomain.y1, subDomain.z0, subDomain.z1};
 
-#ifdef USE_KERNEL_COPY
-        lbm_read_palabos_subdomain(lbm_sim, (double *)data.data(), subdomain);
-#else
-        T* pal_lattices = (double *)&data[0];
- 
-        lbm_lattices_read_subdomain(lbm_sim, lattices, subdomain);
-        
-        for (plint x = subDomain.x0; x <= subDomain.x1; x++) {
-            for (plint y = subDomain.y0; y <= subDomain.y1; y++) {
-                for (plint z = subDomain.z0; z <= subDomain.z1; z++) {
-                    size_t gi = IDX(x,y,z,nx,ny,nz);
-                    
-                    size_t px = x - subDomain.x0;
-                    size_t py = y - subDomain.y0;
-                    size_t pz = z - subDomain.z0;
-                    size_t pbi = PBIDX(px,py,pz,snx,sny,snz); // palabos data base index
+        for (int i = 0; i < REPEAT_RECEIVE; i++) {
 
-                    pal_lattices[pbi +  0] = lattices->c [gi] - 1./3 ;
-                    pal_lattices[pbi +  1] = lattices->w [gi] - 1./18;
-                    pal_lattices[pbi +  2] = lattices->s [gi] - 1./18;
-                    pal_lattices[pbi +  3] = lattices->bc[gi] - 1./18;
-                    pal_lattices[pbi +  4] = lattices->sw[gi] - 1./36;
-                    pal_lattices[pbi +  5] = lattices->nw[gi] - 1./36;
-                    pal_lattices[pbi +  6] = lattices->bw[gi] - 1./36;
-                    pal_lattices[pbi +  7] = lattices->tw[gi] - 1./36;
-                    pal_lattices[pbi +  8] = lattices->bs[gi] - 1./36;
-                    pal_lattices[pbi +  9] = lattices->ts[gi] - 1./36;
-                    pal_lattices[pbi + 10] = lattices->e [gi] - 1./18;
-                    pal_lattices[pbi + 11] = lattices->n [gi] - 1./18;
-                    pal_lattices[pbi + 12] = lattices->tc[gi] - 1./18;
-                    pal_lattices[pbi + 13] = lattices->ne[gi] - 1./36;
-                    pal_lattices[pbi + 14] = lattices->se[gi] - 1./36;
-                    pal_lattices[pbi + 15] = lattices->te[gi] - 1./36;
-                    pal_lattices[pbi + 16] = lattices->be[gi] - 1./36;
-                    pal_lattices[pbi + 17] = lattices->tn[gi] - 1./36;
-                    pal_lattices[pbi + 18] = lattices->bn[gi] - 1./36;
+#ifdef USE_KERNEL_COPY
+            lbm_read_palabos_subdomain(lbm_sim, (double *)data.data(), subdomain);
+#else
+            T* pal_lattices = (double *)&data[0];
+     
+            lbm_lattices_read_subdomain(lbm_sim, lattices, subdomain);
+            
+            for (plint x = subDomain.x0; x <= subDomain.x1; x++) {
+                for (plint y = subDomain.y0; y <= subDomain.y1; y++) {
+                    for (plint z = subDomain.z0; z <= subDomain.z1; z++) {
+                        size_t gi = IDX(x,y,z,nx,ny,nz);
+                        
+                        size_t px = x - subDomain.x0;
+                        size_t py = y - subDomain.y0;
+                        size_t pz = z - subDomain.z0;
+                        size_t pbi = PBIDX(px,py,pz,snx,sny,snz); // palabos data base index
+
+                        pal_lattices[pbi +  0] = lattices->c [gi] - 1./3 ;
+                        pal_lattices[pbi +  1] = lattices->w [gi] - 1./18;
+                        pal_lattices[pbi +  2] = lattices->s [gi] - 1./18;
+                        pal_lattices[pbi +  3] = lattices->bc[gi] - 1./18;
+                        pal_lattices[pbi +  4] = lattices->sw[gi] - 1./36;
+                        pal_lattices[pbi +  5] = lattices->nw[gi] - 1./36;
+                        pal_lattices[pbi +  6] = lattices->bw[gi] - 1./36;
+                        pal_lattices[pbi +  7] = lattices->tw[gi] - 1./36;
+                        pal_lattices[pbi +  8] = lattices->bs[gi] - 1./36;
+                        pal_lattices[pbi +  9] = lattices->ts[gi] - 1./36;
+                        pal_lattices[pbi + 10] = lattices->e [gi] - 1./18;
+                        pal_lattices[pbi + 11] = lattices->n [gi] - 1./18;
+                        pal_lattices[pbi + 12] = lattices->tc[gi] - 1./18;
+                        pal_lattices[pbi + 13] = lattices->ne[gi] - 1./36;
+                        pal_lattices[pbi + 14] = lattices->se[gi] - 1./36;
+                        pal_lattices[pbi + 15] = lattices->te[gi] - 1./36;
+                        pal_lattices[pbi + 16] = lattices->be[gi] - 1./36;
+                        pal_lattices[pbi + 17] = lattices->tn[gi] - 1./36;
+                        pal_lattices[pbi + 18] = lattices->bn[gi] - 1./36;
+                    }
                 }
             }
-        }
 #endif
+        }
 
         return 1;
     }
@@ -234,7 +259,9 @@ namespace plb {
     template<typename T>
     int D3Q19CudaCoProcessor3D<T>::collideAndStream(int domainHandle)
     {
-        lbm_simulation_update(lbm_sim);
+        for (int i = 0; i < REPEAT_CNS; i++) {
+                lbm_simulation_update(lbm_sim);
+        }
         return 1;
     }
 #endif

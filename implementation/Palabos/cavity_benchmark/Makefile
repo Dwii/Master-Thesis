@@ -12,6 +12,15 @@ include ../../lbm_common.mk
 ## compilation.
 ##########################################################################
 
+# Repeat transfert (send and receive)
+RT?=1
+# Repeat send
+RS?=$(RT)
+# Repeat receive
+RR?=$(RT)
+# Repeat collide and stream
+RC?=1
+
 # USE: multiple arguments are separated by spaces.
 #   For example: projectFiles = file1.cpp file2.cpp
 #                optimFlags   = -O -finline-functions
@@ -50,7 +59,7 @@ serialCXX    = g++
 # Compiler to use with MPI parallelism
 parallelCXX  = mpicxx
 # General compiler flags (e.g. -Wall to turn on all warnings on g++)
-compileFlags = -Wall -Wnon-virtual-dtor -DPLB_MAC_OS_X -Wno-deprecated
+compileFlags = -Wall -Wnon-virtual-dtor -DPLB_MAC_OS_X -Wno-deprecated -DREPEAT_SEND=$(RS) -DREPEAT_RECEIVE=$(RR) -DREPEAT_CNS=$(RC)
 #compileFlags = -DPLB_MAC_OS_X -Wno-deprecated-gpu-targets --ptxas-options=-v
 # General linker flags (don't put library includes into this flag)
 linkFlags    =
