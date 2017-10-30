@@ -304,7 +304,9 @@ int main(int argc, char * argv[])
             transferToCoProcessors(lattice);
         }
 
-        lattice.collideAndStream();
+        for (int i = 0; i < REPEAT_PALABOS_CNS; i++) {
+            lattice.collideAndStream();
+        }
         
         if ( copy_boundaries_only ){
             transferFromCoProcessors(lattice, 1);

@@ -62,6 +62,7 @@ namespace plb {
     template<typename T>
     int D3Q19ExampleCoProcessor3D<T>::send(int domainHandle, Box3D const& subDomain, std::vector<char> const& data)
     {
+        cns_done = false;
         for (int i = 0; i < REPEAT_SEND; i++) {
             typename std::map<int, BlockLattice3D<T,descriptors::D3Q19Descriptor> >::iterator it
             = domains.find(domainHandle);
@@ -88,13 +89,17 @@ namespace plb {
     template<typename T>
     int D3Q19ExampleCoProcessor3D<T>::collideAndStream(int domainHandle)
     {
-        for (int i = 0; i < REPEAT_CNS; i++) {
-            typename std::map<int, BlockLattice3D<T,descriptors::D3Q19Descriptor> >::iterator it
-            = domains.find(domainHandle);
-            PLB_ASSERT( it != domains.end() );
-            BlockLattice3D<T,descriptors::D3Q19Descriptor>& lattice = it->second;
-            lattice.collideAndStream(lattice.getBoundingBox());
+        if ( ! cns_done ) {
+            for (int i = 0; i < REPEAT_CNS; i++) {
+                typename std::map<int, BlockLattice3D<T,descriptors::D3Q19Descriptor> >::iterator it
+                = domains.find(domainHandle);
+                PLB_ASSERT( it != domains.end() );
+                BlockLattice3D<T,descriptors::D3Q19Descriptor>& lattice = it->second;
+                lattice.collideAndStream(lattice.getBoundingBox());
+            }
+            cns_done = true;
         }
+
         return 1; // Success.
     }
 
@@ -140,6 +145,8 @@ namespace plb {
         }
         lattices = lbm_lattices_create(nl);
 
+        cns_done = false;
+
         return 1;
     }
 
@@ -147,6 +154,8 @@ namespace plb {
     int D3Q19CudaCoProcessor3D<T>::send(int domainHandle, Box3D const& subDomain, std::vector<char> const& data)
     {
         lbm_box_3d subdomain = {subDomain.x0, subDomain.x1, subDomain.y0, subDomain.y1, subDomain.z0, subDomain.z1};
+        
+        cns_done = false;
 
         for (int i = 0; i < REPEAT_SEND; i++) {
 
@@ -259,9 +268,13 @@ namespace plb {
     template<typename T>
     int D3Q19CudaCoProcessor3D<T>::collideAndStream(int domainHandle)
     {
-        for (int i = 0; i < REPEAT_CNS; i++) {
-                lbm_simulation_update(lbm_sim);
+        if ( ! cns_done ) {
+            for (int i = 0; i < REPEAT_CNS; i++) {
+                    lbm_simulation_update(lbm_sim);
+            }
+            cns_done = true;
         }
+
         return 1;
     }
 #endif

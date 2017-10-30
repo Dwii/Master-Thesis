@@ -131,6 +131,7 @@ public:
     virtual int collideAndStream(int domainHandle);
 private:
     std::map<int, BlockLattice3D<T,descriptors::D3Q19Descriptor> > domains;
+    bool cns_done;
 };
 
 
@@ -153,9 +154,8 @@ public:
 private:
     lbm_simulation* lbm_sim;
     lbm_lattices* lattices;
-    bool lattices_on_host;
     int nx, ny, nz, nl;
-
+    bool cns_done;
 };
 #endif
 

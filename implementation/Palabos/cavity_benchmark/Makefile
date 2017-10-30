@@ -20,6 +20,8 @@ RS?=$(RT)
 RR?=$(RT)
 # Repeat collide and stream
 RC?=1
+# Repeat collide and stream from Palabos
+RPC?=1
 
 # USE: multiple arguments are separated by spaces.
 #   For example: projectFiles = file1.cpp file2.cpp
@@ -59,7 +61,7 @@ serialCXX    = g++
 # Compiler to use with MPI parallelism
 parallelCXX  = mpicxx
 # General compiler flags (e.g. -Wall to turn on all warnings on g++)
-compileFlags = -Wall -Wnon-virtual-dtor -DPLB_MAC_OS_X -Wno-deprecated -DREPEAT_SEND=$(RS) -DREPEAT_RECEIVE=$(RR) -DREPEAT_CNS=$(RC)
+compileFlags = -Wall -Wnon-virtual-dtor -DPLB_MAC_OS_X -Wno-deprecated -DREPEAT_SEND=$(RS) -DREPEAT_RECEIVE=$(RR) -DREPEAT_CNS=$(RC) -DREPEAT_PALABOS_CNS=$(RPC)
 #compileFlags = -DPLB_MAC_OS_X -Wno-deprecated-gpu-targets --ptxas-options=-v
 # General linker flags (don't put library includes into this flag)
 linkFlags    =
