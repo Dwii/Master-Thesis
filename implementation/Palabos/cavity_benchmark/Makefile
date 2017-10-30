@@ -97,6 +97,8 @@ XPU=cpu
 BENPRE=$(XPU)_$(subst true,,$(subst $(BOUNDARY),boundary_,true))
 BENCHMARKS=$(wildcard $(BENDIR)/*.ben)
 BENCHDATAS=${subst $(BENDIR)/,$(OUTDIR)/$(BENPRE),$(BENCHMARKS:.ben=.dat)}
+# Should measures energies be checked or not (true/false)
+CHECK_NRG=true
 # Measures per benchmark setup
 MPS=2
 # Measure extention
@@ -222,22 +224,22 @@ benchmark: setbin compile $(OUTDIR) $(BENCHDATAS)
 
 $(BENDIR)/%.nrg: BIN=$(BINDIR)/$(CPUBIN)
 $(BENDIR)/%.nrg: $(BENDIR)/%.ben 
-	$(eval benchmark_name=${subst $(BENDIR),$(OUTDIR),$(<:.ben=)}_nrg)
-	$(call run_benchmark, $<, $(benchmark_name), 1)
-
-	@expected_count=$$(cat $< | wc -l); \
-	nrg_count=$$(cat $(benchmark_name)*_1.out | grep energy | wc -l); \
-	test $$nrg_count -eq $$expected_count || ( \
-		printf "Wrong number of energies: %d/%d\n" $$nrg_count $$expected_count; \
-		exit 1 \
+	$(if $(subst true,,$(CHECK_NRG)),, \
+		$(eval benchmark_name=${subst $(BENDIR),$(OUTDIR),$(<:.ben=)}_nrg) \
+		$(call run_benchmark, $<, $(benchmark_name), 1) \
+		@expected_count=$$(cat $< | wc -l); \
+		nrg_count=$$(cat $(benchmark_name)*_1.out | grep energy | wc -l); \
+		test $$nrg_count -eq $$expected_count || ( \
+			printf "Wrong number of energies: %d/%d\n" $$nrg_count $$expected_count; \
+			exit 1 \
+		) \
+		@cat $(benchmark_name)*_1.out | sed -n 's/.*energy: \(.*\).*/\1/p' > $@ \
 	)
-
-	@cat $(benchmark_name)*_1.out | sed -n 's/.*energy: \(.*\).*/\1/p' > $@
 
 $(OUTDIR)/$(BENPRE)%.dat: $(BENDIR)/%.ben $(BENDIR)/%.nrg
 	$(eval benchmark_name=$(@:.dat=))
 	$(eval nrg_file=$(^:.ben=.nrg))
-	$(call run_benchmark, $<, $(benchmark_name), $(MPS), $(nrg_file))
+	$(call run_benchmark, $<, $(benchmark_name), $(MPS), $(subst true,,$(subst $(CHECK_NRG),$(nrg_file),true)))
 	$(eval NI=$(shell cat $< | wc -l))
 	$(eval I=$(shell seq $(NI)))
 
