@@ -197,6 +197,7 @@ int main(int argc, char* argv[]) {
     for (pluint iProc=0; iProc<ranges.size(); ++iProc) {
         for (plint blockId=ranges[iProc].first; blockId<=ranges[iProc].second; ++blockId) {
             threadAttribution -> addBlock(blockId, iProc);
+            printf("Block %lu is run by processor %lu\n", blockId, iProc);
         }
     }
 
