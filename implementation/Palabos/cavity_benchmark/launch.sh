@@ -12,8 +12,8 @@ module load CUDA
 MPS=3
 ITER=100
 CHECK_NRG=true
-srun make benchmark ITER=$ITER XPU=cpu BOUNDARY=false MPS=$MPS CHECK_NRG=$CHECK_NRG
-srun make benchmark ITER=$ITER XPU=cpu BOUNDARY=true  MPS=$MPS CHECK_NRG=$CHECK_NRG
-srun make benchmark ITER=$ITER XPU=gpu BOUNDARY=false MPS=$MPS CHECK_NRG=$CHECK_NRG
-srun make benchmark ITER=$ITER XPU=gpu BOUNDARY=true  MPS=$MPS CHECK_NRG=$CHECK_NRG
+srun make benchmarks ITER=$ITER XPU=cpu BOUNDARY=false MPS=$MPS CHECK_NRG=$CHECK_NRG
+srun make benchmarks ITER=$ITER XPU=cpu BOUNDARY=true  MPS=$MPS CHECK_NRG=$CHECK_NRG
+srun make benchmarks ITER=$ITER XPU=gpu BOUNDARY=false MPS=$MPS CHECK_NRG=$CHECK_NRG
+srun make benchmarks ITER=$ITER XPU=gpu BOUNDARY=true  MPS=$MPS CHECK_NRG=$CHECK_NRG
 
