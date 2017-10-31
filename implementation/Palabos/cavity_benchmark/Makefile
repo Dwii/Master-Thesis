@@ -94,7 +94,7 @@ BOUNDARY_FLAG=$(subst true,,$(subst $(BOUNDARY),-b,true))
 XPU=cpu
 
 # Benchmarks
-BENPRE=$(XPU)_$(subst true,,$(subst $(BOUNDARY),boundary_,true))
+BENPRE=$(OUTPRE)$(XPU)_$(subst true,,$(subst $(BOUNDARY),boundary_,true))
 BENCHMARKS=$(wildcard $(BENDIR)/*.ben)
 BENCHDATAS=${subst $(BENDIR)/,$(OUTDIR)/$(BENPRE),$(BENCHMARKS:.ben=.dat)}
 # Should measures energies be checked or not (true/false)
