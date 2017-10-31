@@ -173,6 +173,7 @@ MultiBlockLattice3D<T, DESCRIPTOR> palabos_create_lattice(IncomprFlowParam<T> pa
     for (pluint iProc=0; iProc<ranges.size(); ++iProc) {
         for (plint blockId=ranges[iProc].first; blockId<=ranges[iProc].second; ++blockId) {
             threadAttribution -> addBlock(blockId, iProc);
+            printf("Block %d is run by processor %d\n", blockId, iProc);
         }
     }
 
