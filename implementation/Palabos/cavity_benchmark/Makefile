@@ -191,7 +191,6 @@ info: INFO=$(OUTDIR)/$(OUTPRE)$(ITER).info
 info: BINARGS?=-e
 
 info run: compile setbin .stdout $(OUTDIR)
-	@echo $(XPU) libs: $(libraryPaths)
 	$(call execute, $(libraryPaths), "$(BIN) -N $(N) -x $(SNX) -y $(SNY) -z $(SNZ) -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -L $(BINARGS) $(BOUNDARY_FLAG)", $(INFO))
 
 
