@@ -16,6 +16,10 @@
 #include <libgen.h>
 #include <lbmcuda.h>
 
+#define READ_WRITE           // Read/write lattice on each iterations when defined
+#define BOUNDARY             // Read/write only domain boundaries when defined 
+#define USE_KERNEL_COPY      // Use a kernel to rearrange copied data when define
+
 #define RE       220.0       // Reynolds number
 #define ULB      0.04        // Velocity in lattice units
 #define NULB     ((ULB) * 10 / (RE))   // Viscoscity in lattice units
@@ -254,10 +258,6 @@ int main(int argc, char * const argv[])
     lbm_u* u = lbm_u_create(width, height, depth);
     lbm_lattices* fin = lbm_lattices_create(width * height * depth);
     
-#define READ_WRITE
-#define BOUNDARY
-#define USE_KERNEL_COPY
-
 #if defined(READ_WRITE) && defined(BOUNDARY)
     lbm_box_3d subdomain0w = {       0, width-1,        0,        0,        0, depth-1 };
     lbm_box_3d subdomain1w = {       0, width-1, height-1, height-1,        0, depth-1 };
@@ -286,49 +286,55 @@ int main(int argc, char * const argv[])
     for (int iter = 1; iter <= max_iter; iter++) {
         
 #ifdef READ_WRITE
+        for (int i = 0; i < REPEAT_WRITE; i++) {
 #ifdef BOUNDARY
 #ifdef USE_KERNEL_COPY
-        lbm_write_palabos_subdomain(lbm_sim, data, subdomain0w);
-        lbm_write_palabos_subdomain(lbm_sim, data, subdomain1w);
-        lbm_write_palabos_subdomain(lbm_sim, data, subdomain2w);
-        lbm_write_palabos_subdomain(lbm_sim, data, subdomain3w);
-        lbm_write_palabos_subdomain(lbm_sim, data, subdomain4w);
-        lbm_write_palabos_subdomain(lbm_sim, data, subdomain5w);
+            lbm_write_palabos_subdomain(lbm_sim, data, subdomain0w);
+            lbm_write_palabos_subdomain(lbm_sim, data, subdomain1w);
+            lbm_write_palabos_subdomain(lbm_sim, data, subdomain2w);
+            lbm_write_palabos_subdomain(lbm_sim, data, subdomain3w);
+            lbm_write_palabos_subdomain(lbm_sim, data, subdomain4w);
+            lbm_write_palabos_subdomain(lbm_sim, data, subdomain5w);
 #else
-        lbm_lattices_write_subdomain(lbm_sim, fin, subdomain0w);
-        lbm_lattices_write_subdomain(lbm_sim, fin, subdomain1w);
-        lbm_lattices_write_subdomain(lbm_sim, fin, subdomain2w);
-        lbm_lattices_write_subdomain(lbm_sim, fin, subdomain3w);
-        lbm_lattices_write_subdomain(lbm_sim, fin, subdomain4w);
-        lbm_lattices_write_subdomain(lbm_sim, fin, subdomain5w);
+            lbm_lattices_write_subdomain(lbm_sim, fin, subdomain0w);
+            lbm_lattices_write_subdomain(lbm_sim, fin, subdomain1w);
+            lbm_lattices_write_subdomain(lbm_sim, fin, subdomain2w);
+            lbm_lattices_write_subdomain(lbm_sim, fin, subdomain3w);
+            lbm_lattices_write_subdomain(lbm_sim, fin, subdomain4w);
+            lbm_lattices_write_subdomain(lbm_sim, fin, subdomain5w);
 #endif
 #else
-    lbm_lattices_write(lbm_sim, fin);
+            lbm_lattices_write(lbm_sim, fin);
 #endif
+        }
 #endif
-        
-        lbm_simulation_update(lbm_sim);
-        
+
+        for (int i = 0; i < REPEAT_CNS; i++) {        
+            lbm_simulation_update(lbm_sim);
+        }
+
 #ifdef READ_WRITE
+        for (int i = 0; i < REPEAT_READ; i++) {
 #ifdef BOUNDARY
 #ifdef USE_KERNEL_COPY
-        lbm_read_palabos_subdomain(lbm_sim, data, subdomain0r);
-        lbm_read_palabos_subdomain(lbm_sim, data, subdomain1r);
-        lbm_read_palabos_subdomain(lbm_sim, data, subdomain2r);
-        lbm_read_palabos_subdomain(lbm_sim, data, subdomain3r);
-        lbm_read_palabos_subdomain(lbm_sim, data, subdomain4r);
-        lbm_read_palabos_subdomain(lbm_sim, data, subdomain5r);
+            lbm_read_palabos_subdomain(lbm_sim, data, subdomain0r);
+            lbm_read_palabos_subdomain(lbm_sim, data, subdomain1r);
+            lbm_read_palabos_subdomain(lbm_sim, data, subdomain2r);
+            lbm_read_palabos_subdomain(lbm_sim, data, subdomain3r);
+            lbm_read_palabos_subdomain(lbm_sim, data, subdomain4r);
+            lbm_read_palabos_subdomain(lbm_sim, data, subdomain5r);
 #else
-        lbm_lattices_read_subdomain(lbm_sim, fin, subdomain0r);
-        lbm_lattices_read_subdomain(lbm_sim, fin, subdomain1r);
-        lbm_lattices_read_subdomain(lbm_sim, fin, subdomain2r);
-        lbm_lattices_read_subdomain(lbm_sim, fin, subdomain3r);
-        lbm_lattices_read_subdomain(lbm_sim, fin, subdomain4r);
-        lbm_lattices_read_subdomain(lbm_sim, fin, subdomain5r);
+            lbm_lattices_read_subdomain(lbm_sim, fin, subdomain0r);
+            lbm_lattices_read_subdomain(lbm_sim, fin, subdomain1r);
+            lbm_lattices_read_subdomain(lbm_sim, fin, subdomain2r);
+            lbm_lattices_read_subdomain(lbm_sim, fin, subdomain3r);
+            lbm_lattices_read_subdomain(lbm_sim, fin, subdomain4r);
+            lbm_lattices_read_subdomain(lbm_sim, fin, subdomain5r);
 #endif
 #else
-        lbm_lattices_read(lbm_sim, fin);
+            lbm_lattices_read(lbm_sim, fin);
 #endif
+        }
 #endif
         if ( (!out_interval && iter == max_iter) || (out_interval && iter % out_interval == 0) ) {
             

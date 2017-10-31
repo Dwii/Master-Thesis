@@ -23,8 +23,18 @@ NZ=10
 SRCS=$(wildcard $(SRCDIR)/*.c)
 OBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.c=.o)))
 
+# Repeat transfert (send and receive)
+RT?=1
+# Repeat send (write)
+RS?=$(RT)
+# Repeat receive (read)
+RR?=$(RT)
+# Repeat collide and stream
+RC?=1
+
 # Flags
 CFLAGS=-g -Wall -Wextra -pedantic -std=gnu99 -O3
+CFLAGS += -DREPEAT_WRITE=$(RS) -DREPEAT_READ=$(RR) -DREPEAT_CNS=$(RC)
 
 # Non-standard libraries and headers
 LIBNAM=pgm timing lbmcuda
