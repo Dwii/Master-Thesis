@@ -311,12 +311,14 @@ int main(int argc, char * argv[])
         if ( copy_boundaries_only ){
             transferFromCoProcessors(lattice, 1);
         } else {
-            transferFromCoProcessors(lattice);            
+            transferFromCoProcessors(lattice);
         }
 
         // After transferring back from co-processor to CPU memory, data in the envelopes
         // of the CPU blocks must be synchronized.
-        lattice.duplicateOverlaps(modif::staticVariables);
+        for (int i = 0; i < REPEAT_PALABOS_DO; i++) {
+            lattice.duplicateOverlaps(modif::staticVariables);
+        }
 
         if ( (!out_interval && iter == max_iter) || (out_interval && iter % out_interval == 0) ) {
             

@@ -22,6 +22,8 @@ RR?=$(RT)
 RC?=1
 # Repeat collide and stream from Palabos
 RPC?=1
+# Repeat duplicate overlaps for Palabos
+RPD?=1
 
 # USE: multiple arguments are separated by spaces.
 #   For example: projectFiles = file1.cpp file2.cpp
@@ -65,7 +67,7 @@ compileFlags = -Wall -Wnon-virtual-dtor -Wno-deprecated
 # Add compatibility flag for on Darwin (Mac) systems
 compileFlags += $(if $(filter $(shell uname),Darwin),-DPLB_MAC_OS_X)
 # Set how many times certain parts of the code should be repeated 
-compileFlags += -DREPEAT_SEND=$(RS) -DREPEAT_RECEIVE=$(RR) -DREPEAT_CNS=$(RC) -DREPEAT_PALABOS_CNS=$(RPC)
+compileFlags += -DREPEAT_SEND=$(RS) -DREPEAT_RECEIVE=$(RR) -DREPEAT_CNS=$(RC) -DREPEAT_PALABOS_CNS=$(RPC) -DREPEAT_PALABOS_DO=$(RPD)
 #compileFlags += -Wno-deprecated-gpu-targets --ptxas-options=-v
 # General linker flags (don't put library includes into this flag)
 linkFlags    =
