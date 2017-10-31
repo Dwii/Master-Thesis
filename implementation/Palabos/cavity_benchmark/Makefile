@@ -223,8 +223,8 @@ define run_benchmark
 	@$(foreach i, $(I), $(call repeat_measure, $$(sed '$(i)q;d' $(1)), $(2)_$(i), $(3), $(if $(strip $(4)), $$(sed '$(i)q;d' $(4))))) 
 endef
 
-benchmark: INTERVAL=0
-benchmark: setbin compile $(OUTDIR) $(BENCHDATAS)
+benchmarks: INTERVAL=0
+benchmarks: setbin compile $(OUTDIR) $(BENCHDATAS)
 
 .PRECIOUS: $(BENDIR)/%.nrg
 
