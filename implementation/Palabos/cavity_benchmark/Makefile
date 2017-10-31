@@ -61,8 +61,12 @@ serialCXX    = g++
 # Compiler to use with MPI parallelism
 parallelCXX  = mpicxx
 # General compiler flags (e.g. -Wall to turn on all warnings on g++)
-compileFlags = -Wall -Wnon-virtual-dtor -DPLB_MAC_OS_X -Wno-deprecated -DREPEAT_SEND=$(RS) -DREPEAT_RECEIVE=$(RR) -DREPEAT_CNS=$(RC) -DREPEAT_PALABOS_CNS=$(RPC)
-#compileFlags = -DPLB_MAC_OS_X -Wno-deprecated-gpu-targets --ptxas-options=-v
+compileFlags = -Wall -Wnon-virtual-dtor -Wno-deprecated 
+# Add compatibility flag for on Darwin (Mac) systems
+compileFlags += $(if $(filter $(shell uname),Darwin),-DPLB_MAC_OS_X)
+# Set how many times certain parts of the code should be repeated 
+compileFlags += -DREPEAT_SEND=$(RS) -DREPEAT_RECEIVE=$(RR) -DREPEAT_CNS=$(RC) -DREPEAT_PALABOS_CNS=$(RPC)
+#compileFlags += -Wno-deprecated-gpu-targets --ptxas-options=-v
 # General linker flags (don't put library includes into this flag)
 linkFlags    =
 # Compiler flags to use when optimization mode is on
