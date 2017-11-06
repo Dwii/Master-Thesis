@@ -267,7 +267,7 @@ int main(int argc, char * argv[])
         fprintf(stderr, "No output mode specified.\n");
     }
    
-    plbInit();
+    plbInit(&argc, &argv);
     global::directories().setOutputDir(out_path + "/");
 
     IncomprFlowParam<T> parameters(

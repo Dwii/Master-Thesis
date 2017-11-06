@@ -139,13 +139,6 @@ SparseBlockStructure3D createCavityDistribution3D(plint nx, plint ny, plint nz)
     return createRegularDistribution3D(xVal, yVal, zVal);
 }
 
-
-void saveAtomicBlock(MultiBlockLattice3D<T,DESCRIPTOR>& lattice, plint blockId) {
-    BlockLattice3D<T,DESCRIPTOR>& atomicBlock = lattice.getComponent(blockId);
-    plb_ofstream ofile("block13.dat");
-    ofile << atomicBlock;
-}
-
 int main(int argc, char* argv[]) {
 
     plbInit(&argc, &argv);
@@ -206,8 +199,6 @@ int main(int argc, char* argv[]) {
                     defaultMultiBlockPolicy3D().getCombinedStatistics(),
                     defaultMultiBlockPolicy3D().getMultiCellAccess<T,DESCRIPTOR>(),
                     new BGKdynamics<T,DESCRIPTOR>(parameters.getOmega()) );
-
-    saveAtomicBlock(lattice, 13);
 
     OnLatticeBoundaryCondition3D<T,DESCRIPTOR>* boundaryCondition
         = createInterpBoundaryCondition3D<T,DESCRIPTOR>();
