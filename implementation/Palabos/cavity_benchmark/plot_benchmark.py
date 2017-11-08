@@ -41,8 +41,7 @@ for i, argi in enumerate(range(3, len(sys.argv), 2)):
             mlups, 
             width, 
             alpha=0.5, 
-            color=next(prop_iter)['color'], 
-            label=domains[i]) 
+            color=next(prop_iter)['color']) 
 
 # Set the y axis label
 ax.set_ylabel('MLUPS')
