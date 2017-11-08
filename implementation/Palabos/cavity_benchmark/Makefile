@@ -25,6 +25,10 @@ RPC?=1
 # Repeat duplicate overlaps for Palabos
 RPD?=1
 
+# Number of process for mpirun (> 1 imply MPIparallel = true)
+NP=1
+MPICMD=$(subst 1,mpirun -np $(NP),$(subst $(NP),,1))
+
 # USE: multiple arguments are separated by spaces.
 #   For example: projectFiles = file1.cpp file2.cpp
 #                optimFlags   = -O -finline-functions
@@ -41,7 +45,7 @@ debug        = true
 # Set profiling flags on/off
 profile      = false
 # Set MPI-parallel mode on/off (parallelism in cluster-like environment)
-MPIparallel  = false
+MPIparallel  = $(subst 1,true,$(subst $(NP),false,1))
 # Set SMP-parallel mode on/off (shared-memory parallelism)
 SMPparallel  = false
 # Decide whether to include calls to the POSIX API. On non-POSIX systems,
@@ -80,9 +84,18 @@ profileFlags = -pg
 
 # Binary filename output by SCons (first project file without its extension)
 OUTBIN=$(shell outbin="$(projectFiles)"; echo $${outbin%%.*})
+# Binaries sufix (mpi/sec, repeat, ...)
+SEQSUF=$(subst true,seq,$(subst $(MPIparallel),mpi,true))
+RSSUF =$(subst 1,s$(RS),$(subst $(RS),,1))
+RRSUF =$(subst 1,r$(RR),$(subst $(RR),,1))
+RCSUF =$(subst 1,c$(RC),$(subst $(RC),,1))
+RPCSUF=$(subst 1,pc$(RPC),$(subst $(RPC),,1))
+RPDSUF=$(subst 1,pd$(RPD),$(subst $(RPD),,1))
+REPSUF=$(RSSUF)$(RRSUF)$(RCSUF)$(RPCSUF)$(RPDSUF)
+BINSUF=$(SEQSUF)$(if $(REPSUF),_repeat-$(REPSUF))
 # Final binaries names
-CPUBIN=$(OUTBIN)_cpu
-GPUBIN=$(OUTBIN)_gpu
+CPUBIN=$(OUTBIN)_cpu_$(BINSUF)
+GPUBIN=$(OUTBIN)_gpu_$(BINSUF)
 # Directories
 OUTDIR=out
 BINDIR=bin
@@ -100,7 +113,7 @@ BOUNDARY_FLAG=$(subst true,,$(subst $(BOUNDARY),-b,true))
 XPU=cpu
 
 # Benchmarks
-BENPRE=$(OUTPRE)$(XPU)_$(subst true,,$(subst $(BOUNDARY),boundary_,true))
+BENPRE=$(OUTPRE)$(XPU)_$(BINSUF)_$(subst true,,$(subst $(BOUNDARY),boundary_,true))
 BENCHMARKS=$(wildcard $(BENDIR)/*.ben)
 BENCHDATAS=${subst $(BENDIR)/,$(OUTDIR)/$(BENPRE),$(BENCHMARKS:.ben=.dat)}
 # Should measures energies be checked or not (true/false)
@@ -191,7 +204,7 @@ info: INFO=$(OUTDIR)/$(OUTPRE)$(ITER).info
 info: BINARGS?=-e
 
 info run: compile setbin .stdout $(OUTDIR)
-	$(call execute, $(libraryPaths), "$(BIN) -N $(N) -x $(SNX) -y $(SNY) -z $(SNZ) -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -L $(BINARGS) $(BOUNDARY_FLAG)", $(INFO))
+	$(call execute, $(libraryPaths), "$(MPICMD) $(BIN) -N $(N) -x $(SNX) -y $(SNY) -z $(SNZ) -i $(ITER) -I $(INTERVAL) -o $(OUTDIR) -O $(OUTPRE) -L $(BINARGS) $(BOUNDARY_FLAG)", $(INFO))
 
 
 # Function:    measure
@@ -200,10 +213,12 @@ info run: compile setbin .stdout $(OUTDIR)
 define measure
 	$(eval nxyz=$(shell printf ' -N %d -x %d -y %d -z %d' $(1)))
 	$(eval measure_file=$(2).$(MEXT))
-	$(call execute, $(libraryPaths), "$(BIN) -e -L $(BOUNDARY_FLAG) $(nxyz) -i $(ITER) -I 0 2> /dev/null | grep -E 'energy|lups'", $(measure_file))
+	@printf "Generate measure $(measure_file): ";
+	$(call execute, $(libraryPaths), "$(MPICMD) $(BIN) -e -L $(BOUNDARY_FLAG) $(nxyz) -i $(ITER) -I 0 | grep -E 'energy|lups'", $(measure_file))
 	$(if $(strip $(3)),
 		@cat $(measure_file) | sed -n 's/.*energy: \(.*\).*/\1/p' | grep $(3) > /dev/null || (echo "energy differ for $(measure_file)" && exit 1)
 	)
+	@echo "Done";
 endef
 
 # Function:    measure
@@ -229,16 +244,18 @@ benchmarks: setbin compile $(OUTDIR) $(BENCHDATAS)
 
 $(BENDIR)/%.nrg: BIN=$(BINDIR)/$(CPUBIN)
 $(BENDIR)/%.nrg: $(BENDIR)/%.ben 
+	$(eval expected_count=$(shell cat $< | wc -l))
 	$(if $(subst true,,$(CHECK_NRG)),, \
 		$(eval benchmark_name=${subst $(BENDIR),$(OUTDIR),$(<:.ben=)}_nrg) \
 		$(call run_benchmark, $<, $(benchmark_name), 1) \
-		@expected_count=$$(cat $< | wc -l); \
+		printf "Generate nrg $@: "; \
 		nrg_count=$$(cat $(benchmark_name)*_1.out | grep energy | wc -l); \
-		test $$nrg_count -eq $$expected_count || ( \
+		test $$nrg_count -eq $(expected_count) || ( \
 			printf "Wrong number of energies: %d/%d\n" $$nrg_count $$expected_count; \
 			exit 1 \
-		) \
-		@cat $(benchmark_name)*_1.out | sed -n 's/.*energy: \(.*\).*/\1/p' > $@ \
+		); \
+		cat $(benchmark_name)*_1.out | sed -n 's/.*energy: \(.*\).*/\1/p' > $@; \
+		echo "Done" \
 	)
 
 $(OUTDIR)/$(BENPRE)%.dat: $(BENDIR)/%.ben $(BENDIR)/%.nrg
@@ -246,9 +263,9 @@ $(OUTDIR)/$(BENPRE)%.dat: $(BENDIR)/%.ben $(BENDIR)/%.nrg
 	$(eval nrg_file=$(^:.ben=.nrg))
 	$(call run_benchmark, $<, $(benchmark_name), $(MPS), $(subst true,,$(subst $(CHECK_NRG),$(nrg_file),true)))
 	$(eval NI=$(shell cat $< | wc -l))
-	$(eval I=$(shell seq $(NI)))
-
-	@expected_count=$$(echo '$(NI) * $(MPS)' | bc ); \
+	$(eval I=$(shell seq $(NI))) 
+	@printf "Generate $@: "; \
+	expected_count=$$(echo '$(NI) * $(MPS)' | bc ); \
 	output_count=$$(grep -l -E "lups|energy" $(benchmark_name)*.out | wc -l); \
 	test $$output_count -eq $$expected_count || ( \
 		printf "Wrong number of valid output: %d/%d\n" $$output_count $$expected_count; \
@@ -256,18 +273,19 @@ $(OUTDIR)/$(BENPRE)%.dat: $(BENDIR)/%.ben $(BENDIR)/%.nrg
 	)
 
 	@$(foreach i, $(I), echo "($$(cat $(benchmark_name)_$(i)*.$(MEXT) | sed -n 's/average lups: \(.*\).*/\1/p' | paste -s -d+ -))" / $(MPS) | bc >> $@; )
-
+	@echo "Done"
 
 define get_dat_legend
 	$(eval xpu=$(shell echo $(1) | grep -q gpu && echo "GPU" || echo "CPU")) \
 	$(eval transfert=$(shell echo $(1) | grep -q boundary && echo "boundaries" || echo "full domain")) \
-	'$(xpu) ($(transfert))'
+	$(eval mpi=$(shell echo $(1) | grep -q mpi && echo "with MPI ")) \
+	'$(xpu) $(mpi)($(transfert))'
 endef
 
 benchplot: 
 	@$(foreach benchmark, $(BENCHMARKS), \
 		$(eval image=${subst $(BENDIR)/,$(OUTDIR)/,$(benchmark:.ben=.pdf)}) \
-		$(eval dats=$(shell echo ${subst $(BENDIR)/,$(OUTDIR)/*,$(benchmark:.ben=.dat)})) \
+		$(eval dats=$(shell ls ${subst $(BENDIR)/,$(OUTDIR)/*,$(benchmark:.ben=.dat)} | grep -v repeat)) \
 		python3 $(PLOTSCRIPT) $(benchmark) $(image) $(foreach dat, $(dats), $(dat) $(call get_dat_legend, $(dat)) ); \
 	)	
 
