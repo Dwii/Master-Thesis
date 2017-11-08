@@ -262,10 +262,6 @@ int main(int argc, char * argv[])
         fprintf(stderr, "  -b : copy only the boundaries between palabos and the coprocessor\n");
         return EXIT_FAILURE;
     }
-    
-    if (out == OUT_NONE) {
-        fprintf(stderr, "No output mode specified.\n");
-    }
    
     plbInit(&argc, &argv);
     global::directories().setOutputDir(out_path + "/");
