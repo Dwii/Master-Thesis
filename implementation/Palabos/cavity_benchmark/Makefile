@@ -264,15 +264,16 @@ $(OUTDIR)/$(BENPRE)%.dat: $(BENDIR)/%.ben $(BENDIR)/%.nrg
 	$(call run_benchmark, $<, $(benchmark_name), $(MPS), $(subst true,,$(subst $(CHECK_NRG),$(nrg_file),true)))
 	$(eval NI=$(shell cat $< | wc -l))
 	$(eval I=$(shell seq $(NI))) 
-	@printf "Generate $@: "; \
-	expected_count=$$(echo '$(NI) * $(MPS)' | bc ); \
-	output_count=$$(grep -l -E "lups|energy" $(benchmark_name)*.out | wc -l); \
-	test $$output_count -eq $$expected_count || ( \
-		printf "Wrong number of valid output: %d/%d\n" $$output_count $$expected_count; \
-		exit 1 \
-	)
-
-	@$(foreach i, $(I), echo "($$(cat $(benchmark_name)_$(i)*.$(MEXT) | sed -n 's/average lups: \(.*\).*/\1/p' | paste -s -d+ -))" / $(MPS) | bc >> $@; )
+	$(eval J=$(shell seq $(MPS))) 
+	@printf "Generate $@: "
+	@($(foreach i, $(I), \
+		$(eval all_lups=$(shell echo $$($(foreach j, $(J), cat $(benchmark_name)_$(i)_$(j).$(MEXT) | sed -n 's/average lups: \(.*\).*/\1/p' | sort -g | head -n 1; )); ))\
+		$(eval n_lups=$(shell echo $(all_lups) | wc -w)) \
+		$(if $(filter $(n_lups),$(MPS)),, $(error Missing lups for $(benchmark_name)_$(i)_X.$(MEXT): $(n_lups)/$(MPS))) \
+		$(eval sum=$(shell echo $(subst $(space),+,$(strip $(all_lups))) | bc)) \
+		$(eval avg_lups=$(shell echo $(sum) / $(MPS) | bc  )) \
+		echo $(avg_lups); \
+	)) > $@
 	@echo "Done"
 
 define get_dat_legend
