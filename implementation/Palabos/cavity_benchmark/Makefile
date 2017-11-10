@@ -218,6 +218,7 @@ define measure
 	$(if $(strip $(3)),
 		@cat $(measure_file) | sed -n 's/.*energy: \(.*\).*/\1/p' | grep $(3) > /dev/null || (echo "energy differ for $(measure_file)" && exit 1)
 	)
+	@cat $(measure_file) | grep -q lups || (echo "no lups" && exit 1)
 	@echo "Done";
 endef
 
@@ -267,12 +268,12 @@ $(OUTDIR)/$(BENPRE)%.dat: $(BENDIR)/%.ben $(BENDIR)/%.nrg
 	$(eval J=$(shell seq $(MPS))) 
 	@printf "Generate $@: "
 	@($(foreach i, $(I), \
-		$(eval all_lups=$(shell echo $$($(foreach j, $(J), cat $(benchmark_name)_$(i)_$(j).$(MEXT) | sed -n 's/average lups: \(.*\).*/\1/p' | sort -g | head -n 1; )); ))\
-		$(eval n_lups=$(shell echo $(all_lups) | wc -w)) \
-		$(if $(filter $(n_lups),$(MPS)),, $(error Missing lups for $(benchmark_name)_$(i)_X.$(MEXT): $(n_lups)/$(MPS))) \
-		$(eval sum=$(shell echo $(subst $(space),+,$(strip $(all_lups))) | bc)) \
-		$(eval avg_lups=$(shell echo $(sum) / $(MPS) | bc  )) \
-		echo $(avg_lups); \
+		function join_by { local IFS="$$1"; shift; echo "$$*"; }; \
+		all_lups=$$(echo $$($(foreach j, $(J), cat $(benchmark_name)_$(i)_$(j).$(MEXT) | sed -n 's/average lups: \(.*\).*/\1/p' | sort -g | head -n 1; ))); \
+		nbr_lups=$$(echo $$all_lups | wc -w); \
+		sum_lups=$$(echo $$(join_by + $$all_lups) | bc); \
+		avg_lups=$$(echo $$sum_lups / $(MPS) | bc); \
+		echo $$avg_lups; \
 	)) > $@
 	@echo "Done"
 
