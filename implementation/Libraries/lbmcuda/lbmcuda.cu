@@ -14,10 +14,6 @@
 #define BLOCK_SIZE 64
 #endif 
 
-#if BLOCK_SIZE < 10
-#error holyshit
-#endif
-
 #define SQUARE(a) ((a)*(a))
 #define GPU_SQUARE(a) __dmul_rn(a,a)
 
