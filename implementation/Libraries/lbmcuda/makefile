@@ -14,6 +14,9 @@ OBJS=$(addprefix $(OBJDIR)/,$(SRCS:.cu=.o))
 # Flags
 NVCC_FLAGS=--compiler-options '-fPIC' -Wno-deprecated-gpu-targets -O3 --ptxas-options=-v -Xptxas -dlcm=cg
 
+# Add BLOCK_SIZE definition to NVCC_FLAGS if stated
+NVCC_FLAGS+=$(if $(BLOCK_SIZE),-DBLOCK_SIZE=$(BLOCK_SIZE))
+
 all: $(OBJDIR) $(BIN)
 
 $(OBJDIR) $(BINDIR) $(IMGDIR): 
