@@ -17,10 +17,6 @@ NX=100
 NY=100
 NZ=10
 
-# Source and object files
-SRCS=$(wildcard $(SRCDIR)/*.c)
-OBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.c=.o)))
-
 # Repeat transfert (send and receive)
 RT?=1
 # Repeat send (write)
@@ -36,6 +32,10 @@ RRSUF =$(subst 1,r$(RR),$(subst $(RR),,1))
 RCSUF =$(subst 1,c$(RC),$(subst $(RC),,1))
 REPSUF=$(RSSUF)$(RRSUF)$(RCSUF)
 BINSUF=$(if $(REPSUF),_repeat-$(REPSUF))
+
+# Source and object files
+SRCS=$(wildcard $(SRCDIR)/*.c)
+OBJS=$(addprefix $(OBJDIR)/,$(notdir $(SRCS:.c=$(BINSUF).o)))
 
 # Binary target
 BIN=lbmSimple$(BINSUF)
