@@ -141,7 +141,7 @@ for iter in range(1, maxIter+1):
             from matplotlib import cm
             unorm_box = sqrt(u[0]**2+u[1]**2+u[2]**2).transpose()
             plt.clf()
-            plt.imshow(unorm_box[nz//2,:,:], cmap=cm.Reds)
+            plt.imshow(unorm_box[nz//8,:,:], cmap=cm.Reds)
             plt.savefig("{0}/{1}{2}.png".format(outDir, outPre, iter))
         if out == 'OUT':
             file = open("{0}/{1}{2}.out".format(outDir, outPre, iter), 'w')

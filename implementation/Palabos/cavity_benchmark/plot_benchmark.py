@@ -19,7 +19,7 @@ domains = ()
 nb_setups = 0
 for line in open(benchmark,'r'):
     n, snx, sny, snz = line.split()
-    domains += ( "{0}x{1}x{2}".format(snx, sny, snz), )
+    domains += ( r"{0}$^3$".format(snx), ) #+= ( "{0}x{1}x{2}".format(snx, sny, snz), )
     nb_setups += 1
 
 # Setting the positions and width for the bars
@@ -45,6 +45,7 @@ for i, argi in enumerate(range(3, len(sys.argv), 2)):
 
 # Set the y axis label
 ax.set_ylabel('MLUPS')
+ax.set_xlabel('Taille du sous-domaine')
 
 # Set the chart's title
 #ax.set_title(title)
@@ -60,7 +61,7 @@ plt.xlim(min(pos)-width, max(pos)+width*4)
 #plt.ylim([0, maxLups] )
 
 # Adding the legend and showing the plot
-plt.legend(legends, loc='upper left')
+plt.legend(legends, loc='upper center')
 ax.yaxis.grid()
 plt.savefig(image_path)
 plt.tight_layout()
