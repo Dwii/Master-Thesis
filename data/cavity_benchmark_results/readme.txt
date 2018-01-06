@@ -1,0 +1,1 @@
+Parallel executions (MPI) were done on 9 individual threads.
