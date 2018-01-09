@@ -51,7 +51,6 @@ for i, argi in enumerate(range(FIRST_ARGS, len(sys.argv), 2)):
         time = (lat[j] * iterations) / ( int(lups) )
         time_by_lat[i] += ( [lat[j], time], )
 
-    legends[i] = sys.argv[argi+1]
 
     x_min[i] = (min(time_by_lat[i], key=operator.itemgetter(0)))[0]
     x_max[i] = (max(time_by_lat[i], key=operator.itemgetter(0)))[0]
