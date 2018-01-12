@@ -259,7 +259,7 @@ __global__ void lbm_computation(lbm_vars d_vars, lbm_lattices f0, lbm_lattices f
 }
 
 struct lbm_simulation{
-    lbm_vars h_vars, d_vars;
+    lbm_vars d_vars;
     double* d_pal_lat;
     dim3 dimComputationGrid, dimComputationBlock;
     size_t shared_mem_size;
@@ -419,8 +419,6 @@ lbm_simulation* lbm_simulation_create(size_t nx, size_t ny, size_t nz, double om
     lbm_sim->nl = nx * ny * nz;
 
     lbm_sim->omega = omega;
-   
-    lbm_vars_alloc(&lbm_sim->h_vars, lbm_sim->nl);
     
     lbm_sim->switch_f0_f1 = false;
 
@@ -445,7 +443,6 @@ lbm_simulation* lbm_simulation_create(size_t nx, size_t ny, size_t nz, double om
 
 void lbm_simulation_destroy(lbm_simulation* lbm_sim)
 {
-    lbm_vars_dealloc(&lbm_sim->h_vars);
     lbm_vars_cuda_dealloc(&lbm_sim->d_vars);
     HANDLE_ERROR(cudaFree(lbm_sim->d_pal_lat));
     free(lbm_sim);
