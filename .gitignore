@@ -54,4 +54,6 @@ report/*.bbl
 
 *.nrg
 
-*.blg
+report/main.run.xml
+
+report/main-blx.bib
