@@ -21,6 +21,9 @@
 \usepackage{enumerate}
 \usepackage{float}
 
+% Declare color package and fix colortbl bug with tabular lines
+\usepackage{color, colortbl}
+
 \usepackage{array}
 \newcolumntype{M}[1]{>{\arraybackslash}m{#1}}
 \newcolumntype{N}{@{}m{0pt}@{}}
@@ -28,7 +31,7 @@
 
 \usepackage{multirow}
 \usepackage{multicol}
-\hypersetup{citecolor = blue, urlcolor = blue, linkcolor= blue} %pdfstartpage=4}
+\hypersetup{citecolor = black, urlcolor = black, linkcolor= black} %pdfstartpage=4}
 
 \usepackage{tocbibind} % Table des matière dans la table des matières
 
@@ -39,8 +42,8 @@
 \pagestyle{fancy}
 
 \usepackage{subfigure}
+%\setcounter{lofdepth}{2}
 \usepackage[export]{adjustbox}
-
 
 %\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
 \renewcommand{\chaptermark}[1]{%
@@ -89,6 +92,14 @@
 
 % guillemets à la française (eg=entre guillemets)
 \newcommand{\eg}[1]{\og{}#1\fg{}}
+
+
+% Affiche plusieurs lignes d'un fichier à partir d'une ligne jusqu'à une autre avec lstinputlisting
+\newcommand{\lstinputlines}[3]{\lstinputlisting[firstnumber=#1, firstline=#1, lastline=#2]{#3}}
+
+% Affiche une seule ligne d'un fichier avec lstinputlisting
+\newcommand{\lstinputline}[2]{\lstinputlines{#1}{#1}{#2}}
+
 
 % Configuration du paquet listing
 \lstset{
@@ -171,12 +182,15 @@
 		{Ů}{{\r{U}}}1    
 }
 
+\usepackage{units}
 %\usepackage{dirtree}
 \usepackage{amsmath}
 \usepackage{mathtools} % \shortintertext for comments in align
 \usepackage{amssymb}
 \usepackage{relsize}
 \usepackage{calc}
+
+\usepackage[inline]{enumitem}
 
 %\makeindex
 \begin{document}
@@ -194,13 +208,22 @@
 
 \chapter*{Acronymes}
 
-\begin{acronym}[1122222]
+\begin{acronym}[11222232]
 %\acro{}{\href{}{}}
-\acro{URL}{\href{http://fr.wikipedia.org/wiki/Uniform_Resource_Locator}{Uniform Resource Locator}}
-\acro{LBM}{\href{https://fr.wikipedia.org/wiki/Méthode_de_Boltzmann_sur_réseau}{Lattice Bolzmann Method}}
+
+\acro{ASCII}{\href{https://fr.wikipedia.org/wiki/American_Standard_Code_for_Information_Interchange}{American Standard Code for Information Interchange}}
 \acro{CPU}{\href{https://fr.wikipedia.org/wiki/Processeur}{Central Processing Unit}}
-\acro{GPU}{\href{https://fr.wikipedia.org/wiki/Processeur_graphique}{Graphics Processing Unit}}
+\acro{CP}{Co-Processeur}
+\acro{CS}{Collide \& Stream}
 \acro{FMA}{\href{http://docs.nvidia.com/cuda/floating-point/\#fused-multiply-add-fma}{Fused Multiply-Add}}
+\acro{GPU}{\href{https://fr.wikipedia.org/wiki/Processeur_graphique}{Graphics Processing Unit}}
+\acro{IDE}{\href{https://fr.wikipedia.org/wiki/Environnement_de_d\%C3\%A9veloppement}{Environnement de développement Intégré}}
+\acro{LBM}{\href{https://fr.wikipedia.org/wiki/Méthode_de_Boltzmann_sur_réseau}{Lattice Bolzmann Method}}
+\acro{LUPS}{Lattice Update Per Second}
+\acro{MLUPS}{Mega \acs{LUPS}}
+\acro{MPI}{\href{https://fr.wikipedia.org/wiki/Message_Passing_Interface}{Message Passing Interface}}
+\acro{SM}{Streaming Multiprocessor}
+\acro{SP}{Stream Processor}
 \end{acronym}
 
 \chapter*{Avant-propos}
@@ -211,11 +234,19 @@
 \pagenumbering{arabic}
 \input{introduction.tex}
 
-\chapter{Calculs sur nombres flottants}\label{title-floats}
-\input{floats.tex}
-
 \chapter{État de l'art}\label{title-sota}
 \input{sota.tex}
+
+\chapter{Bilan} %TODO à renomer
+
+\chapter{Implémentation}\label{title-implementation}
+\input{implementation.tex}
+
+\chapter{Mesures de performances}\label{title-mesures_perf}
+\input{mesures.tex}
+
+\chapter{Modèle de performance}\label{title-modele_perf}
+\input{modele_perf.tex}
 
 \chapter{Conclusion}\label{title-conclusion}
 \input{conclusion.tex}
@@ -223,4 +254,6 @@
 \bibliography{main}
 \bibliographystyle{plain}
 
+%\appendix 
+%\chapter{Code }
 \end{document}
