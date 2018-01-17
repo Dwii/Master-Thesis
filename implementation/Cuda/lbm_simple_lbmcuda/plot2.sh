@@ -27,4 +27,4 @@ do
 	img=${gpu}_by_bs.pdf
 	eval "python3 plot_tuple.py $img $args"
 done
-rm $dats
+#rm $dats
