@@ -36,7 +36,7 @@ for i, argi in enumerate(range(FIRST_ARGS, len(sys.argv), 2)):
     time_by_lat[i] = ()
     # Load benchark
     for j, time in enumerate(open(file,'r')):
-        time_by_lat[i] += ( [(16+j)**3*8/1E6, float(time)], )
+        time_by_lat[i] += ( [(j)**3*8/1E6, float(time)], )
         max_time = max(max_time, float(time))
         min_time = float(time) if min_time == None else min(min_time, float(time))
 
