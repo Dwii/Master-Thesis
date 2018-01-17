@@ -49,3 +49,7 @@ report/*.log
 report/*.gz
 report/*.toc
 report/*.bbl
+
+*.blg
+
+*.nrg
