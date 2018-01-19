@@ -79,7 +79,7 @@ ou les performances en \acs{LUPS}:
 
 \subsection{Affinage du modèle }\label{title-affinage_modele_perf}
 \subsubsection{Description du modèle de performance pour automate cellulaire}
-Un modèle de performance est proposé par \cite{albuquerque_performance_2012} pour évaluer le temps d'exécution d'un automate cellulaire sur un \acs{GPU} et le formule ainsi:
+\citet{albuquerque_performance_2012} propose un modèle de performance pour évaluer le temps d'exécution d'un automate cellulaire sur un \acs{GPU} qu'ils formulent ainsi:
 \begin{equation}
 \Time_{GPU} = g \cdot \Time_{kernel} = g \bigg( \frac{N_{total}\cdot C_T}{N_{SM}\cdot N_P \cdot D \cdot freq} + \Time_{launch}\bigg)
 \end{equation}
@@ -160,9 +160,6 @@ En dehors de la formulation détaillée des coefficients $\cscoef\scoef\rcoef$, 
 \Time_{send}      &=\text{\makebox[10pt][c]{$\scoef$} }   \cdot   \text{\makebox[30pt][c]{$N_{out}$} }   + \text{\makebox[38pt][c]{$ \Time_{launch}$} }+\Time_{lat} \\
 \Time_{receive} &=  \text{\makebox[10pt][c]{$\rcoef$} } \cdot  \text{\makebox[30pt][c]{$N_{in}$} }       + \text{\makebox[38pt][c]{$ \Time_{launch}$} } +\Time_{lat}
 \end{align}
-
-
-
 
 \subsection{Calcul et mesure des coefficients $\cscoef\scoef\rcoef$ } \label{title-calcul_coeff}
 Le modèle adapté de \cite{albuquerque_performance_2012} en section \ref{title-affinage_modele_perf} nous donne des formules pour calculer les coefficients, à commencer par $\cscoef $.
@@ -317,7 +314,6 @@ Ainsi,  la stratégie de découpage du domaine doit trouver un compromis pour la
 \noindent Cette question est toutefois le sujet d'un travail différent. Par ailleurs, le modèle esquissé ici ne détaille pas l'impact des paramètres physiques de la machine hôte (fréquence du \acs{CPU}, bande passante, etc.).
 
 \subsection{Formulation du modèle}
-
 
 Palabos peut s'exécuter sur $N_T$ \textit{threads}. Dans une configuration de calculs séquentiels, avec $N_T=1$, le temps d'exécution total $\Time_{Palabos} $ peut s'exprimer ainsi:
 \begin{equation}

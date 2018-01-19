@@ -1,4 +1,4 @@
-Ce travail, dont le but est la réalisation d'une implémentation Cuda de \acs{LBM} pour Palabos, a débuté avec de nombreux prototypes en C puis  Cuda, avant d'aborder son intégration à Palabos.
+Ce travail, dont le but est la réalisation d'une implémentation Cuda de \acs{LBM} pour Palabos, a débuté avec de nombreux prototypes en C puis Cuda, avant d'aborder son intégration à Palabos.
 
 L'objectif final de cette implémentation est évidemment d'en améliorer les performances. Les mesures effectuées montrent en ce sens que l'objectif est atteint, mais soulignent aussi les limites d'une telle approche dans le cadre d'exécutions hybrides, à commencer par l'impact qu'ont les transferts de populations entre le \acs{GPU} et le \acs{CPU} à chaque itération. La division du domaine doit également être le sujet d'une attention particulière pour s'assurer d'obtenir les meilleures performances possible et surtout éviter de les dégrader.
 
@@ -6,6 +6,6 @@ L'objectif final de cette implémentation est évidemment d'en améliorer les pe
 
 La taille du domaine est hélas également limitée par la mémoire disponible. En effet, l'implémentation réalisée se révèle gourmande, surtout en conjonction avec Palabos, ce qui limite sa capacité à offrir de meilleures performances qu'elle pourrait atteindre avec de plus grands domaines. Trouver un moyen de réduire son empreinte mémoire serait une piste à explorer dans le cadre d'un futur travail.
 
-Enfin, les mesures obtenues dans les \textit{benchmarks} valident le modèle de performance proposé par ce travail, qui simule avec précision les performances de l'implémentation \acs{GPU}, à l'aide des coefficients $\cscoef\scoef\rcoef$. \cite{albuquerque_performance_2012} a ensuite permis d'affiner le modèle et caractériser les paramètres de ces coefficients, pour en permettre le calcul. 
+Enfin, les mesures obtenues dans les \textit{benchmarks} valident le modèle de performance proposé par ce travail, qui simule avec précision les performances de l'implémentation \acs{GPU}, à l'aide des coefficients $\cscoef\scoef\rcoef$. Le modèle proposé par \citet{albuquerque_performance_2012} a ensuite permis d'affiner le modèle et caractériser les paramètres de ces coefficients, pour en permettre le calcul. 
 
 Un second modèle pour l'implémentation hybride est également esquissé pour les exécutions séquentielles et parallèles. En l'affinant davantage et en l'utilisant en conjonction avec le modèle de l'implémentation \acs{GPU}, le modèle hybride pourrait se révéler très utile pour estimer la meilleure stratégie de division du domaine, afin de maximiser les performances d'une simulation distribuée.

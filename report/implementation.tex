@@ -116,7 +116,7 @@ Les codes Python servent de base de test (voir section \ref{title-tests}) pour l
 %\subsubsection{Sources Python et extraction du code Cuda}
 Sailfish est un outil de simulation de dynamiques des fluides basés sur la \ac{LBM}. Bien qu'il soit écrit en Python, Sailfish génère, compile et exécute un code Cuda pour optimiser l'exécution de ses simulations sur \acs{GPU}.
 
-De leur article \cite{januszewski_sailfish:_2014}, les auteurs décrivent son fonctionnement général, mais afin d'avoir un aperçu plus concret, une analyse du code est nécessaire. 
+Dans leur article, \citet{januszewski_sailfish:_2014} décrivent son fonctionnement général, mais afin d'avoir un aperçu plus concret, une analyse du code est nécessaire. 
 
 Une brève analyse du code Python permet d'identifier que la fonction \texttt{get\_code} génère le code Cuda. Celle-ci est appelée dans le corps de la fonction \texttt{\_update\_compute\_code} du fichier \texttt{sailfish/subdomain\_runner.py} du projet, qui compile ensuite le code généré. À l'aide d'un \acs{IDE} comme PyCharm et d'un point d'arrêt, il est alors possible d'extraire le code Cuda au format \acs{ASCII} avant qu'il soit compilé en langage machine.
 
@@ -174,7 +174,7 @@ La figure \ref{fig:sailfish_hist_aligned} illustre ce mécanisme exécuté simul
 
 L'exemple utilisé illustre des blocs de 4 \textit{thread} par souci de lisibilité, mais dans la pratique, des blocs plus grands (32 ou 64) sont utilisés pour réduire ainsi le nombre d'accès \textit{uncoalesced}.
 
-Toutefois, \cite{obrecht_global_2011} cherche à éviter l'usage de la mémoire partagée plutôt qu'éviter à tout prix les accès \textit{uncoalesced}. En effet, cette stratégie se montre efficace sur les anciennes générations de \acs{GPU}, le gain en performance semble nettement moindre sur les \acs{GPU} récents, qui réduisent le cout des accès \textit{uncoalesced} à l'aide de la mémoire cache. 
+Toutefois, \citet{obrecht_global_2011} cherchent à éviter l'usage de la mémoire partagée plutôt qu'éviter à tout prix les accès \textit{uncoalesced}. En effet, cette stratégie se montre efficace sur les anciennes générations de \acs{GPU}, le gain en performance semble nettement moindre sur les \acs{GPU} récents, qui réduisent le cout des accès \textit{uncoalesced} à l'aide de la mémoire cache. 
 %\end{itemize}
 
 
@@ -208,7 +208,7 @@ Toutefois, \cite{obrecht_global_2011} cherche à éviter l'usage de la mémoire 
 \end{figure}
 
 \subsection{Différences entre calculs sur CPU et GPU} \label{title-floats}
-Cuda supporte la norme IEEE 754 pour les calculs avec nombre flottants \cite{noauthor_cuda_nodate}. Toutefois, dans la première implémentation Cuda de la \acs{LBM}, le protocole de test (décrit en section \ref{title-tests}) a montré des différences sur certains calculs réalisés par les codes \ac{CPU}.
+Cuda supporte la norme IEEE 754 pour les calculs avec nombre flottants \cite{noauthor_cuda_2017}. Toutefois, dans la première implémentation Cuda de la \acs{LBM}, le protocole de test (décrit en section \ref{title-tests}) a montré des différences sur certains calculs réalisés par les codes \ac{CPU}.
 
 Pour les mesurer, un code \ac{LBM} 2D \ac{CPU} et un code \ac{GPU} ont été implémenté et leurs résultats comparés. La figure \ref{fig:lbm_float_deltas} illustre la différence moyenne entre les valeurs calculées sur \ac{CPU} et \ac{GPU} pour l'ensemble des populations $f_{in}$ de chaque itération.
 
@@ -283,9 +283,9 @@ L'écart entre les résultats observés sur \ac{CPU} et \ac{GPU} suit les étape
 	\label{fig:lbm_5000_to_43000}
 \end{figure}
 
-Cette différence entre certains résultats sur \ac{CPU} et \ac{GPU} est le fruit d'une optimisation du compilateur Cuda. Sur \ac{CPU}, lorsqu'une opération du type $r = x \times y+z$ est rencontrée, le processeur calcul d'abord $r_{xy} = x \times y$ puis $r = r_{xy} + z$. Deux opérations sont donc réalisées, ce qui implique deux potentiels arrondis dans le cas des nombres flottants. Sur \ac{GPU}, le compilateur optimise ce type de calculs \cite{noauthor_cuda_nodate-1} avec la fonction \ac{FMA} qui réalise $x \times y+z$ en une seule opération. Le calcul est ainsi plus rapide et précis (puisqu'un seul arrondi est effectué).
+Cette différence entre certains résultats sur \ac{CPU} et \ac{GPU} est le fruit d'une optimisation du compilateur Cuda. Sur \ac{CPU}, lorsqu'une opération du type $r = x \times y+z$ est rencontrée, le processeur calcul d'abord $r_{xy} = x \times y$ puis $r = r_{xy} + z$. Deux opérations sont donc réalisées, ce qui implique deux potentiels arrondis dans le cas des nombres flottants. Sur \ac{GPU}, le compilateur optimise ce type de calculs \cite{noauthor_cuda_2017-1} avec la fonction \ac{FMA} qui réalise $x \times y+z$ en une seule opération. Le calcul est ainsi plus rapide et précis (puisqu'un seul arrondi est effectué).
 
-Comme le souligne la documentation de Cuda, cette optimisation n'est pas forcément souhaitable dans certaines circonstances et peut être évitée avec l'utilisation de fonctions intrinsèques \cite{noauthor_cuda_nodate-1, noauthor_cuda_nodate-2}.
+Comme le souligne la documentation de Cuda, cette optimisation n'est pas forcément souhaitable dans certaines circonstances et peut être évitée avec l'utilisation de fonctions intrinsèques \cite{noauthor_cuda_2017-1, noauthor_cuda_2017-2}.
 
 Cette précaution force le \ac{GPU} à effectuer les multiplications et additions indépendamment et permet de s’assurer que les calculs réalisés sur \ac{CPU} et \ac{GPU} produisent les mêmes résultats.
 
@@ -294,10 +294,10 @@ De nombreuses implémentations 2D ont été réalisées. Elles ont d’abord ét
 
 Les 10 populations manquantes sont ajoutées en mémoire globale, aux divers calculs nécessaires à leur simulation ainsi qu'au \textit{streaming}. À ce stade, l'implémentation utilisait encore la mémoire partagée pour le \textit{streaming}. Suite à l'ajout des populations, l'implémentation est testée avec et sans ce mécanisme. Mais comme l'évoque la section \ref{title-streaming-coalesced}, il s'avère que les \textit{GPU} récents ne pâtissent pas réellement des accès \textit{uncoalesced} en raison d'optimisation automatique à travers l'utilisation de la mémoire cache.
 
-D'autres optimisations, proposées par \cite{januszewski_sailfish:_2014,tran_performance_2017}, améliorent les performances:
+D'autres optimisations, proposées par \citet{januszewski_sailfish:_2014} et \citet{tran_performance_2017} améliorent les performances:
 \begin{itemize}
 \item \textbf{Registres}: Les registres sont utilisés par certaines variables locales du kernel. C'est le type de mémoire le plus rapide, mais leur nombre est restreint. En dépasser la limite entraîne un débordement en mémoire local, moins rapide, et par conséquent une perte de performance. Hélas, le passage de D2Q9 à D3Q19 augmente significativement le nombre de variables locales et par conséquent l'utilisation des registres. Ne pas précalculer des valeurs utilisées plusieurs fois, et qui devraient être ainsi stockées dans des variables intermédiaires, mais les recalculer à chaque fois semble être une \eg{optimisation} contre-intuitive, mais réduit le nombre de registres et par conséquent contribue à améliorer les performances.
-\item \textbf{Cache L1}: Dans leur travail, \cite{januszewski_sailfish:_2014} relèvent que les accès à la mémoire locale dus aux dépassements du nombre de registres passent par la cache L1 et que plus sa part inutilisée est grande et moins la mémoire globale est mise à contribution. Ils proposent ainsi d'augmenter la taille de la cache et de désactiver la cache L1 pour les accès à la mémoire globale. La première opération est accomplie par \texttt{cudaDeviceSetCacheConfig}:
+\item \textbf{Cache L1}: \citet{januszewski_sailfish:_2014} relèvent que les accès à la mémoire locale dus aux dépassements du nombre de registres passent par la cache L1 et que plus sa part inutilisée est grande et moins la mémoire globale est mise à contribution. Ils proposent ainsi d'augmenter la taille de la cache et de désactiver la cache L1 pour les accès à la mémoire globale. La première opération est accomplie par \texttt{cudaDeviceSetCacheConfig}:
 \begin{lstlisting}[numbers=none]
 if ( cudaDeviceSetCacheConfig (cudaFuncCachePreferL1) != cudaSuccess)
 	fprintf(stderr, "cudaFuncSetCacheConfig failed\n");
@@ -371,27 +371,41 @@ i_{pal} = ( x*N_z*N_y + y*N_z + z) * 19 + dir
 \end{equation}
 avec la dimension  $N_y$ et $N_z$ du sous-domaine en $y$ et $z$ et $i_{pal}$ l'index de la population en $\{x,y,z\}$ avec pour direction $dir$ (figure \ref{fig:plb_population_index}):
 
-\begin{alignat*}{3}
+\noindent\begin{minipage}{.25\linewidth}
+\begin{align*}
 &dir_{center} &=  0 \\
 &dir_{west} &=  1 \\
 &dir_{south} &=  2 \\
 &dir_{center}^{bottom} &=  3 \\
-&dir_{south west} &=  4 \\
+&dir_{south west} &=  4
+\end{align*}
+\end{minipage}%
+\begin{minipage}{.25\linewidth}
+\begin{align*}
 &dir_{north west} &=  5 \\
 &dir_{west}^{bottom} &=  6 \\
 &dir_{west}^{top} &=  7 \\
 &dir_{south}^{bottom} &=  8 \\
-&dir_{south}^{top} &=  9 \\
+&dir_{south}^{top} &=  9 
+\end{align*}
+\end{minipage}%
+\begin{minipage}{.25\linewidth}
+\begin{align*}
 &dir_{east} &= 10 \\
 &dir_{north} &= 11 \\
 &dir_{center}^{top} &= 12 \\
 &dir_{north east} &= 13 \\
-&dir_{south east} &= 14 \\
+&dir_{south east} &= 14 
+\end{align*}
+\end{minipage}
+\begin{minipage}{.25\linewidth}
+\begin{align*}
 &dir_{east}^{top} &= 15 \\
 &dir_{east}^{bottom} &= 16 \\
 &dir_{north}^{top} &= 17 \\
-&dir_{north}^{bottom} &= 18
-\end{alignat*}
+&dir_{north}^{bottom} &= 18\\
+\end{align*}
+\end{minipage}\\
 
 Si le \ac{CP} utilise la même stratégie d'adressage, une simple copie de la mémoire suffit. Dans le cas inverse, il faut considérer une étape de réorganisation de la mémoire.
 

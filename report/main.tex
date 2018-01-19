@@ -4,6 +4,7 @@
 % Compatibilité Antidote
 \usepackage[T1]{fontenc}
 %\usepackage{lmodern}
+\usepackage[numbers]{natbib} % do not declare this after babel
 
 \usepackage[utf8]{inputenc}
 \usepackage[francais]{babel}
@@ -36,7 +37,7 @@
 \usepackage{tocbibind} % Table des matière dans la table des matières
 
 \usepackage[babel=true]{csquotes} % csquotes va utiliser la langue définie dans babel
-\usepackage{cite}
+%\usepackage{cite}
 
 \usepackage{fancyhdr}
 \pagestyle{fancy}
@@ -234,6 +235,9 @@
 \pagenumbering{arabic}
 \input{introduction.tex}
 
+\chapter{Méthode de Lattice Boltzaman}
+\input{lbm.tex}
+
 \chapter{État de l'art}\label{title-sota}
 \input{sota.tex}
 
@@ -252,8 +256,8 @@
 \input{conclusion.tex}
 
 \bibliography{main}
-\bibliographystyle{plain}
-
+%\bibliographystyle{plain}
+\bibliographystyle{plainnat}
 %\appendix 
 %\chapter{Code }
 \end{document}
