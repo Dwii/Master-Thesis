@@ -126,7 +126,7 @@ __global__ void LBMCollideAndPropagate(int *map, Dist cd, Dist od, float *orho, 
 		fo_NE[tix+1] = fi_NE;
 		fo_SE[tix+1] = fi_SE;
 	// E propagation in global memory (at block boundary)
-	} else if (ti < LAT_W) {
+	} else if (ti < LAT_W-1) {
 		od.fE[gi+1] = fi_E;
 		if (blockIdx.y > 0)			od.fSE[gi-LAT_W+1] = fi_SE;
 		if (blockIdx.y < LAT_H-1)	od.fNE[gi+LAT_W+1] = fi_NE;
