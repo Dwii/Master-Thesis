@@ -2,10 +2,10 @@
 \section{Algorithme} \label{title-lbm_algo}
 Pour simuler le comportement de fluides, \acs{LBM} découpe l'espace physique à modéliser en un domaine discret composé de populations, organisées en une grille, et discrétise le temps en générations. 
 
-Une population représente une portion de l'espace physique. Une simulation consiste en l'application de deux étapes de calculs, effectuée de façon identique sur chaque population du domaine, pour calculer celui de la génération suivante où le processus pourra être répété. Le résultat de la génération $t$ ne dépend par conséquent que de l'état du domaine à la génération $t-1$.  Il s'agit, à l'instar du bien connu jeu de la vie de \textsc{J.~Conway}, d'un automate cellulaire.
+Une population représente une portion de l'espace physique. Une simulation consiste en l'application de deux étapes de calculs, effectuées de façon identique sur chaque population du domaine, pour calculer celui de la génération suivante où le processus pourra être répété. Le résultat de la génération $t$ ne dépend par conséquent que de l'état du domaine à la génération $t-1$.  Il s'agit, à l'instar du bien connu jeu de la vie de \textsc{J.~Conway}, d'un automate cellulaire.
 
 
-Une population, illustrée par les figures \ref{fig:population_d2q9}, est composée de 9 directions (nord, sud, est ...), auxquelles sont attribuées une valeur qui représentent la densité de probabilité qu'a la vélocité du fluide d'aller dans une direction donnée.
+Une population, illustrée par les figures \ref{fig:population_d2q9}, est composée de 9 directions (nord, sud, est ...), auxquelles sont attribuées une valeur qui représente la densité de probabilité qu'a la vélocité du fluide d'aller dans une direction donnée.
 
 \begin{figure}[h]
 	\centering
@@ -22,7 +22,7 @@ Une population, illustrée par les figures \ref{fig:population_d2q9}, est compos
 \end{figure}
 Les populations du domaine sont notées $f^{in}(x,t) = \{f^{in}_0(x,t), f^{in}_1(x,t), \dots f^{in}_8(x,t)\}$, avec $x$ la position dans la grille.
 
-La première étape de simulation d'une génération, dite de \textit{collision}, introduit les vecteurs de vélocité $v$,  tel que les voisins de $f^{in}(x, t)$ sont trouvé par $f^{in}(x+v_i,t)$: 
+La première étape de simulation d'une génération, dite de \textit{collision}, introduit les vecteurs de vélocité $v$,  tel que les voisins de $f^{in}(x, t)$ sont trouvés par $f^{in}(x+v_i,t)$: 
 \begin{multicols}{3}
 \begin{itemize}
 \item[] $v_0 = [1,1]$
@@ -46,9 +46,9 @@ On commence par calculer les variables \textit{macroscopiques} de la population,
 u = \frac{1}{\rho(x,t)}\sum_{i=0}^{8} v_i \cdot f^{in}_i(x,t)
 \end{equation}
 \end{multicols}~\\[-0.5\baselineskip]
-\noindent puis on calcule les directions $i$ de la population $f^{out}$ qui résulte de la collision:
+\noindent puis on calcule les directions $i$ de la population $f^{out}$ qui résultent de la collision:
 \begin{equation}
-f^{out}_i = f^{in}_i - \omega \cdot \big(fi^{in}_i - E(i, \rho, u) \big)
+f^{out}_i = f^{in}_i - \omega \cdot \big(f^{in}_i - E(i, \rho, u) \big)
 \end{equation}\\[-\baselineskip]
 
 \noindent avec $E$ la fonction d'\textit{equilibrium}:
@@ -56,7 +56,7 @@ f^{out}_i = f^{in}_i - \omega \cdot \big(fi^{in}_i - E(i, \rho, u) \big)
 E(i, \rho, u) = \rho\cdot t_i \bigg(  1 + \frac{v_i \cdot u}{c^2_s} + \frac{1}{2~c^4_s} (v_i \cdot u)^2 - \frac{1}{2~c^2_s} |u|^2 \bigg)
 \end{equation}\\[-\baselineskip]
 
-\noindent avec $c_s$ la vitesse du son, $\omega$ le paramètre de relaxation, et $t_i = \nicefrac{1}{9}$ pour les directions orthogonales, et les constantes $t_i$, qui compense les longueurs inégales des différentes vélocités, avec $t_i =\nicefrac{1}{36}$ pour les diagonales et $t_i=\nicefrac{4}{9}$ pour la centrale, soit $t = \{\nicefrac{1}{36} , \nicefrac{1}{9}, \nicefrac{1}{36}, \nicefrac{1}{9}, \nicefrac{4}{9}, \nicefrac{1}{9}, \nicefrac{1}{36}, \nicefrac{1}{9}, \nicefrac{1}{36}\}$.
+\noindent avec $c_s$ la vitesse du son, $\omega$ le paramètre de relaxation, et $t_i = \nicefrac{1}{9}$ pour les directions orthogonales, et les constantes $t_i$, qui compensent les longueurs inégales des différentes vélocités, avec $t_i =\nicefrac{1}{36}$ pour les diagonales et $t_i=\nicefrac{4}{9}$ pour la centrale, soit $t = \{\nicefrac{1}{36} , \nicefrac{1}{9}, \nicefrac{1}{36}, \nicefrac{1}{9}, \nicefrac{4}{9}, \nicefrac{1}{9}, \nicefrac{1}{36}, \nicefrac{1}{9}, \nicefrac{1}{36}\}$.
 
 La seconde étape, illustrée par les figures \ref{fig:population_streaming}, propage les densités des populations $f^{out}$ calculées dans cette génération $t$ dans les nouvelles populations de la suivante $t+\delta t$, où $\delta t$ correspond au pas de temps utilisé.
 

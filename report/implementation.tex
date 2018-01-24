@@ -11,7 +11,7 @@ Le mécanisme adopté s'appuie sur un système de \textit{makefile}. Chaque impl
 
 \subsection{Implémentations Python et C}  \label{title-implementation_python_C}
 
-Le projet a débuté avec le code Python \texttt{lbm\_py}, portée en C sous le nom de \texttt{lbm\_py2c}, et deux autres codes Python ont par la suite été implémenté sur cette base:
+Le projet a débuté avec le code Python \texttt{lbm\_py}, porté en C sous le nom de \texttt{lbm\_py2c}, et deux autres codes Python ont par la suite été implémentés sur cette base:
 \begin{itemize}
 \item \texttt{lbm\_simple}: Simplifie \texttt{lbm\_py} en retirant l'écoulement ainsi que la gestion des obstacles et initialise l'espace de recherche avec une perturbation au centre (figure \ref{fig:lbm_simple}). 
 \item \texttt{lbm\_simple\_3d}: Portage en trois dimensions de \texttt{lbm\_simple} et porté en C sous le même nom (figure \ref{fig:lbm_simple_3d}). 
@@ -140,12 +140,12 @@ Plutôt qu'utiliser une boucle pour itérer sur les différentes directions et e
 
 %\item \textbf{Streaming sur la mémoire partagée (coalescing)}: 
 \subsubsection{\textit{Streaming coalesced}}\label{title-streaming-coalesced}
-Le \textit{streaming} copie les directions de la population calculée par un cœur \acs{GPU} dans les populations adjacentes qui résident en mémoire globale. L'accès à cette mémoire est lent, mais peut-être optimisé par des accès contigus et où l'indice du cœur est aligné à celui du bloc. On dit de ce schéma d'accès à la mémoire qu'il est \eg{\textit{coalesced}}.
+Le \textit{streaming} copie les directions de la population calculée par un cœur \acs{GPU} dans les populations adjacentes qui résident en mémoire globale. L'accès à cette mémoire est lent, mais peut être optimisé par des accès contigus où l'indice du cœur est aligné à celui du bloc. On dit de ce schéma d'accès à la mémoire qu'il est \eg{\textit{coalesced}}.
 
 Les \textit{threads} au sein d'un bloc sont activés par \textit{warp} de 32\footnote{ce nombre peut dépendre de la génération du \ac{GPU} utilisé} sur l'axe des \textit{x}. Ces \textit{threads}, qui accèdent à la mémoire globale lors du \textit{streaming}, doivent chacun y écrire une à une les valeurs des directions calculées qui résident dans leurs registres, soit 32 doubles par direction. La mémoire globale est accédée par transaction de 32, 64, 128 ou 256 octets. Par conséquent, si les 32 directions (qui occupent 256 octets) accédées par les \textit{threads} sont contiguës en mémoires, seule une transaction en mémoire globale par direction est nécessaire. 
 
 Les figures \ref{fig:sailfish_hist_misaligned}, \ref{fig:sailfish_hist_alignment}, \ref{fig:sailfish_hist_dir_misaligned}, \ref{fig:sailfish_hist_ti}, \ref{fig:sailfish_hist_aligned} et \ref{fig:sailfish_hist_dir_aligned} illustrent le \textit{streaming} d'un bloc de 4 \textit{threads} sur un domaine $12 \times 3$.
-Sur la figure \ref{fig:sailfish_hist_misaligned}, les \textit{threads} utilisent un schéma d'accès où les directions sont propagées aux populations adjacentes directement en mémoire globale. L'arrangement en mémoire des directions sur les populations accédées est illustré sur la figure \ref{fig:sailfish_hist_alignment}. On y observe sur la figure~\ref{fig:sailfish_hist_dir_misaligned} que l'écriture des valeurs pour les directions nord et sud est naturellement alignée. Ce n'est toutefois pas le cas pour les autres directions puisqu'elles impliquent un décalage en $y$ (est ou ouest). En effet, l'index des \textit{thread} au sein de leur bloc n'est plus aligné à celui \textit{thread} du segment accédé par la transaction en mémoire globale. Leur accès n'est par conséquent pas \textit{coalesced}.
+Sur la figure \ref{fig:sailfish_hist_misaligned}, les \textit{threads} utilisent un schéma d'accès où les directions sont propagées aux populations adjacentes directement en mémoire globale. L'arrangement en mémoire des directions sur les populations accédées est illustré sur la figure \ref{fig:sailfish_hist_alignment}. On y observe sur la figure~\ref{fig:sailfish_hist_dir_misaligned} que l'écriture des valeurs pour les directions nord et sud est naturellement alignée. Ce n'est toutefois pas le cas pour les autres directions puisqu'elles impliquent un décalage en $y$ (est ou ouest). En effet, l'index des \textit{thread} au sein de leur bloc n'est plus aligné à celui du \textit{thread} du segment accédé par la transaction en mémoire globale. Leur accès n'est par conséquent pas \textit{coalesced}.
 
 \begin{figure}[h]
 	\centering
@@ -174,7 +174,7 @@ La figure \ref{fig:sailfish_hist_aligned} illustre ce mécanisme exécuté simul
 
 L'exemple utilisé illustre des blocs de 4 \textit{thread} par souci de lisibilité, mais dans la pratique, des blocs plus grands (32 ou 64) sont utilisés pour réduire ainsi le nombre d'accès \textit{uncoalesced}.
 
-Toutefois, \citet{obrecht_global_2011} cherchent à éviter l'usage de la mémoire partagée plutôt qu'éviter à tout prix les accès \textit{uncoalesced}. En effet, cette stratégie se montre efficace sur les anciennes générations de \acs{GPU}, le gain en performance semble nettement moindre sur les \acs{GPU} récents, qui réduisent le cout des accès \textit{uncoalesced} à l'aide de la mémoire cache. 
+Toutefois, \citet{obrecht_global_2011} cherchent à éviter l'usage de la mémoire partagée plutôt qu'éviter à tout prix les accès \textit{uncoalesced}. En effet, cette stratégie se montre efficace sur les anciennes générations de \acs{GPU}, le gain en performance semble nettement moindre sur les \acs{GPU} récents, qui réduisent le coût des accès \textit{uncoalesced} à l'aide de la mémoire cache. 
 %\end{itemize}
 
 
@@ -210,7 +210,7 @@ Toutefois, \citet{obrecht_global_2011} cherchent à éviter l'usage de la mémoi
 \subsection{Différences entre calculs sur CPU et GPU} \label{title-floats}
 Cuda supporte la norme IEEE 754 pour les calculs avec nombre flottants \cite{noauthor_cuda_2017}. Toutefois, dans la première implémentation Cuda de la \acs{LBM}, le protocole de test (décrit en section \ref{title-tests}) a montré des différences sur certains calculs réalisés par les codes \ac{CPU}.
 
-Pour les mesurer, un code \ac{LBM} 2D \ac{CPU} et un code \ac{GPU} ont été implémenté et leurs résultats comparés. La figure \ref{fig:lbm_float_deltas} illustre la différence moyenne entre les valeurs calculées sur \ac{CPU} et \ac{GPU} pour l'ensemble des populations $f_{in}$ de chaque itération.
+Pour les mesurer, un code \ac{LBM} 2D \ac{CPU} et un code \ac{GPU} ont été implémentés et leurs résultats comparés. La figure \ref{fig:lbm_float_deltas} illustre la différence moyenne entre les valeurs calculées sur \ac{CPU} et \ac{GPU} pour l'ensemble des populations $f_{in}$ de chaque itération.
 
 \begin{figure}[H]
 	\centering
@@ -351,9 +351,9 @@ Un co-processeur n'est autre qu'une classe qui hérite de \texttt{CoProcessor3D}
 
 \begin{itemize}
 \item \texttt{addDomain}: Associe un \texttt{ID} à un sous-domaine attribué au \ac{CP} et en défini les dimensions.
-\item \texttt{send}: Envoie l'état du sous-domaine de la mémoire de Palabos vers celle du \ac{CP}.
+\item \texttt{send}: Envoie l'état du sous-domaine, de la mémoire de Palabos vers celle du \ac{CP}.
 \item \texttt{collideAndStream}: Calcul une itération avec la \ac{LBM} sur un sous-domaine du \ac{CP}.
-\item \texttt{receive}: Reçoit l'état du sous-domaine de la mémoire du \ac{CP} vers celle de Palabos.
+\item \texttt{receive}: Envoie l'état du sous-domaine, de la mémoire du \ac{CP} vers celle de Palabos.
 \end{itemize}
 
 C'est ce mécanisme de \ac{CP} qui est utilisé pour donner à Palabos la capacité de calculer sur \acs{GPU}.
@@ -416,7 +416,7 @@ Si le \ac{CP} utilise la même stratégie d'adressage, une simple copie de la m�
 	\label{fig:plb_population_index}
 \end{figure}
 
-La communication des données entre le \acs{CPU} et le \acs{GPU} passe par la mémoire globale du \acs{GPU} à l'aide de la fonction \texttt{cudaMemcpy}. Ce type de transactions doit être réduit au minimum (au début d'une simulation à des fins d'initialisation et la fin pour rapatrier les résultats en général) car il s'agit du type d'accès mémoire le plus lent dans le contexte des \acs{GPU}. Hélas, Palabos requiert impérativement ces transactions à chaque itération, ce qui réduit significativement les performances.
+La communication des données entre le \acs{CPU} et le \acs{GPU} passe par la mémoire globale du \acs{GPU} à l'aide de la fonction \texttt{cudaMemcpy}. Ce type de transactions doit être réduit au minimum (au début d'une simulation à des fins d'initialisation et à la fin pour rapatrier les résultats en général) car il s'agit du type d'accès mémoire le plus lent dans le contexte des \acs{GPU}. Hélas, Palabos requiert impérativement ces transactions à chaque itération, ce qui réduit significativement les performances.
 
 Toutefois, il n'est pas nécessaire de transférer l'intégralité du sous-domaine à son \ac{CP} à chaque fois, à l'exception des cas suivants:
 \begin{enumerate}
@@ -505,7 +505,7 @@ On observe une inversion de l'ordre des opérations, par rapport à la stratégi
 
 Dans le cas du \textit{receive}, un autre kernel, dédié cette fois à la réorganisation et la copie des données depuis la structure de donnée de calcul, est exécuté avant que les donnés soient finalement transférés du \acs{GPU} au \acs{CPU}.
 
-Cette méthode réduit à la fois considérablement le nombre d'appels à \texttt{cudaMemcpy} et profite de capacité de parallélisation du \acs{GPU} pour d'accélérer la réorganisation des données. Elle présente ainsi de bien meilleures performances.
+Cette méthode réduit à la fois considérablement le nombre d'appels à \texttt{cudaMemcpy} et profite de capacité de parallélisation du \acs{GPU} pour accélérer la réorganisation des données. Elle présente ainsi de bien meilleures performances.
 
 \begin{figure}[h]
 	\centering
@@ -546,7 +546,7 @@ Cette méthode réduit à la fois considérablement le nombre d'appels à \textt
 \subsection{Simulation d'écoulement dans une cavité} \label{title-cavity_benchmark}
 Pour tester l'intégration à Palabos et en mesurer les performances, l'implémentation \texttt{cavity\_benchmark} a été implémenté. À l'exception de quelques modifications (destinées à rendre les exécutions configurables notamment), leur code est essentiellement copié de l'exemple \texttt{coProcessor} fournit dans par Palabos.
 
-Cette implémentation simule l'écoulement d'un fluide dans une cavité. Le domaine est cubique et découpé en vingt-sept sous-domaines. Il est possible de choisir les dimensions du domaine central. Les autres domaines ajustent alors les leurs automatiquement. La figure \ref{fig:decoupage_sous_domaine_cavity_benchmark} illustre le découpage et dimensionnement des sous-domaines pour deux exemples. Le premier pour un sous domaine central dont les côtés mesurent le $\frac{1}{3}$ de ceux du domaine et  $\frac{2}{3}$ pour le second.
+Cette implémentation simule l'écoulement d'un fluide dans une cavité. Le domaine est cubique et découpé en vingt-sept sous-domaines. Il est possible de choisir les dimensions du domaine central. Les autres domaines ajustent alors les leurs automatiquement. La figure \ref{fig:decoupage_sous_domaine_cavity_benchmark} illustre le découpage et dimensionnement des sous-domaines pour deux exemples. Le premier pour un sous-domaine central dont les côtés mesurent le $\frac{1}{3}$ de ceux du domaine et  $\frac{2}{3}$ pour le second.
 
 \begin{figure}[H]
 	\centering

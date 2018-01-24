@@ -25,7 +25,7 @@ Ces paramètres n'ont pas besoin d'être inclus dans le modèle de performance, 
 %\newcommand{\rcoef}[0]{\varphi}
 
 
-Les profilages réalisés en section \ref{title-profilage_gpu} montrent que le temps d'exécution d'une simulation se résume essentiellement à la somme des périodes du \textit{Send}, \textit{Collide \& Stream} et \textit{Receive}. Les mesures suggèrent aussi les tendances, reconnaissable sur chaque type de \acs{GPU}, que suivent leurs courbes en fonction de la taille du domaine.
+Les profilages réalisés en section \ref{title-profilage_gpu} montrent que le temps d'exécution d'une simulation se résume essentiellement à la somme des périodes du \textit{Send}, \textit{Collide \& Stream} et \textit{Receive}. Les mesures suggèrent aussi les tendances, reconnaissables sur chaque type de \acs{GPU}, que suivent leurs courbes en fonction de la taille du domaine.
 
 Pour commencer, la courbe du temps d'exécution de \textit{Collide \& Stream} semble être linéaire. Cette supposition est confirmée par les droites de régression tracées à l'aide des mesures effectuées sur la figure \ref{fig:linear_regr_collide_and_stream}. On peut ainsi exprimer son temps d'exécution $\Time_{cs}$, pour une génération, par la formule suivante, avec $N_x$, $N_y$ et $N_z$ les dimensions du domaine ou $N_{total}$ le nombre total de \textit{lattices} (les itérations) et un coefficient $\cscoef$ déterminé en fonction du \acs{GPU}.
 \begin{subequations}
@@ -93,7 +93,7 @@ La formule est aussi étendue pour un \textit{cluster} de \acs{GPU}:
 
 avec $N_{GPU}$ le nombre de \acs{GPU} et le temps de transfert $\Time_{trans} = \Time_{lat}+ N_{boundary}/bw$ où $T_{lat}$ est la somme des latences, $N_{boundary}$ les données aux bords à transférer et $bw$ la bande passante. 
 
-Parmi tous ces termes, $N_{SM}$, $N_P$, $D$ et $freq$ sont des propriétés du \acs{GPU} et $C_T$, $\Time_{launch}$, $\Time_{trans}$ sont inféré à partir des simulations.
+Parmi tous ces termes, $N_{SM}$, $N_P$, $D$ et $freq$ sont des propriétés du \acs{GPU} et $C_T$, $\Time_{launch}$, $\Time_{trans}$ sont inférés à partir des simulations.
 \subsubsection{Adaptation du modèle}
 L'implémentation sur \acs{GPU} de \ac{LBM}, qui est un automate cellulaire, peut profiter de ce modèle pour calculer les coefficients $\cscoef\scoef\rcoef$ formulés en section \ref{title-modele_performance}.  Elle fonctionne comme un \textit{cluster}, en raison des transferts à chaque itération, mais avec $N_{GPU}=1$. On adapte ainsi légèrement le modèle en conséquence:
 
@@ -222,7 +222,7 @@ En l'absence d'informations concernant la profondeur $D$ des \textit{pipelines},
 	\end{equation*}
 \end{minipage}\\[\baselineskip]
 
-\noindent Les coefficients $\scoef $ et $\rcoef $, dont les valeurs dépendent de toutes les propriétés du modèle, sont plus compliqué à calculer et sont ici inférées par les mesurés: 
+\noindent Les coefficients $\scoef $ et $\rcoef $, dont les valeurs dépendent de toutes les propriétés du modèle, sont plus compliqués à calculer et sont ici inférés par les mesurés: 
 
 \noindent\begin{minipage}{.33\linewidth}
 \begin{align*}
@@ -308,7 +308,7 @@ Ainsi,  la stratégie de découpage du domaine doit trouver un compromis pour la
 \begin{itemize}
 \item maximiser la taille des sous-domaines sur le co-processeur \acs{GPU};
 \item en maximiser le nombre pour ceux qui doivent être exécutés sur \acs{CPU};
-\item et minimiser le nombre de sous-domaines \acs{CPU} dont aux dimensions trop petites.
+\item et minimiser le nombre de sous-domaines \acs{CPU} aux dimensions trop petites.
 \end{itemize}
 
 \noindent Cette question est toutefois le sujet d'un travail différent. Par ailleurs, le modèle esquissé ici ne détaille pas l'impact des paramètres physiques de la machine hôte (fréquence du \acs{CPU}, bande passante, etc.).
@@ -330,7 +330,7 @@ Le fonctionnement exact sous-jacent $\Time_{do}$ est caché dans l'implémentati
 \Time_{do}  = \docoef \cdot N_{Total}
 \end{equation}
 
-avec $\docoef$ un coefficient qui correspond au nécessaire au processus de duplication des chevauchements pour s'exécuter sur un \textit{lattice}.
+\noindent avec $\docoef$ un coefficient qui correspond au temps nécessaire au processus de duplication des chevauchements pour s'exécuter sur un \textit{lattice}.
 
 Le temps $\Time_{sd_i}$ dépend du moyen employé pour calculer le sous-domaine. Dans le cas présent, $\Time_{sd_i} = T_{GPU_i}$ \footnote{avec $g_{GPU_i}=1$} du modèle de performance du \acs{GPU}, présenté en section \ref{title-modele_performance} ou \ref{title-affinage_modele_perf}, si c'est le sous-domaine du co-processeur \acs{GPU},  $\Time_{sd_i} = T_{CPU_i}$, le temps de calcul sur \acs{CPU} si c'est un sous-domaine de Palabos.
 

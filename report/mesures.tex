@@ -5,7 +5,7 @@ Ce chapitre analyse les performances obtenues pas l'implémentation \acs{GPU} et
 Le premier simule le même type de problème que \texttt{lbm\_simple} (voir section \ref{title-implementation_python_C}) avec ou sans transfert des populations à chaque itération afin de mesurer les performances sur \acs{GPU}. Le second, décrit en section \ref{title-cavity_benchmark}, simule un écoulement dans une cavité pour évaluer les performances d'une configuration hybride \acs{CPU}/\acs{GPU} avec Palabos.  
 
 \subsection{Matériel utilisé}
-Les mesures sont effectuées sur les \acs{GPU} et \acs{CPU} listés dans la table \ref{table:gpu_specs} pour évaluer l'impact de sur les performances de plusieurs types de matériel. Le \acs{GPU} utilisé est indiqué sur les mesures ou dans la section qui les présente. Si rien n'est indiqué, c'est le \acs{GPU} Pascal qui est utilisé.
+Les mesures sont effectuées sur les \acs{GPU} et \acs{CPU} listés dans la table \ref{table:gpu_specs} pour évaluer l'impact sur les performances de plusieurs types de matériel. Le \acs{GPU} utilisé est indiqué sur les mesures ou dans la section qui les présente. Si rien n'est indiqué, c'est le \acs{GPU} Pascal qui est utilisé.
 
 \begin{table}[h]
 \label{table:gpu_specs}
@@ -61,7 +61,7 @@ avec $3$ le nombre de dimensions en D3Q19; soit encore environ 402.6 Mo de plus,
 \section{\textit{Benchmarks} des \acs{GPU}} \label{title-benchmark_gpu}
 
 \subsection{Bande passante et débits de transfert}
-Cette section présente les mesures des débits d'accès à la mémoire globale et des transferts entre \acs{CPU} et \acs{GPU}. Elle ot été collectée avec la méthode proposée par \cite{noauthor_how_2012}.
+Cette section présente les mesures des débits d'accès à la mémoire globale et des transferts entre \acs{CPU} et \acs{GPU}. Elles ont été collectéee avec la méthode proposée par \citet{noauthor_how_2012}.
 
 Les premières, illustrées sur la figure \ref{fig:bandwidth}, montrent les bandes passantes effectives mesurées (l'accès à la mémoire globale sur le \acs{GPU}). La progression en fonction de la quantité des données copiées est due au fait que le nombre de \textit{threads} capables de copier les données en parallèle évolue jusqu'à ce que la limite de \textit{threads} soit atteinte. Les mesures confirment les bandes passantes théoriques de la table \ref{table:gpu_specs}, les valeurs effectives étant usuellement entre $75\%$ à $85\%$ de celles théoriques.
 
@@ -94,7 +94,7 @@ Les secondes mesures, illustrées par les figures \ref{fig:cudamemcpy_throughput
 
 \subsection{\textit{Overhead} de lancement d'un kernel et latence des transferts} \label{title-latences}
 
-Comme l'illustre la table \ref{table:latence}, l'exécution d'un kernel sur le \acs{GPU} ou d'un transfert de donnée avec \texttt{cudaMemcpy} n'est pas immédiate. Pour mesurer la latence du démarrage d'un kernel, on mesure simplement le temps d'exécution d'un kernel vide (sans aucune instruction). Pour la latence d'un transfert transferts opérés avec \texttt{cudaMemcpy} , on ne peut pas simplement faire une copie de 0 octet.
+Comme l'illustre la table \ref{table:latence}, l'exécution d'un kernel sur le \acs{GPU} ou d'un transfert de données avec \texttt{cudaMemcpy} n'est pas immédiate. Pour mesurer la latence du démarrage d'un kernel, on mesure simplement le temps d'exécution d'un kernel vide (sans aucune instruction). Pour la latence d'un transfert opéré avec \texttt{cudaMemcpy} , on ne peut pas simplement faire une copie de 0 octet.
 
 Si, comme le propose \citet{albuquerque_performance_2012}, on considère le temps de transfert $T_{trans} = T_{lat} + \nicefrac{N}{bw}$, avec $T_{lat}$ la latence, $N$ la quantité de données à transférer et $bw$ la bande passante, il est possible de déduire $T_{lat}$. On mesure le temps d'exécution $T_{trans}$ pour un transfert avec $N$ données puis un second temps de transfert $T'_{trans}$ mesuré pour $m\cdot N$ données et on calcule ensuite $T_{lat}$ ainsi:
 
@@ -138,7 +138,7 @@ La formule suivante calcule un indice à une dimension, avec $i$, $j$ et $k$ ét
 (i+i_{max}) \bmod i_{max} + \Big((j+j_{max}) \bmod j_{max} + ( k+k_{max}) \bmod k_{max} \times j_{max}\Big) \times i_{max} 
 \end{equation}
 
-Par conséquent, $j_{max} \times i_{max}$ individus séparent $k$ et $k+1$ , $j_{max}$ séparent $j$ et $j+1$ mais $i$ et $i+1$ eux sont voisin en mémoire. Il faut par conséquent attribuer $i$ à l'indice qui change le plus rapidement, soit $x$. Cette conclusion est confirmée par les mesures illustrées par la figure \ref{fig:index_order}. Plus les individus indexés par $x$ sont distants, plus les performances se dégradent.
+Par conséquent, $j_{max} \times i_{max}$ individus séparent $k$ et $k+1$ , $j_{max}$ séparent $j$ et $j+1$ mais $i$ et $i+1$ eux sont voisins en mémoire. Il faut par conséquent attribuer $i$ à l'indice qui change le plus rapidement, soit $x$. Cette conclusion est confirmée par les mesures illustrées par la figure \ref{fig:index_order}. Plus les individus indexés par $x$ sont distants, plus les performances se dégradent.
  
 \begin{figure}[H]
 	\centering
@@ -278,7 +278,7 @@ Cette méthode permet d'extraire les temps illustrés par les figures \ref{fig:g
 \subsection{Profilage d'exécutions séquentielles}
 Maintenant que le profil des temps d'exécution est connu sur \acs{GPU}, cette section s'intéresse à son profil hybride à l'aide de \texttt{cavity\_benchmark}. Les temps d'exécution sont calculés sur le même principe que dans la section \ref{title-profilage_gpu} mais considèrent en plus les \textit{Collide \& Stream} effectués par les sous-domaines de Palabos ainsi que la duplication des chevauchements (détaillé en section \ref{title-transfert_palabos_cp}). Les mesures sont effectuées sur le \acs{GPU} Pascal, qui montrent jusqu'ici les meilleures performances. 
 
-Le domaine de $132^3$ \textit{lattices} est découpé en 27 sous-domaines (voir section \ref{title-cavity_benchmark}). Le sous-domaine central est calculé le co-processeur et les autres par le \acs{CPU}. Deux séries de mesures, où est comparé l'impact sur les performances des transferts complets ou partiels (détaillé en section \ref{title-transfert_palabos_cp}),  sont effectuées ; La première série utilise un co-processeur \acs{CPU} (figures \ref{fig:hybrid_rep_times_cpu}) à des fins de référence et la seconde un co-processeur \acs{GPU} (figures \ref{fig:hybrid_rep_times_gpu}).
+Le domaine de $132^3$ \textit{lattices} est découpé en 27 sous-domaines (voir section \ref{title-cavity_benchmark}). Le sous-domaine central est calculé par le co-processeur et les autres par le \acs{CPU}. Deux séries de mesures, où est comparé l'impact sur les performances des transferts complets ou partiels (détaillé en section \ref{title-transfert_palabos_cp}),  sont effectuées ; La première série utilise un co-processeur \acs{CPU} (figures \ref{fig:hybrid_rep_times_cpu}) à des fins de référence et la seconde un co-processeur \acs{GPU} (figures \ref{fig:hybrid_rep_times_gpu}).
 
 \subsubsection{Méthode de transfert (complet/partiel)}
 Cet  aspect a l'impact le plus flagrant sur les performances. Avec un co-processeur \acs{CPU}, le temps d'exécution général augmente avec la taille du domaine lors de transfert complet tandis qu'il reste stable avec des transferts partiels. Non seulement les temps de transfert complets sont nettement supérieurs, mais on observe aussi qu'une part inconnue du temps d'exécution de Palabos augmente; probablement pour gérer ce flux de données nettement supérieur. On retrouve ce comportement avec un co-processeur \acs{GPU}. Toutefois, on observe qu’avec la méthode de transfert partiel le temps de calcul diminue avec l’augmentation de la taille du sous-domaine central. La méthode de transfert complet est par conséquent à bannir, exception faite pour les très petits sous-domaines comme l'illustrent les figures \ref{fig:trsf_methods}. Mais comme le paragraphe suivant l’explique, ces sous-domaines de petite taille sont à éviter de toute manière.
@@ -366,9 +366,9 @@ Les mesures qu'illustre la figure \ref{fig:lups_by_iter_palabos} montrent cepend
 \end{figure}
 
 \subsection{Exécutions parallèles}
-Pour obtenir des performances intéressantes, Palabos permet de paralléliser les calculs des différents sous-domaines. Cette section analyse les performances d'exécutions parallélisées sur 9 \textit{threads}. Bien que l'idéale aurait été 27 \textit{threads} (soit un par sous-domaine), le \textit{cluster} de calcul ne permet pas d'attribuer autant de \textit{thread}. Chaque \textit{thread} attend par conséquent sur trois exécutions sur \acs{CPU} réalisées séquentiellement, à l'exception de l'un d'entre eux qui utilise le co-processeur pour les calculs à la place d'un \acs{CPU}. Les figures \ref{fig:perf_mpi} illustrent les  performances mesurées pour les exécutions hybrides avec les trois types de \acs{GPU} disponibles.
+Pour obtenir des performances intéressantes, Palabos permet de paralléliser les calculs des différents sous-domaines. Cette section analyse les performances d'exécutions parallélisées sur 9 \textit{threads}. Bien que l'idéale aurait été 27 \textit{threads} (soit un par sous-domaine), le \textit{cluster} de calcul ne permet pas d'attribuer autant de \textit{threads}. Chaque \textit{thread} attend par conséquent sur trois exécutions sur \acs{CPU} réalisées séquentiellement, à l'exception de l'un d'entre eux qui utilise le co-processeur pour les calculs à la place d'un \acs{CPU}. Les figures \ref{fig:perf_mpi} illustrent les  performances mesurées pour les exécutions hybrides avec les trois types de \acs{GPU} disponibles.
 
-Les meilleures performances obtenues par les mesures dont le \acs{GPU} utilise une carte Titan par rapport aux performances sur Pascal, d'habitude supérieures sont frappantes. Cette différence s'explique pourtant par les différents \acs{CPU} qu'utilisent les \textit{thread} de cette simulation (voir la table \ref{table:gpu_specs}).
+Les meilleures performances obtenues par les mesures dont le \acs{GPU} utilise une carte Titan par rapport aux performances sur Pascal, d'habitude supérieures sont frappantes. Cette différence s'explique pourtant par les différents \acs{CPU} qu'utilisent les \textit{threads} de cette simulation (voir la table \ref{table:gpu_specs}).
 
 À cela près, les trois simulations suivent la même tendance. Les performances augmentent pour atteindre leur pic entre les dimensions $32^3$ et $48^3$ du sous-domaine du co-processeur puis diminue ensuite avec une très légère augmentation à $128^3$.
 
