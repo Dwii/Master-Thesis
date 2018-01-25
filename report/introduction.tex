@@ -4,7 +4,7 @@ La méthode de Lattice Boltzmann (\acf{LBM} en anglais) est un algorithme de sim
 
 Palabos, un solveur en mécanique des fluides numérique basé sur \acs{LBM}, permet de distribuer la simulation sur un \textit{cluster} de \acs{CPU} pour accélérer les calculs. Cette parallélisation pourrait encore être poussée  davantage pour certaines parties du domaine en les calculant sur \acs{GPU}. En effet, ces derniers se prêtent particulièrement bien aux algorithmes parallèles.
 
-C'est là l'objectif de ce travail qui propose une implémentation de \acs{LBM} sur \acs{GPU}, réalisée pour Palabos afin, d'en améliorer les performances.
+C'est là l'objectif de ce travail qui propose une implémentation de \acs{LBM} sur \acs{GPU}, réalisée pour Palabos afin d'en améliorer les performances.
 
 Après une vue d'ensemble des méthodes utilisées dans la simulation de fluide avec \acs{LBM}, ce document présente ensuite l'implémentation réalisée à travers ses deux principales phases de développement; la réalisation du code \acs{GPU} puis son intégration à Palabos.
-Le document discute ensuite des performances mesurées pour estimer les capacités de l'implémentation, et propose finalement son modèle de performance.
+Le document discute ensuite des performances mesurées pour estimer les capacités de l'implémentation, et propose finalement un modèle de performance pour les prédire.

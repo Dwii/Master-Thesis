@@ -60,13 +60,13 @@ Les coefficients $\cscoef \scoef \rcoef$ du modèle de performance, dans sa form
 \end{equation}
 \end{subequations}\\[-\baselineskip]
 
-ou les performances en \acs{LUPS}:
+ou les performances en \XLUPS{}:
 \begin{subequations}
 \begin{align}
-\acs{LUPS} =  \frac{N_{total} \cdot g}{\Time_{total}}
+\XLUPS{} =  \frac{N_{total} \cdot g}{\Time_{total}}
  \end{align}
 \begin{equation}
-\boxed{\acs{LUPS} = \frac{N_{total}}{ \cscoef \cdot N_{total} + \scoef \cdot N_{out} + \rcoef \cdot N_{in} }   }  
+\boxed{\XLUPS{} = \frac{N_{total}}{ \cscoef \cdot N_{total} + \scoef \cdot N_{out} + \rcoef \cdot N_{in} }   }  
 \end{equation}
 \end{subequations}\\[-\baselineskip]
 
@@ -183,7 +183,7 @@ Les valeurs de $N_{SM}$, $freq$ et $N_{P}$ se trouvent dans la documentation du 
 			\hline 
 		\end{tabular} 
 	}
-	\caption{Nombre de \ac{SP} par \acs{SM} \cite{noauthor_cuda_2018}} 
+	\caption{Nombre de \ac{SP} par \acs{SM} \cite{ZZZweb_cuda_2018}} 
 \end{table}
 
 En l'absence d'informations concernant la profondeur $D$ des \textit{pipelines}, le calcul se base sur des valeurs de  $\nicefrac{C_T}{D}$, inférées par les mesures.\\
@@ -302,7 +302,7 @@ L'utilisation de Palabos introduit les paramètres supplémentaires suivants:
 \item les paramètres de l'hôte (\acs{CPU}, mémoire, etc.)
 \end{itemize}
 
-Les mesures montrent  deux schémas de performances en fonction de la taille d'un sous-domaine. Tandis qu’elles augmentent continuellement sur \acs{GPU}, les performances sur \acs{CPU} restent stables entre 8.5 et 10 \acs{MLUPS} mais baissent jusqu'à moins de 2 \acs{MLUPS} lorsque $N_{sd}$ est petit et ses dimensions petites (forme aplatie).
+Les mesures montrent  deux schémas de performances en fonction de la taille d'un sous-domaine. Tandis qu’elles augmentent continuellement sur \acs{GPU}, les performances sur \acs{CPU} restent stables entre 8.5 et 10 \XLUPS{M} mais baissent jusqu'à moins de 2 \XLUPS{M} lorsque $N_{sd}$ est petit et ses dimensions petites (forme aplatie).
 
 Ainsi,  la stratégie de découpage du domaine doit trouver un compromis pour la division en sous-domaines pour :
 \begin{itemize}

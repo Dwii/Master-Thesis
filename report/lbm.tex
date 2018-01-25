@@ -56,7 +56,7 @@ f^{out}_i = f^{in}_i - \omega \cdot \big(f^{in}_i - E(i, \rho, u) \big)
 E(i, \rho, u) = \rho\cdot t_i \bigg(  1 + \frac{v_i \cdot u}{c^2_s} + \frac{1}{2~c^4_s} (v_i \cdot u)^2 - \frac{1}{2~c^2_s} |u|^2 \bigg)
 \end{equation}\\[-\baselineskip]
 
-\noindent avec $c_s$ la vitesse du son, $\omega$ le paramètre de relaxation, et $t_i = \nicefrac{1}{9}$ pour les directions orthogonales, et les constantes $t_i$, qui compensent les longueurs inégales des différentes vélocités, avec $t_i =\nicefrac{1}{36}$ pour les diagonales et $t_i=\nicefrac{4}{9}$ pour la centrale, soit $t = \{\nicefrac{1}{36} , \nicefrac{1}{9}, \nicefrac{1}{36}, \nicefrac{1}{9}, \nicefrac{4}{9}, \nicefrac{1}{9}, \nicefrac{1}{36}, \nicefrac{1}{9}, \nicefrac{1}{36}\}$.
+\noindent avec $c_s$ la vitesse du son, $\omega$ le paramètre de relaxation, et $t_i = \nicefrac{1}{9}$ pour les directions orthogonales, et les constantes $t_i$, qui compense les longueurs inégales des différentes vélocités, avec $t_i =\nicefrac{1}{36}$ pour les diagonales et $t_i=\nicefrac{4}{9}$ pour la centrale, soit $t = \{\nicefrac{1}{36} , \nicefrac{1}{9}, \nicefrac{1}{36}, \nicefrac{1}{9}, \nicefrac{4}{9}, \nicefrac{1}{9}, \nicefrac{1}{36}, \nicefrac{1}{9}, \nicefrac{1}{36}\}$.
 
 La seconde étape, illustrée par les figures \ref{fig:population_streaming}, propage les densités des populations $f^{out}$ calculées dans cette génération $t$ dans les nouvelles populations de la suivante $t+\delta t$, où $\delta t$ correspond au pas de temps utilisé.
 
@@ -89,4 +89,4 @@ En effet, l'algorithme est également généralisé pour 3 dimensions, avec les 
 
 La simulation de fluide avec \acs{LBM} est un processus gourmand en mémoire et temps de calcul. Un pan important de la recherche concernant \acs{LBM} vise à trouver des techniques pour améliorer les performances de son implémentation.
 
-Les \acl{LUPS} (populations calculées par seconde) ou \acs{LUPS} et \ac{MLUPS} sont communément utilisés à cette fin.
+Les \acl{LUPS} (populations calculées par seconde) ou \XLUPS{} sont communément utilisés à cette fin.

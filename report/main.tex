@@ -34,7 +34,7 @@
 \usepackage{multicol}
 \hypersetup{citecolor = black, urlcolor = black, linkcolor= black} %pdfstartpage=4}
 
-\usepackage{tocbibind} % Table des matière dans la table des matières
+%\usepackage{tocbibind} % Table des matière dans la table des matières
 
 \usepackage[babel=true]{csquotes} % csquotes va utiliser la langue définie dans babel
 %\usepackage{cite}
@@ -193,11 +193,27 @@
 
 \usepackage[inline]{enumitem}
 
+\usepackage{eurosym}
+
+\usepackage{tikz}
+\usetikzlibrary{shapes,snakes}
+\usetikzlibrary{backgrounds}
+
+\usepackage{algorithm2e}
+\usepackage{algorithmic}
+
+\newcommand{\XLUPS}[1]{\textsc{\footnotesize #1}\acs{LUPS}}
+\newcommand{\XFLUPS}[1]{\textsc{\footnotesize #1}\acs{FLUPS}}
+
 %\makeindex
 \begin{document}
 \input{title.tex}
 
 \pagenumbering{Roman}
+
+\chapter*{Avant-propos}
+%\addcontentsline{toc}{chapter}{Avant-propos}
+\input{avant_propos.tex}
 
 \tableofcontents
 
@@ -212,36 +228,34 @@
 \begin{acronym}[11222232]
 %\acro{}{\href{}{}}
 
+\acro{AoS}{Array of Structures}
 \acro{ASCII}{\href{https://fr.wikipedia.org/wiki/American_Standard_Code_for_Information_Interchange}{American Standard Code for Information Interchange}}
 \acro{CPU}{\href{https://fr.wikipedia.org/wiki/Processeur}{Central Processing Unit}}
 \acro{CP}{Co-Processeur}
 \acro{CS}{Collide \& Stream}
+\acro{ECC}{\href{https://fr.wikipedia.org/wiki/Mémoire_à_code_correcteur_d'erreurs}{Error-correcting code}}
+\acro{ELBM}{Entropic \acs{LBM}}
+\acro{FLUPS}{Lattice Cell Update Per Second}
 \acro{FMA}{\href{http://docs.nvidia.com/cuda/floating-point/\#fused-multiply-add-fma}{Fused Multiply-Add}}
 \acro{GPU}{\href{https://fr.wikipedia.org/wiki/Processeur_graphique}{Graphics Processing Unit}}
 \acro{IDE}{\href{https://fr.wikipedia.org/wiki/Environnement_de_d\%C3\%A9veloppement}{Environnement de développement Intégré}}
-\acro{LBM}{\href{https://fr.wikipedia.org/wiki/Méthode_de_Boltzmann_sur_réseau}{Lattice Bolzmann Method}}
+\acro{LBM}{\href{https://fr.wikipedia.org/wiki/Méthode_de_Boltzmann_sur_réseau}{Lattice Boltzmann Method}}
 \acro{LUPS}{Lattice Update Per Second}
-\acro{MLUPS}{Mega \acs{LUPS}}
 \acro{MPI}{\href{https://fr.wikipedia.org/wiki/Message_Passing_Interface}{Message Passing Interface}}
 \acro{SM}{Streaming Multiprocessor}
+\acro{SoA}{Structure of Arrays}
 \acro{SP}{Stream Processor}
 \end{acronym}
-
-\chapter*{Avant-propos}
-\addcontentsline{toc}{chapter}{Avant-propos}
-\input{avant_propos.tex}
 
 \chapter{Introduction}
 \pagenumbering{arabic}
 \input{introduction.tex}
 
-\chapter{Méthode de Lattice Boltzaman}
+\chapter{Méthode de Lattice Boltzmann}
 \input{lbm.tex}
 
 \chapter{État de l'art}\label{title-sota}
 \input{sota.tex}
-
-\chapter{Bilan} %TODO à renomer
 
 \chapter{Implémentation}\label{title-implementation}
 \input{implementation.tex}
@@ -252,12 +266,16 @@
 \chapter{Modèle de performance}\label{title-modele_perf}
 \input{modele_perf.tex}
 
+\chapter{Bug et améliorations}\label{title-ameliorations}
+\input{ameliorations.tex}
+
 \chapter{Conclusion}\label{title-conclusion}
 \input{conclusion.tex}
 
 \bibliography{main}
 %\bibliographystyle{plain}
-\bibliographystyle{plainnat}
+%\bibliographystyle{plainnat}
+\bibliographystyle{plainnatperso}
 %\appendix 
 %\chapter{Code }
 \end{document}
