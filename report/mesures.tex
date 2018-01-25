@@ -42,7 +42,7 @@ Les mesures sont effectuées sur les \acs{GPU} et \acs{CPU} listés dans la tabl
 	Fréquence du \acs{CPU} (MHz) & 2200 & 3400 & 2670 \\ 
 	\hline 
 \end{tabular} 
-\caption{Spécifications du matériel \cite{noauthor_list_2018} utilisé pour les \textit{benchmarks} }
+\caption{Spécifications du matériel \cite{ZZZweb_list_2018} utilisé pour les \textit{benchmarks} }
 \end{table}
 
 \subsection{Limitations mémoire pour les simulations \acs{LBM}}
@@ -61,7 +61,7 @@ avec $3$ le nombre de dimensions en D3Q19; soit encore environ 402.6 Mo de plus,
 \section{\textit{Benchmarks} des \acs{GPU}} \label{title-benchmark_gpu}
 
 \subsection{Bande passante et débits de transfert}
-Cette section présente les mesures des débits d'accès à la mémoire globale et des transferts entre \acs{CPU} et \acs{GPU}. Elles ont été collectéee avec la méthode proposée par \citet{noauthor_how_2012}.
+Cette section présente les mesures des débits d'accès à la mémoire globale et des transferts entre \acs{CPU} et \acs{GPU}. Elles ont été collectéee avec la méthode proposée par \citet{ZZZweb_how_2012}.
 
 Les premières, illustrées sur la figure \ref{fig:bandwidth}, montrent les bandes passantes effectives mesurées (l'accès à la mémoire globale sur le \acs{GPU}). La progression en fonction de la quantité des données copiées est due au fait que le nombre de \textit{threads} capables de copier les données en parallèle évolue jusqu'à ce que la limite de \textit{threads} soit atteinte. Les mesures confirment les bandes passantes théoriques de la table \ref{table:gpu_specs}, les valeurs effectives étant usuellement entre $75\%$ à $85\%$ de celles théoriques.
 
@@ -170,12 +170,12 @@ L'impact de la taille du domaine par rapport à celle des \textit{warp} et surto
 	\label{fig:domain_size_bs}
 \end{figure}
 
-Les mesures illustrées par figure \ref{fig:lups_by_iter} révèlent une tendance relative à la taille du domaine. Plus le domaine est grand, plus les performances sont stables. En effet, on observe des différences de performances allant jusqu'à plus de 90 \acs{MLUPS} pour un domaine de $128^3$ \textit{lattices}, plus de 60 \acs{MLUPS} pour un domaine de $64^3$ \textit{lattices} mais presque aucune après 50 itérations sur un domaine de $256^3$ \textit{lattices}.
+Les mesures illustrées par figure \ref{fig:lups_by_iter} révèlent une tendance relative à la taille du domaine. Plus le domaine est grand, plus les performances sont stables. En effet, on observe des différences de performances allant jusqu'à plus de 90 \XLUPS{M} pour un domaine de $128^3$ \textit{lattices}, plus de 60 \XLUPS{M} pour un domaine de $64^3$ \textit{lattices} mais presque aucune après 50 itérations sur un domaine de $256^3$ \textit{lattices}.
 
 \subsection{Taille des blocs}
 La section précédente met déjà en lumière l'importance de la taille des blocs. Les mesures illustrées par les figures \ref{fig:lups_by_bs} cherchent à déterminer une taille optimale en fonction de dimension de domaine optimale (multiple de 32). Pour s'approcher du cas hybride, les performances sont désormais relevées sur des mesures qui simulent les transferts \acs{CPU}/\acs{GPU} de Palabos.
 
-On observe des pics de performances pour les tailles de bloc multiples de 32 sur tous les types de \acs{GPU} et, à moindre mesure, les multiples de 16. Toutefois, les meilleures performances sont invariablement observées pour les blocs de 32 \textit{threads}, suivis d'assez près par 64. Cette tendance s'explique probablement par la taille des \textit{warp} qui est identique (32) et que le \acs{GPU} ne peut pas exploiter ses capacités au mieux et atteindre la meilleure \textit{occupancy}  \cite{noauthor_achieved_2018} si ces valeurs ne coïncident pas. 
+On observe des pics de performances pour les tailles de bloc multiples de 32 sur tous les types de \acs{GPU} et, à moindre mesure, les multiples de 16. Toutefois, les meilleures performances sont invariablement observées pour les blocs de 32 \textit{threads}, suivis d'assez près par 64. Cette tendance s'explique probablement par la taille des \textit{warp} qui est identique (32) et que le \acs{GPU} ne peut pas exploiter ses capacités au mieux et atteindre la meilleure \textit{occupancy}  \cite{ZZZweb_achieved_2018} si ces valeurs ne coïncident pas. 
 
 \begin{figure}[h]
 	\centering

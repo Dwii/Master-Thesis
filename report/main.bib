@@ -105,6 +105,7 @@
 	doi = {10.1016/j.cpc.2017.03.013},
 	abstract = {We introduce the lattice-Boltzmann code LB3D, version 7.1. Building on a parallel program and supporting tools which have enabled research utilising high performance computing resources for nearly two decades, LB3D version 7 provides a subset of the research code functionality as an open source project. Here, we describe the theoretical basis of the algorithm as well as computational aspects of the implementation. The software package is validated against simulations of meso-phases resulting from self-assembly in ternary fluid mixtures comprising immiscible and amphiphilic components such as water-oil-surfactant systems. The impact of the surfactant species on the dynamics of spinodal decomposition are tested and quantitative measurement of the permeability of a body centred cubic (BCC) model porous medium for a simple binary mixture is described. Single-core performance and scaling behaviour of the code are reported for simulations on current supercomputer architectures. Program summary Program Title: LB3D Program Files doi: http://dx.doi.org/10.17632/9g9x2wr8z8.1 Licensing provisions: BSD 3-clause Programming language: FORTRAN90, Python, C Nature of problem: Solution of the hydrodynamics of single phase, binary immiscible and ternary amphiphilic fluids. Simulation of fluid mixtures comprising miscible and immiscible fluid components as well as amphiphilic species on the mesoscopic scale. Observable phenomena include self-organisation of mesoscopic complex fluid phases and fluid transport in porous media. Solution method: Lattice-Boltzmann (lattice-Bhatnagar-Gross-Krook, LBGK) [1, 2, 3] method describing fluid dynamics in terms of the single particle velocity distribution function in a 3-dimensional discrete phase space (D3Q19) [4, 5, 6]. Multiphase interactions are modelled using a phenomenological pseudo potential approach [7, 8] with amphiphilic interactions utilising an additional dipole field [9, 10]. Solid boundaries are modelled using simple bounce-back boundary conditions and additional pseudo-potential wetting interactions [11]. Additional comments including Restrictions and Unusual features: The purpose of the release is the provision of a refactored minimal version of LB3D suitable as a starting point for the integration of additional features building on the parallel computation and 10 functionality. [1] S. Succi, The Lattice Boltzmann Equation: For Fluid Dynamics and Beyond, Oxford University Press, 2001. [2] B. Dunweg, A. Ladd, Lattice Boltzmann simulations of soft matter systems, Adv. Poly. Sci. 221 (2009) 89-166 [3] C. K. Aidun, J. R. Clausen, Lattice-Boltzmann Method for Complex Flows, Annual Review of Fluid Mechanics 42 (2010) 439. [4] X. He, L.-S. Luo, A priori derivation of the lattice-Boltzmann equation, Phys. Rev. E 55 (1997) R6333. [5] X. He, L-S. Luo, Theory of the lattice Boltzmann method: from the Boltzmann equation to the lattice Boltzmann equation, Phys. Rev. E 56. [6] Y. H. Qian, D. D'Humieres, P. Lallemand, Lattice BGK Models for Navier Stokes Equation, Euro-physics Letters 17 (1992) 479. [7] X. Shan, H. Chen, Lattice-Boltzmann model for simulating flows with multiple phases and components, Physical Review E 47 (1993) 1815. [8] X. Shan, G. Doolen, Multicomponent lattice-Boltzmann model with interparticle interaction, Journal of Statistical Physics 81 (1995) 379. [9] H. Chen, B. Boghosian, P.V. Coveney, M. Nekovee, A ternary lattice-Boltzmann model for amphiphilic fluids, Proceedings of the Royal Society of London A 456 (2000) 2043. [10] M. Nekovee, P. V. Coveney, H. Chen, B. M. Boghosian, Lattice-Boltzmann model for interacting amphiphilic fluids, Phys. Rev. E 62 (2000) 8282. [11] N. S. Marlys, H. Chen, Simulation of multicomponent fluids in complex three-dimensional geometries by the lattice-Boltzmann method, Phys. Rev. E 53 (1996) 743. (C) 2017 The Authors. Published by Elsevier B.V.},
 	language = {English},
+	number = {TO-REMOVE-IN-BBL-FILE},
 	journal = {Computer Physics Communications},
 	author = {Schmieschek, S. and Shamardin, L. and Frijters, S. and Kruger, T. and Schiller, U. D. and Harting, J. and Coveney, P. V.},
 	month = aug,
@@ -116,16 +117,17 @@
 
 @article{tran_performance_2017,
 	title = {Performance {Optimization} of 3D {Lattice} {Boltzmann} {Flow} {Solver} on a {GPU}},
+	volume = {2017},
 	issn = {1058-9244},
 	doi = {10.1155/2017/1205892},
 	abstract = {Lattice Boltzmann Method (LBM) is a powerful numerical simulation method of the fluid flow. With its data parallel nature, it is a promising candidate for a parallel implementation on a GPU. The LBM, however, is heavily data intensive and memory bound. In particular, moving the data to the adjacent cells in the streaming computation phase incurs a lot of uncoalesced accesses on the GPU which affects the overall performance. Furthermore, the main computation kernels of the LBM use a large number of registers per thread which limits the thread parallelism available at the run time due to the fixed number of registers on the GPU. In this paper, we develop high performance parallelization of the LBM on a GPU by minimizing the overheads associated with the uncoalesced memory accesses while improving the cache locality using the tiling optimization with the data layout change. Furthermore, we aggressively reduce the register uses for the LBM kernels in order to increase the run-time thread parallelism. Experimental results on the Nvidia Tesla K20 GPU show that our approach delivers impressive throughput performance: 1210.63 Million Lattice Updates Per Second (MLUPS).},
 	language = {English},
+	number = {TO-REMOVE-IN-BBL-FILE},
 	journal = {Scientific Programming},
 	author = {Tran, Nhat-Phuong and Lee, Myungho and Hong, Sugwon},
 	year = {2017},
 	note = {WOS:000394026700001},
-	keywords = {processor, simulation},
-	pages = {1205892}
+	keywords = {processor, simulation}
 }
 
 @article{obrecht_thermal_2016,
@@ -170,6 +172,7 @@
 	doi = {10.1016/j.cam.2015.02.008},
 	abstract = {This work presents the lattice Boltzmann method (LBM) for computational simulations of the cardiac electrical activity using monodomain model. An optimized implementation of the lattice Boltzmann method is presented which uses a collision model with multiple relaxation parameters in order to consider the anisotropy of the cardiac tissue. With focus on fast simulations of cardiac dynamics, due to the high level of parallelism present in the LBM, a GPO parallelization was performed and its performance was studied under regular and irregular three-dimensional domains. The results of our optimized lattice Boltzmann parallel implementation for cardiac simulations have shown acceleration factors as high as 500x for the overall simulation and for the LBM a performance of 419 mega lattice updates per second was achieved. With near real time simulations in a single computer equipped with a modern GPO these results show that the proposed framework is a promising approach for application in a clinical workflow. (C) 2015 Elsevier B.V. All rights reserved.},
 	language = {English},
+	number = {TO-REMOVE-IN-BBL-FILE},
 	journal = {Journal of Computational and Applied Mathematics},
 	author = {Campos, J. O. and Oliveira, R. S. and dos Santos, R. W. and Rocha, B. M.},
 	month = mar,
@@ -213,6 +216,7 @@
 }
 
 @article{januszewski_sailfish_2014,
+	series = {Scientific {Programming}},
 	title = {Sailfish : {A} flexible multi-{GPU} implementation of the lattice {Boltzmann} method},
 	volume = {185},
 	issn = {0010-4655},
@@ -226,7 +230,7 @@
 	month = sep,
 	year = {2014},
 	note = {WOS:000338608900004},
-	keywords = {boundary-conditions, lbm, Computational fluid dynamics, cuda, model, Lattice Boltzmann, binary-fluid, dimensions, equation, flows, gpu, Graphics   processing unit, graphics processing units, simulations, viscosities},
+	keywords = {binary-fluid, boundary-conditions, Computational fluid dynamics, cuda, dimensions, equation, flows, gpu, Graphics   processing unit, graphics processing units, Lattice Boltzmann, lbm, model, simulations, viscosities},
 	pages = {2350--2368}
 }
 
@@ -238,12 +242,13 @@
 	doi = {10.1016/j.compfluid.2012.02.013},
 	abstract = {GPUs offer several times the floating point performance and memory bandwidth of current standard two socket CPU compute nodes, e.g. NVIDIA C2070 vs. Intel Xeon Westmere X5650. The lattice Boltzmann method (LBM) has been established as a flow solver in recent years and was one of the first flow solvers to be successfully ported to GPUs with a performance benefit. We demonstrate advanced optimization strategies for a D3Q19 lattice Boltzmann based incompressible flow solver for GPGPUs and CPUs. Since the implemented algorithm is limited by memory bandwidth, we concentrate on improving memory access. Basic data layout issues for optimal data access are explained and discussed. Furthermore, the algorithmic steps are rearranged to improve scattered access of the GPU memory. The importance of occupancy is discussed as well as optimization strategies to improve overall concurrency. We obtain a well-optimized CPU kernel, which is integrated into a larger framework that can handle single phase fluid flow simulations as well as particle-laden flows. Our 3D LBM GPU implementation reaches up to 650 MLUPS in single precision and 290 MLUPS in double precision on an NVIDIA Tesla C2070 as well as an AMD 6970. (c) 2012 Elsevier Ltd. All rights reserved.},
 	language = {English},
+	number = {TO-REMOVE-IN-BBL-FILE},
 	journal = {Computers \& Fluids},
 	author = {Habich, J. and Feichtinger, C. and Koestler, H. and Hager, G. and Wellein, G.},
 	month = jul,
 	year = {2013},
 	note = {WOS:000320427200032},
-	keywords = {Computational fluid dynamics, cuda, Lattice Boltzmann method, hpc, gpgpu, OpenCL, Parallelization, Performance modeling and engineering},
+	keywords = {Computational fluid dynamics, cuda, gpgpu, hpc, Lattice Boltzmann method, OpenCL, Parallelization, Performance modeling and engineering},
 	pages = {276--282}
 }
 
@@ -271,12 +276,13 @@
 	doi = {10.1016/j.simpat.2012.03.004},
 	abstract = {A three-dimensional Lattice-Boltzmann fluid model with nineteen discrete velocities was implemented using NVIDIA Graphic Processing Unit (GPU) programing language "Compute Unified Device Architecture" (CUDA). Previous LBM CPU implementations required two steps to maximize memory bandwidth due to memory access restrictions of earlier versions of CUDA toolkit and hardware capabilities. In this work, a new approach based on single-step algorithm with a reversed collision-propagation scheme is developed to maximize CPU memory bandwidth, taking advantage of the newer versions of CUDA programming model and newer NVIDIA Graphic Cards. The code was tested on the numerical calculation of lid driven cubic cavity flow at Reynolds number 100 and 1000 showing great precision and stability. Simulations running on low cost CPU cards can calculate 400 cell updates per second with more than 65\% hardware bandwidth. (C) 2012 Elsevier B.V. All rights reserved.},
 	language = {English},
+	number = {TO-REMOVE-IN-BBL-FILE},
 	journal = {Simulation Modelling Practice and Theory},
 	author = {Rinaldi, P. R. and Dari, E. A. and Venere, M. J. and Clausse, A.},
 	month = jun,
 	year = {2012},
 	note = {WOS:000305100600011},
-	keywords = {boundary-conditions, cuda, model, gpgpu, flows, 3D Lattice-Boltzmann Methods},
+	keywords = {3D Lattice-Boltzmann Methods, boundary-conditions, cuda, flows, gpgpu, model},
 	pages = {163--171}
 }
 
@@ -337,12 +343,13 @@
 	doi = {10.1088/1742-5468/2009/06/P06016},
 	abstract = {Modern graphics processing units (GPUs) can perform general-purpose computations in addition to the native specialized graphics operations. Due to the highly parallel nature of graphics processing, the GPU has evolved into a many-core coprocessor that supports high data parallelism. Its performance has been growing at a rate of squared Moore's law, and its peak floating point performance exceeds that of the CPU by an order of magnitude. Therefore, it is a viable platform for time-sensitive and computationally intensive applications. The lattice Boltzmann model (LBM) computations are carried out via linear operations at discrete lattice sites, which can be implemented efficiently using a GPU-based architecture. Our simulations produce results comparable to the CPU version while improving performance by an order of magnitude. We have demonstrated that the GPU is well suited for interactive simulations in many applications, including simulating. re, smoke, lightweight objects in wind, jellyfish swimming in water, and heat shimmering and mirage (using the hybrid thermal LBM). We further advocate the use of a GPU cluster for large scale LBM simulations and for high performance computing. The Stony Brook Visual Computing Cluster has been the platform for several applications, including simulations of real-time plume dispersion in complex urban environments and thermal fluid dynamics in a pressurized water reactor. Major GPU vendors have been targeting the high performance computing market with GPU hardware implementations. Software toolkits such as NVIDIA CUDA provide a convenient development platform that abstracts the GPU and allows access to its underlying stream computing architecture. However, software programming for a GPU cluster remains a challenging task. We have therefore developed the Zippy framework to simplify GPU cluster programming. Zippy is based on global arrays combined with the stream programming model and it hides the low-level details of the underlying cluster architecture.},
 	language = {English},
+	number = {TO-REMOVE-IN-BBL-FILE},
 	journal = {Journal of Statistical Mechanics-Theory and Experiment},
 	author = {Kaufman, Arie and Fan, Zhe and Petkov, Kaloian},
 	month = jun,
 	year = {2009},
 	note = {WOS:000267137700001},
-	keywords = {lattice Boltzmann methods, computation},
+	keywords = {computation, lattice Boltzmann methods},
 	pages = {P06016}
 }
 
@@ -386,12 +393,13 @@
 	doi = {10.1016/j.compfluid.2012.06.003},
 	abstract = {We describe the implementation of a thermal compressible Lattice Boltzmann algorithm on an NVIDIA Tesla C2050 system based on the Fermi GP-GPU. We consider two different versions, including and not including reactive effects. We describe the overall organization of the algorithm and give details on its implementations. Efficiency ranges from 25\% to 31\% of the double precision peak performance of the GP-GPU. We compare our results with a different implementation of the same algorithm, developed and optimized for many-core Intel Westmere CPUs. (C) 2012 Elsevier Ltd. All rights reserved.},
 	language = {English},
+	number = {TO-REMOVE-IN-BBL-FILE},
 	journal = {Computers \& Fluids},
 	author = {Biferale, Luca and Mantovani, Filippo and Pivanti, Marcello and Pozzati, Fabio and Sbragaglia, Mauro and Scagliarini, Andrea and Schifano, Sebastiano Fabio and Toschi, Federico and Tripiccione, Raffaele},
 	month = jul,
 	year = {2013},
 	note = {WOS:000320427200007},
-	keywords = {Lattice Boltzmann methods, Computational fluid-dynamics, GP-GPU   computing},
+	keywords = {Computational fluid-dynamics, GP-GPU   computing, Lattice Boltzmann methods},
 	pages = {55--62}
 }
 
@@ -402,12 +410,13 @@
 	doi = {10.1016/j.compfluid.2012.04.022},
 	abstract = {This paper presents a Graphics Processing Unit (GPU) based implementation of the Finite Differencing Time Domain (FDTD) methods, for solving unsteady incompressible viscous flow over an airfoil using the Stream function-Vorticity formulation for a structured grid. For the large-scale simulations, FDTD methods can be computationally expensive and require considerable amount of time to solve on traditional CPUs. On the contrary, modern GPGPUs such GTX 480 are designed to accelerate lots of independent calculations due to advantage of their highly parallel architecture. In present work, the main purpose is to show a new configuration for leveraging GPU processing power for the computationally expensive simulations based on explicit FDTD method and CUDA language. Our proposed work improves the GPU FDTD results by increasing the global memory coalescence with the same amount of occupancy, resulting in an increase in maximum output performance. In addition, this study introduces a more coalesced pattern of data loading which reduces the global memory requests. Although both GPU based programs are over 28 times faster than a sequential CPU based version, Implementation of our proposed work showed up to 44\% decrease in execution time comparing to the naive GPU method. (C) 2012 Elsevier Ltd. All rights reserved.},
 	language = {English},
+	number = {TO-REMOVE-IN-BBL-FILE},
 	journal = {Computers \& Fluids},
 	author = {Gohari, S. M. Iman and Esfahanian, Vahid and Moqtaderi, Hamed},
 	month = jul,
 	year = {2013},
 	note = {WOS:000320427200013},
-	keywords = {cuda, gpu, Airfoil, Coalesced pattern, Finite differencing time domain},
+	keywords = {Airfoil, Coalesced pattern, cuda, Finite differencing time domain, gpu},
 	pages = {102--115}
 }
 
@@ -418,12 +427,13 @@
 	doi = {10.1016/j.compfluid.2012.02.014},
 	abstract = {In this contribution, a single-node multi-CPU thermal lattice Boltzmann solver is presented. We implement a simplified version of the hybrid model developed by Lallemand and Luo in 2003, which combines multiple-relaxation-time lattice Boltzmann for the fluid flow with a finite-difference method for temperature. The program is based on the TheLMA framework which was developed for that purpose. The chosen implementation and optimisation strategies are described, both for inter-GPU communication and for coupling with the thermal component of the model. Validation and performance results are provided as well. (c) 2012 Elsevier Ltd. All rights reserved.},
 	language = {English},
+	number = {TO-REMOVE-IN-BBL-FILE},
 	journal = {Computers \& Fluids},
 	author = {Obrecht, Christian and Kuznik, Frederic and Tourancheau, Bernard and Roux, Jean-Jacques},
 	month = jul,
 	year = {2013},
 	note = {WOS:000320427200031},
-	keywords = {cuda, model, graphics processing units, GPU computing, relaxation, Thermal lattice Boltzmann method},
+	keywords = {cuda, GPU computing, graphics processing units, model, relaxation, Thermal lattice Boltzmann method},
 	pages = {269--275}
 }
 
@@ -476,38 +486,41 @@
 	file = {ScienceDirect Snapshot:/Users/Dwii/Zotero/storage/KQW6TD53/S0898122111001064.html:text/html}
 }
 
-@misc{noauthor_cuda_2017,
+@misc{zzzweb_cuda_2017,
 	type = {concept},
 	title = {Cuda {Toolkit} {Documentation}, {Cuda} and {Floating} {Point}},
 	url = {http://docs.nvidia.com/cuda/floating-point/#cuda-and-floating-point},
 	abstract = {White paper covering the most common issues related to NVIDIA GPUs.},
 	urldate = {2017-11-27},
+	author = {ZZZweb, Cuda},
 	month = nov,
 	year = {2017}
 }
 
-@misc{noauthor_cuda_2017-1,
+@misc{zzzweb_cuda_2017-1,
 	type = {concept},
 	title = {Cuda {Toolkit} {Documentation}, {Controlling} {Fused} {Multiply}-add},
 	url = {http://docs.nvidia.com/cuda/floating-point/#controlling-fused-multiply-add},
 	abstract = {White paper covering the most common issues related to NVIDIA GPUs.},
 	urldate = {2017-11-27},
+	author = {ZZZweb, Cuda},
 	month = nov,
 	year = {2017},
 	file = {Snapshot:/Users/Dwii/Zotero/storage/74N7N9M9/floating-point.html:text/html}
 }
 
-@misc{noauthor_cuda_2017-2,
+@misc{zzzweb_cuda_2017-2,
 	type = {{cppModule}},
 	title = {Cuda {Toolkit} {Documentation}, {Double} {Precision} {Intrinsics}},
 	url = {http://docs.nvidia.com/cuda/cuda-math-api/group__CUDA__MATH__INTRINSIC__DOUBLE.html},
 	urldate = {2017-11-27},
+	author = {ZZZweb, Cuda},
 	month = nov,
 	year = {2017},
 	file = {Snapshot:/Users/Dwii/Zotero/storage/NLGDQTTZ/group__CUDA__MATH__INTRINSIC__DOUBLE.html:text/html}
 }
 
-@misc{noauthor_list_2018,
+@misc{zzzweb_list_2018,
 	title = {List of {Nvidia} graphics processing units},
 	copyright = {Creative Commons Attribution-ShareAlike License},
 	url = {https://en.wikipedia.org/w/index.php?title=List_of_Nvidia_graphics_processing_units},
@@ -515,33 +528,37 @@
 	language = {en},
 	urldate = {2018-01-08},
 	journal = {Wikipedia},
+	author = {ZZZweb, List},
 	month = jan,
 	year = {2018},
 	note = {Page Version ID: 819127188}
 }
 
-@misc{noauthor_achieved_2018,
+@misc{zzzweb_achieved_2018,
 	title = {Achieved {Occupancy}},
 	url = {https://docs.nvidia.com/gameworks/content/developertools/desktop/analysis/report/cudaexperiments/kernellevel/achievedoccupancy.htm},
 	urldate = {2018-01-08},
+	author = {ZZZweb, Achieved},
 	month = jan,
 	year = {2018},
 	file = {Achieved Occupancy:/Users/Dwii/Zotero/storage/D8EK8JXE/achievedoccupancy.html:text/html}
 }
 
-@misc{noauthor_how_2012,
+@misc{zzzweb_how_2012,
 	title = {How to {Implement} {Performance} {Metrics} in {CUDA} {C}/{C}++},
 	url = {https://devblogs.nvidia.com/parallelforall/how-implement-performance-metrics-cuda-cc/},
 	abstract = {In the first post of this series we looked at the basic elements of CUDA C/C++ by examining a CUDA C/C++ implementation of SAXPY. In this second post we discuss how to analyze the performance of this and other CUDA C/C++ codes. We will rely on these performance measurement techniques in future posts where performance optimization …},
 	language = {en-US},
 	urldate = {2018-01-12},
 	journal = {Parallel Forall},
+	author = {ZZZweb, How},
 	month = nov,
 	year = {2012},
 	file = {Snapshot:/Users/Dwii/Zotero/storage/LN8BD4XV/how-implement-performance-metrics-cuda-cc.html:text/html}
 }
 
 @book{albuquerque_performance_2012,
+	series = {{PARCO}},
 	title = {Performance model for a cellular automata implementation on a {GPU} cluster},
 	volume = {22},
 	abstract = {In the past few years, GPUs have gained a lot of popularity as they offer an opportunity to accelerate many algorithms. In this paper we present a mono, a multi-GPU and GPU cluster implementation, based on CUDA, of a cellular automata. We derive a performance model and establish its accurateness.},
@@ -551,7 +568,7 @@
 	note = {DOI: 10.3233/978-1-61499-041-3-191}
 }
 
-@misc{noauthor_cuda_2018,
+@misc{zzzweb_cuda_2018,
 	title = {{CUDA}},
 	copyright = {Creative Commons Attribution-ShareAlike License},
 	url = {https://en.wikipedia.org/w/index.php?title=CUDA&oldid=820132007},
@@ -560,6 +577,7 @@ The CUDA platform is designed to work with programming languages such as C, C++,
 	language = {en},
 	urldate = {2018-01-14},
 	journal = {Wikipedia},
+	author = {ZZZweb, CUDA},
 	month = jan,
 	year = {2018},
 	note = {Page Version ID: 820132007}
@@ -570,6 +588,7 @@ The CUDA platform is designed to work with programming languages such as C, C++,
 	volume = {6449},
 	url = {https://hal.archives-ouvertes.fr/hal-01003059},
 	abstract = {In this work, we investigate the global memory access mechanism on recent GPUs. For the purpose of this study, we created specific benchmark programs, which allowed us to explore the scheduling of global memory transactions. Thus, we formulate a model capable of estimating the execution time for a large class of applications. Our main goal is to facilitate optimisation of regular data-parallel applications on GPUs. As an example, we finally describe our CUDA implementations of LBM flow solvers on which our model was able to estimate performance with less than 5\% relative error.},
+	number = {TO-REMOVE-IN-BBL-FILE},
 	urldate = {2018-01-17},
 	journal = {Lecture notes in computer science},
 	author = {Obrecht, Christian and Kuznik, Frederic and Tourancheau, Bernard and Roux, Jean-Jacques},
@@ -623,12 +642,13 @@ The CUDA platform is designed to work with programming languages such as C, C++,
 	url = {http://www.sciencedirect.com/science/article/pii/S0167819114001446},
 	doi = {10.1016/j.parco.2014.12.003},
 	abstract = {Computational fluid dynamic simulations are in general very compute intensive. Only by parallel simulations on modern supercomputers the computational demands of complex simulation tasks can be satisfied. Facing these computational demands GPUs offer high performance, as they provide the high floating point performance and memory to processor chip bandwidth. To successfully utilize GPU clusters for the daily business of a large community, usable software frameworks must be established on these clusters. The development of such software frameworks is only feasible with maintainable software designs that consider performance as a design objective right from the start. For this work we extend the software design concepts to achieve more efficient and highly scalable multi-GPU parallelization within our software framework waLBerla for multi-physics simulations centered around the lattice Boltzmann method. Our software designs now also support a pure-MPI and a hybrid parallelization approach capable of heterogeneous simulations using CPUs and GPUs in parallel. For the first time weak and strong scaling performance results obtained on the Tsubame 2.0 cluster for more than 1000 GPUs are presented using waLBerla. With the help of a new communication model the parallel efficiency of our implementation is investigated and analyzed in a detailed and structured performance analysis. The suitability of the waLBerla framework for production runs on large GPU clusters is demonstrated. As one possible application we show results of strong scaling experiments for flows through a porous medium.},
+	number = {TO-REMOVE-IN-BBL-FILE},
 	urldate = {2018-01-17},
 	journal = {Parallel Computing},
 	author = {Feichtinger, Christian and Habich, Johannes and Köstler, Harald and Rüde, Ulrich and Aoki, Takayuki},
 	month = jul,
 	year = {2015},
-	keywords = {Lattice Boltzmann method, CUDA, Heterogeneous computations, Performance modeling},
+	keywords = {CUDA, Heterogeneous computations, Lattice Boltzmann method, Performance modeling},
 	pages = {1--13},
 	file = {ScienceDirect Snapshot:/Users/Dwii/Zotero/storage/PKITQTTU/S0167819114001446.html:text/html}
 }
@@ -726,6 +746,7 @@ The CUDA platform is designed to work with programming languages such as C, C++,
 	url = {http://www.sciencedirect.com/science/article/pii/S1877705813011922},
 	doi = {10.1016/j.proeng.2013.08.010},
 	abstract = {We present some results conceming the computational performances of the open source general purpose CFD code PalaBos, in terms of scalability and efficiency, on the petascale Sunway BlueLight MPP system. Based on the numerical simulated program of 3D cavity lid driven flow, the optimization methods in I/O, communication, memory access, etc, are applied in debugging and optimization of the parallel MPI program. Experimental results of large scalar parallel computing of 3D cavity lid driven flow show that, the parallel strategy and optimization methods are correct and efficient. The parallel implementation scheme is very useful and can shorten the computing time explicitly.},
+	number = {TO-REMOVE-IN-BBL-FILE},
 	urldate = {2018-01-18},
 	journal = {Procedia Engineering},
 	author = {Min, Tian and Weidong, Gu and Jingshan, Pan and Meng, Guo},
@@ -744,6 +765,7 @@ The CUDA platform is designed to work with programming languages such as C, C++,
 	url = {http://www.sciencedirect.com/science/article/pii/S1877050913003621},
 	doi = {10.1016/j.procs.2013.05.219},
 	abstract = {In this paper we report on our early experience on porting, optimizing and benchmarking a Lattice Boltzmann (LB) code on the Xeon-Phi co-processor, the first generally available version of the new Many Integrated Core (MIC) architecture, developed by Intel. We consider as a test-bed a state-of-the-art LB model, that accurately reproduces the thermo-hydrodynamics of a 2D- fluid obeying the equations of state of a perfect gas. The regular structure of LB algorithms makes it relatively easy to identify a large degree of available parallelism. However, mapping a large fraction of this parallelism onto this new class of processors is not straightforward. The D2Q37 LB algorithm considered in this paper is an appropriate test-bed for this architecture since the critical computing kernels require high performances both in terms of memory bandwidth for sparse memory access patterns and number crunching capability. We describe our implementation of the code, that builds on previous experience made on other (simpler) many-core processors and GPUs, present benchmark results and measure performances, and finally compare with the results obtained by previous implementations developed on state-of-the-art classic multi-core CPUs and GP-GPUs.},
+	number = {TO-REMOVE-IN-BBL-FILE},
 	urldate = {2018-01-18},
 	journal = {Procedia Computer Science},
 	author = {Crimi, G. and Mantovani, F. and Pivanti, M. and Schifano, S. F. and Tripiccione, R.},
@@ -762,12 +784,13 @@ The CUDA platform is designed to work with programming languages such as C, C++,
 	url = {http://www.sciencedirect.com/science/article/pii/S1877705813011648},
 	doi = {10.1016/j.proeng.2013.07.098},
 	abstract = {This paper describes a hybrid MPI-CUDA parallelization strategy for the direct numerical simulation of incompressible flows using unstructured meshes. Our in-house MPI-based unstructured CFD code has been extended in order to increase its performance by means of GPU co-processors. Therefore, the main goal of this work is to take advantage of the current hybrid supercomputers to increase our computing capabilities. CUDA is used to perform the calculations on the GPU devices and MPI to handle the communications between them. The main drawback for the performance is the slowdown produced by the MPI communication episodes. Consequently, overlapping strategies, to hide MPI communication costs under GPU computations, are studied in detail with the aim to achieve scalability when executing the code on multiple nodes.},
+	number = {TO-REMOVE-IN-BBL-FILE},
 	urldate = {2018-01-18},
 	journal = {Procedia Engineering},
 	author = {Oyarzun, G. and Borrell, R. and Gorobets, A. and Lehmkuhl, O. and Oliva, A.},
 	month = jan,
 	year = {2013},
-	keywords = {MPI, CPU/GPU hybrid supercomputers, CUDA., direct numerical simulation, Navier-Stokes equations},
+	keywords = {CPU/GPU hybrid supercomputers, CUDA., direct numerical simulation, MPI, Navier-Stokes equations},
 	pages = {87--93},
 	file = {ScienceDirect Full Text PDF:/Users/Dwii/Zotero/storage/MHWMNGYP/Oyarzun et al. - 2013 - Direct Numerical Simulation of Incompressible Flow.pdf:application/pdf;ScienceDirect Snapshot:/Users/Dwii/Zotero/storage/ARRPENR5/S1877705813011648.html:text/html}
 }
@@ -779,6 +802,7 @@ The CUDA platform is designed to work with programming languages such as C, C++,
 	url = {http://www.sciencedirect.com/science/article/pii/S0021999114005786},
 	doi = {10.1016/j.jcp.2014.08.024},
 	abstract = {Programming and optimizing complex, real-world CFD codes on current many-core accelerated HPC systems is very challenging, especially when collaborating CPUs and accelerators to fully tap the potential of heterogeneous systems. In this paper, with a tri-level hybrid and heterogeneous programming model using MPI + OpenMP + CUDA, we port and optimize our high-order multi-block structured CFD software HOSTA on the GPU-accelerated TianHe-1A supercomputer. HOSTA adopts two self-developed high-order compact definite difference schemes WCNS and HDCS that can simulate flows with complex geometries. We present a dual-level parallelization scheme for efficient multi-block computation on GPUs and perform particular kernel optimizations for high-order CFD schemes. The GPU-only approach achieves a speedup of about 1.3 when comparing one Tesla M2050 GPU with two Xeon X5670 CPUs. To achieve a greater speedup, we collaborate CPU and GPU for HOSTA instead of using a naive GPU-only approach. We present a novel scheme to balance the loads between the store-poor GPU and the store-rich CPU. Taking CPU and GPU load balance into account, we improve the maximum simulation problem size per TianHe-1A node for HOSTA by 2.3×, meanwhile the collaborative approach can improve the performance by around 45\% compared to the GPU-only approach. Further, to scale HOSTA on TianHe-1A, we propose a gather/scatter optimization to minimize PCI-e data transfer times for ghost and singularity data of 3D grid blocks, and overlap the collaborative computation and communication as far as possible using some advanced CUDA and MPI features. Scalability tests show that HOSTA can achieve a parallel efficiency of above 60\% on 1024 TianHe-1A nodes. With our method, we have successfully simulated an EET high-lift airfoil configuration containing 800M cells and China's large civil airplane configuration containing 150M cells. To our best knowledge, those are the largest-scale CPU–GPU collaborative simulations that solve realistic CFD problems with both complex configurations and high-order schemes.},
+	number = {TO-REMOVE-IN-BBL-FILE},
 	urldate = {2018-01-18},
 	journal = {Journal of Computational Physics},
 	author = {Xu, Chuanfu and Deng, Xiaogang and Zhang, Lilun and Fang, Jianbin and Wang, Guangxue and Jiang, Yi and Cao, Wei and Che, Yonggang and Wang, Yongxian and Wang, Zhenghua and Liu, Wei and Cheng, Xinghua},
@@ -879,6 +903,7 @@ The CUDA platform is designed to work with programming languages such as C, C++,
 
 @article{latt_technical_2007,
 	title = {Technical report: {How} to implement your {DdQq} dynamics with only q variables per node (instead of 2q)},
+	number = {TO-REMOVE-IN-BBL-FILE},
 	author = {Latt, Jonas},
 	year = {2007},
 	file = {plb-tr1.pdf:/Users/Dwii/Zotero/storage/RFFDFCQD/plb-tr1.pdf:application/pdf}
@@ -892,6 +917,7 @@ The CUDA platform is designed to work with programming languages such as C, C++,
 	url = {http://www.sciencedirect.com/science/article/pii/S0045793014002382},
 	doi = {10.1016/j.compfluid.2014.06.002},
 	abstract = {Nowadays, an increasing number of researchers have demonstrated a tendency to choose hybrid CPU–GPU hybrid computing as a high performance computing alternative. Entropic Lattice Boltzmann method (ELBM) parallelization, like many parallel algorithms in the field of rapid scientific and engineering computing, has given rise to much attention for applications of computational fluid dynamics. This study aims to present an efficient implementation of ELBM flow simulation for the D3Q19 model in a hybrid CPU–GPU computing environment, which consists of AMD multi-core CPUs with NVIDIA Graphics Processing Units (GPUs). To overcome the GPU memory size limitation and communication overhead, we propose a set of techniques for the development of an efficient ELBM algorithm for hybrid CPU–GPU computation. Considering the contribution of computational capacity for both the CPU and GPU, an efficient load balancing model is built. The efficiency and accuracy of the proposed approach and established model are tested on a hybrid CPU–GPU accelerated system, where the intensive parts of the computation are dealt with the software framework OpenMP and CUDA. Finally, we show the comparison of resulting computational performance using a hybrid CPU–GPU approach against both a single CPU core and a single GPU device.},
+	number = {TO-REMOVE-IN-BBL-FILE},
 	urldate = {2018-01-25},
 	journal = {Computers \& Fluids},
 	author = {Ye, Yu and Li, Kenli and Wang, Yan and Deng, Tan},
@@ -900,4 +926,24 @@ The CUDA platform is designed to work with programming languages such as C, C++,
 	keywords = {Computational fluid dynamics, CUDA, Entropic Lattice Boltzmann Method (ELBM), GPU, Hybrid computing, OpenMP, Parallel computation},
 	pages = {114--121},
 	file = {ScienceDirect Snapshot:/Users/Dwii/Zotero/storage/GLZULCQD/S0045793014002382.html:text/html}
+}
+
+@misc{zzzweb_stack_2018,
+	title = {Stack {Overflow}: {Trouble} launching {CUDA} kernels from static initialization code},
+	url = {https://stackoverflow.com/a/24883665},
+	urldate = {2018-01-25},
+	author = {ZZZweb, Stack},
+	month = jan,
+	year = {2018},
+	file = {Snapshot:/Users/Dwii/Zotero/storage/GDGMR2K9/24883665.html:text/html}
+}
+
+@misc{zzzweb_stack_2018-1,
+	title = {Stack {Overflow}: cuda call fails in destructor},
+	url = {https://stackoverflow.com/a/35828076},
+	urldate = {2018-01-25},
+	author = {ZZZweb, Stack},
+	month = jan,
+	year = {2018},
+	file = {Snapshot:/Users/Dwii/Zotero/storage/ECG3FY75/35828076.html:text/html}
 }
