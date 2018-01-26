@@ -1,6 +1,6 @@
 \section{Modèle \acs{GPU}}
 \subsection{Identification des paramètres}
-Les paramètres qui affectent les performances de l'implémentation sur \acs{GPU} sont:
+\noindent Les performances de l'implémentation sur \acs{GPU} sont affectées par les paramètres suivants:
 \begin{itemize}
 \item le \acs{GPU};
 \item la taille du domaine;
@@ -19,22 +19,16 @@ Ces paramètres n'ont pas besoin d'être inclus dans le modèle de performance, 
 \newcommand{\scoef}[0]{\Gamma}
 \newcommand{\rcoef}[0]{\digamma}
 
-%\newcommand{\Time}[0]{T}
-%\newcommand{\cscoef}[0]{\omega}
-%\newcommand{\scoef}[0]{\tau}
-%\newcommand{\rcoef}[0]{\varphi}
-
-
 Les profilages réalisés en section \ref{title-profilage_gpu} montrent que le temps d'exécution d'une simulation se résume essentiellement à la somme des périodes du \textit{Send}, \textit{Collide \& Stream} et \textit{Receive}. Les mesures suggèrent aussi les tendances, reconnaissables sur chaque type de \acs{GPU}, que suivent leurs courbes en fonction de la taille du domaine.
 
-Pour commencer, la courbe du temps d'exécution de \textit{Collide \& Stream} semble être linéaire. Cette supposition est confirmée par les droites de régression tracées à l'aide des mesures effectuées sur la figure \ref{fig:linear_regr_collide_and_stream}. On peut ainsi exprimer son temps d'exécution $\Time_{cs}$, pour une génération, par la formule suivante, avec $N_x$, $N_y$ et $N_z$ les dimensions du domaine ou $N_{total}$ le nombre total de \textit{lattices} (les itérations) et un coefficient $\cscoef$ déterminé en fonction du \acs{GPU}.
+Pour commencer, la courbe du temps d'exécution de \textit{Collide \& Stream} semble être linéaire. Cette supposition est confirmée par les droites de régression tracées à l'aide des mesures effectuées sur la figure \ref{fig:linear_regr_collide_and_stream}. On peut ainsi exprimer son temps d'exécution $\Time_{cs}$, pour une génération, par la formule suivante, avec $N_x$, $N_y$ et $N_z$ les dimensions du domaine ou $N_{total}$, le nombre total de populations et un coefficient $\cscoef$ déterminé en fonction du \acs{GPU}.
 \begin{subequations}
 \begin{align}
 \Time_{cs} & = \cscoef \cdot N_x \cdot N_y \cdot N_z\\
               & = \cscoef \cdot N_{total} 
 \end{align}
 \end{subequations}
-Ensuite, les courbes du temps d'exécution de \textit{Send} et \textit{Receive} semblent suivre l'évolution de la taille de l'enveloppe transférée (figure \ref{fig:plb_enveloppe_3d}). On exprimera ainsi pour une génération, avec la formule suivante, le temps de transfert $\Time_{send}$  de l'enveloppe extérieur, du \acs{CPU} au \acs{GPU}, réalisé par le \textit{Send}, avec $N_{out}$ la taille de l'enveloppe extérieure et un coefficient $\scoef$ déterminé en fonction du \acs{GPU}.
+Ensuite, les courbes du temps d'exécution de \textit{Send} et \textit{Receive} semblent suivre l'évolution de la taille de l'enveloppe transférée (figure \ref{fig:plb_enveloppe_3d}). La formule suivante exprime ainsi, pour une génération, le temps de transfert $\Time_{send}$  de l'enveloppe extérieur, du \acs{CPU} au \acs{GPU}, réalisé par le \textit{Send}, avec $N_{out}$ la taille de l'enveloppe extérieure et un coefficient $\scoef$ déterminé en fonction du \acs{GPU}.
 \begin{subequations}
 \begin{align}
 \Time_{send} &= \scoef \cdot \Big(N_x \cdot N_y \cdot N_z - (N_x-2)(N_y-2)(N_z-2)\Big)\\
@@ -42,7 +36,7 @@ Ensuite, les courbes du temps d'exécution de \textit{Send} et \textit{Receive} 
 \end{align}
 \end{subequations}
 
-De la même façon, on exprimera avec la formule suivante, le temps de transfert $\Time_{receive}$ de l'enveloppe intérieur, du \acs{GPU} au \acs{CPU}, réalisé par le \textit{Receive}, avec $N_{in} $ la taille de l'enveloppe intérieure et un coefficient $\rcoef$ déterminé en fonction du \acs{GPU}.
+De la même façon, la formule qui suit exprime le temps de transfert $\Time_{receive}$ de l'enveloppe intérieure, du \acs{GPU} au \acs{CPU}, réalisé par le \textit{Receive}, avec $N_{in} $ la taille de l'enveloppe intérieure et un coefficient $\rcoef$ déterminé en fonction du \acs{GPU}.
 \begin{subequations}
 \begin{align}
 \Time_{receive} &= \rcoef \cdot \Big((N_x-2)(N_y-2)(N_z-2) - (N_x-4)(N_y-4)(N_z-4)\Big)\\
@@ -79,12 +73,12 @@ ou les performances en \XLUPS{}:
 
 \subsection{Affinage du modèle }\label{title-affinage_modele_perf}
 \subsubsection{Description du modèle de performance pour automate cellulaire}
-\citet{albuquerque_performance_2012} propose un modèle de performance pour évaluer le temps d'exécution d'un automate cellulaire sur un \acs{GPU} qu'ils formulent ainsi:
+\citet{albuquerque_performance_2012} proposent un modèle de performance pour évaluer le temps d'exécution d'un automate cellulaire sur un \acs{GPU} qu'ils formulent ainsi:
 \begin{equation}
 \Time_{GPU} = g \cdot \Time_{kernel} = g \bigg( \frac{N_{total}\cdot C_T}{N_{SM}\cdot N_P \cdot D \cdot freq} + \Time_{launch}\bigg)
 \end{equation}
 
-avec $N_{SM}$ le nombre de \ac{SM}, $N_P$ le nombre de processeurs sur chaque \ac{SM}, $D$ la profondeur du \textit{pipeline} des processeurs, $freq$ sa fréquence, $C_T$ le travail dont un \textit{thread} est capable et $T_{launch}$ le temps de démarrage d'un kernel.
+avec $N_{SM}$ le nombre de \ac{SM}, $N_P$ le nombre de processeurs sur chaque \ac{SM}, $D$ la profondeur du \textit{pipeline} des processeurs, $freq$ sa fréquence, $C_T$ le travail dont un \textit{thread} est capable et $T_{launch}$ le temps de démarrage d'un \textit{kernel}.
 
 La formule est aussi étendue pour un \textit{cluster} de \acs{GPU}:
 \begin{equation}
@@ -101,7 +95,7 @@ L'implémentation sur \acs{GPU} de \ac{LBM}, qui est un automate cellulaire, peu
 \Time_{GPU} = g \bigg( \frac{N_{total}\cdot C_T}{N_{SM}\cdot N_P \cdot D \cdot freq} + \Time_{launch} + \Time_{trans}\bigg)
 \end{equation}
 
-Le coefficient $\cscoef$ qui équivaut au temps requis pour calculer un \textit{lattice} par génération correspond selon ce modèle à l'expression suivante:
+Le coefficient $\cscoef$ qui équivaut au temps requis pour calculer une population par génération correspond selon ce modèle à l'expression suivante:
 \begin{equation}
 \cscoef= \frac{C_T}{N_{SM}\cdot N_P \cdot D \cdot freq}
 \end{equation}
@@ -111,25 +105,24 @@ et s'intègre ainsi à la formule générale:
 \Time_{GPU} = g \bigg( \cscoef \cdot N_{total} + \Time_{trans} + \Time_{launch}  \bigg)
 \end{equation}
 
-Les coefficients  $\scoef$ et $\rcoef$ correspondent au temps requis pour transférer et réorganiser un \textit{lattice}, respectivement vers et depuis le \acs{GPU}. Le modèle définit les temps de transfert avec $\Time_{trans}$.
+Les coefficients  $\scoef$ et $\rcoef$ correspondent au temps requis pour transférer et réorganiser une population, respectivement vers et depuis le \acs{GPU}. Le modèle définit les temps de transfert avec $\Time_{trans}$.
 \begin{equation}
 \Time_{trans} = \Time_{lat}+ \frac{N_{boundary}}{bw}
 \end{equation}
 
-où $N_{boundary} = N_{out} +  N_{in}$. Les mesures montrent que cette formulation n'est toutefois pas suffisamment précise, car la bande passante est différente d'un sens et dans l'autre. Il faut par conséquent ajuster le modèle pour qu'il utilise un $\Time_{trans}$ différent par type de transfert:
+où $N_{boundary} = N_{out} +  N_{in}$. Les mesures montrent que cette formulation n'est toutefois pas suffisamment précise, car la bande passante est différente d'un sens à l'autre. Il faut par conséquent ajuster le modèle pour qu'il utilise un $\Time_{trans}$ différent par type de transfert:
 \begin{equation}
-\Time_{GPU} = g \bigg( \cscoef \cdot N_{total} + \Time^{send}_{trans} + \Time^{receive}_{trans} + \Time_{launch}  \bigg)
+\Time_{GPU} = g \bigg( \cscoef \cdot N_{total} + \Time_{s,trans} + \Time_{r,trans} + \Time_{launch}  \bigg)
 \end{equation}\\[-\baselineskip]
 
-L'implémentation réalisée ne se contente toutefois pas de transférer des données lors du \textit{send} et du \textit{receive}, mais les réorganise sur le \acs{GPU}, dont le kernel a un $C'_T$ différent du premier (on compte par ailleurs 2 $T_{launch}$ supplémentaires).
-
+L'implémentation réalisée ne se contente toutefois pas de transférer des données lors du \textit{send} et du \textit{receive}, mais les réorganise sur le \acs{GPU}, dont le \textit{kernel} a un $C'_T$ différent du premier. On compte par ailleurs deux $T_{launch}$ supplémentaires, par \textit{kernel} de réorganisation.
 \begin{equation}
-\Time_{GPU} = g \bigg( \cscoef \cdot N_{total} + \Time^{send}_{trans} + \Time^{receive}_{trans} + 2\cdot\frac{N_{boundary}\cdot C'_T}{N_{SM}\cdot N_P \cdot D \cdot freq} + 3\cdot\Time_{launch}  \bigg)
+\Time_{GPU} = g \bigg( \cscoef \cdot N_{total} + \Time_{s,trans} + \Time_{r,trans} + 2\cdot\frac{N_{boundary}\cdot C'_T}{N_{SM}\cdot N_P \cdot D \cdot freq} + 3\cdot\Time_{launch}  \bigg)
 \end{equation}\\[-\baselineskip]
 
-Pour simplifier la lecture, on pose $\phi$, le temps nécessaire à ce kernel pour réorganiser un \textit{lattice}.
+Pour simplifier la lecture, on pose $\psi$, le temps nécessaire à ce \textit{kernel} pour réorganiser une population.
 \begin{equation}
-\Time_{GPU} = g \bigg( \cscoef \cdot N_{total}  + \Time^{send}_{trans} + \Time^{receive}_{trans} + 2\cdot\psi\cdot N_{boundary} + 3\cdot\Time_{launch} \bigg)
+\Time_{GPU} = g \bigg( \cscoef \cdot N_{total}  + \Time_{s,trans} + \Time_{r,trans} + 2\cdot\psi\cdot N_{boundary} + 3\cdot\Time_{launch} \bigg)
 \end{equation}\\[-\baselineskip]
 
 \noindent On développe les $T_{trans}$ puis distingue $N_{in}$ et $N_{out}$ des $N_{boundary}$ utilisés jusqu'à présent.
@@ -138,7 +131,7 @@ Pour simplifier la lecture, on pose $\phi$, le temps nécessaire à ce kernel po
 \end{equation}\\[-\baselineskip]
 
 
-On peut ainsi considérer que les coefficients $\scoef$ et $\rcoef$ correspondent aux expressions suivantes, puis les ajouter au modèle.\\
+On peut ainsi considérer que les coefficients $\scoef$ et $\rcoef$ correspondent aux expressions suivantes, que l'on ajoute au modèle.\\
 
 \noindent\begin{minipage}{.5\linewidth}
 	\begin{equation}
@@ -162,12 +155,12 @@ En dehors de la formulation détaillée des coefficients $\cscoef\scoef\rcoef$, 
 \end{align}
 
 \subsection{Calcul et mesure des coefficients $\cscoef\scoef\rcoef$ } \label{title-calcul_coeff}
-Le modèle adapté de \cite{albuquerque_performance_2012} en section \ref{title-affinage_modele_perf} nous donne des formules pour calculer les coefficients, à commencer par $\cscoef $.
+Le modèle adapté d'\citet{albuquerque_performance_2012} en section \ref{title-affinage_modele_perf} nous donne des formules pour calculer les coefficients, à commencer par $\cscoef $.
 \begin{equation*}
 \cscoef = \frac{C_T}{N_{SM}\cdot N_P \cdot D \cdot freq}
 \end{equation*}\\[-\baselineskip]
 
-Les valeurs de $N_{SM}$, $freq$ et $N_{P}$ se trouvent dans la documentation du \acs{GPU} (table \ref{table:gpu_specs}) ou avec Cuda à l'aide de la structure \texttt{cudaDeviceProp}, respectivement dans les champs \texttt{multiProcessorCount}, \texttt{clockRate} et finalement le couple \texttt{major} et \texttt{minor} pour déterminer la \textit{compute capability} du \acs{GPU} et déduire ses $N_{P}$ (table \ref{table:streaming_processeur_per_sm}):
+Les valeurs de $N_{SM}$, $freq$ et $N_{P}$ se trouvent dans la documentation du \acs{GPU} (table \ref{table:gpu_specs}) ou s'obtiennent avec la fonction \texttt{cudaGetDeviceProperties} de Cuda, qui renseigne respectivement les champs suivants de la structure \texttt{cudaDeviceProp}: \texttt{multiProcessorCount}, \texttt{clockRate} et finalement le couple \texttt{major} et \texttt{minor} pour déterminer la \textit{compute capability} du \acs{GPU} et déduire ses $N_{P}$ (table \ref{table:streaming_processeur_per_sm}):
 
 \begin{table}[h]
 	\label{table:streaming_processeur_per_sm}
@@ -222,7 +215,7 @@ En l'absence d'informations concernant la profondeur $D$ des \textit{pipelines},
 	\end{equation*}
 \end{minipage}\\[\baselineskip]
 
-\noindent Les coefficients $\scoef $ et $\rcoef $, dont les valeurs dépendent de toutes les propriétés du modèle, sont plus compliqués à calculer et sont ici inférés par les mesurés: 
+\noindent Les coefficients $\scoef $ et $\rcoef $, dont les valeurs dépendent de toutes les propriétés du modèle, sont plus compliqués à calculer et sont inférés par les mesures: 
 
 \noindent\begin{minipage}{.33\linewidth}
 \begin{align*}
@@ -293,7 +286,7 @@ La figure \ref{fig:courbes_model_perf} illustre les courbes théoriques du modè
 
 \section{Modèle hybride}
 \subsection{Identification des paramètres}
-Les contraintes mémoire, dues à l'implémentation \textit{GPU}, à Palabos et aux machines de test, n'ont pas permis d'obtenir les performances que le système pourrait atteindre dans une configuration optimale. Cette section n'entre par conséquent pas trop en détail dans le modèle de performance hybride, mais esquisse ce à quoi il devrait ressembler. 
+Les contraintes mémoire, dues à l'implémentation \acs{GPU}, à Palabos et aux machines de test, n'ont pas permis d'obtenir les performances que le système pourrait atteindre dans une configuration optimale. Cette section n'entre par conséquent pas trop en détail dans le modèle de performance hybride, mais esquisse ce à quoi il devrait ressembler. 
 
 L'utilisation de Palabos introduit les paramètres supplémentaires suivants:
 \begin{itemize}
@@ -302,7 +295,7 @@ L'utilisation de Palabos introduit les paramètres supplémentaires suivants:
 \item les paramètres de l'hôte (\acs{CPU}, mémoire, etc.)
 \end{itemize}
 
-Les mesures montrent  deux schémas de performances en fonction de la taille d'un sous-domaine. Tandis qu’elles augmentent continuellement sur \acs{GPU}, les performances sur \acs{CPU} restent stables entre 8.5 et 10 \XLUPS{M} mais baissent jusqu'à moins de 2 \XLUPS{M} lorsque $N_{sd}$ est petit et ses dimensions petites (forme aplatie).
+Les mesures montrent  deux schémas de performances en fonction de la taille d'un sous-domaine. Tandis qu’elles augmentent continuellement sur \acs{GPU}, les performances sur \acs{CPU} restent stables entre 8.5 et 10 \XLUPS{M} mais baissent jusqu'à moins de 2 \XLUPS{M} lorsque $N_{s}$ est petit et que certaines de ses dimensions sont petites (forme aplatie).
 
 Ainsi,  la stratégie de découpage du domaine doit trouver un compromis pour la division en sous-domaines pour :
 \begin{itemize}
@@ -322,7 +315,7 @@ Palabos peut s'exécuter sur $N_T$ \textit{threads}. Dans une configuration de c
 
 avec $\Time_{do}$ le temps d'exécution du \textit{duplicate overlaps} et $\Time_{sd_i}$ le temps calcul du sous-domaine $i$.
 
-Le fonctionnement exact sous-jacent $\Time_{do}$ est caché dans l'implémentation de Palabos. Mais comme les mesures montrent que son temps d'exécution ne varie qu'en fonction de la taille du domaine, on peut alors l'exprimer ainsi:\\
+Le fonctionnement exact sous-jacent à $\Time_{do}$ est caché dans l'implémentation de Palabos. Mais comme les mesures montrent que son temps d'exécution ne varie qu'en fonction de la taille du domaine, on peut alors l'exprimer ainsi:\\
 
 \newcommand{\docoef}[0]{DO}
 
@@ -330,13 +323,13 @@ Le fonctionnement exact sous-jacent $\Time_{do}$ est caché dans l'implémentati
 \Time_{do}  = \docoef \cdot N_{Total}
 \end{equation}
 
-\noindent avec $\docoef$ un coefficient qui correspond au temps nécessaire au processus de duplication des chevauchements pour s'exécuter sur un \textit{lattice}.
+\noindent avec $\docoef$ un coefficient qui correspond au temps nécessaire au processus de duplication des chevauchements pour s'exécuter sur une population.
 
 Le temps $\Time_{sd_i}$ dépend du moyen employé pour calculer le sous-domaine. Dans le cas présent, $\Time_{sd_i} = T_{GPU_i}$ \footnote{avec $g_{GPU_i}=1$} du modèle de performance du \acs{GPU}, présenté en section \ref{title-modele_performance} ou \ref{title-affinage_modele_perf}, si c'est le sous-domaine du co-processeur \acs{GPU},  $\Time_{sd_i} = T_{CPU_i}$, le temps de calcul sur \acs{CPU} si c'est un sous-domaine de Palabos.
 
-Lors d'une simulation parallélisée, Palabos distribue à chaque \textit{thread} $t$ les sous-domaines $S_t$ à calculer. Son temps d'exécution $T_{thread_t}$, avec $T_{launch}$ son temps de démarrage, s'exprime ainsi:
+Lors d'une simulation parallélisée, Palabos distribue à chaque \textit{thread} $t$ les sous-domaines $s(t)\in S$ à calculer. Son temps d'exécution $T_{thread_t}$, avec $T_{launch}$ son temps de démarrage, s'exprime ainsi:
 \begin{equation}
-\Time_{thread_t} =  \Time_{launch} + \sum_{s\in S} T_{sd_s} 
+\Time_{thread_t} =  \Time_{launch} + \sum_{s{(t)}\in S} T_{sd_{s(t)}} 
 \end{equation}\\[-\baselineskip]
 
 Finalement, le temps d'exécution $\Time_{Palabos}$ s'exprime ainsi:

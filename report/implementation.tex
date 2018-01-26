@@ -1,44 +1,102 @@
 \section{Phase préliminaire}
-Le projet considère deux principales étapes dans son développement: l'implémentation d'un code Cuda performant de l'algorithme de la \ac{LBM} puis son intégration dans Palabos.
+Le projet considère deux principales étapes dans son développement: l'implémentation d'un code Cuda performant de l'algorithme de \ac{LBM}  puis son intégration dans Palabos.
 
-Toutefois, une phase de préparation du projet et de familiarisation à la \ac{LBM} eut lieu au préalable. Elle se base sur un code Python existant, nommé \texttt{lbm\_py}, qui simule un écoulement en deux dimensions autour d'un cercle. 
+Toutefois, une phase de préparation du projet et de familiarisation à \ac{LBM}  eut lieu au préalable. Elle se base sur un code Python existant, nommé \texttt{lbm\_py}, qui simule un écoulement en deux dimensions autour d'un cercle. 
 
-Cette implémentation sert à la fois de base pour aux implémentations suivantes et permet de vérifier la validité de leurs résultats. En effet, la première étape de cette phase préliminaire fut de ré-implémenter cette simulation en C. Par conséquent, un mécanisme de test automatique est nécessaire.
+Cette implémentation sert à la fois de base aux implémentations suivantes et permet de vérifier la validité de leurs résultats. En effet, la première étape de cette phase préliminaire fut de ré-implémenter cette simulation en C. Par conséquent, un mécanisme de test automatique est nécessaire.
 
 \subsection{Mécanisme de tests automatiques} \label{title-tests}
 
-Le mécanisme adopté s'appuie sur un système de \textit{makefile}. Chaque implémentation en possède un avec une cible \texttt{output}. Elle génère un fichier qui contient les valeurs des populations à la fin de la simulation. Le \texttt{makefile} principal, situé à la racine, possède lui une cible \texttt{test} qui appelle les cibles \texttt{output} de toutes les implémentations du projet.
+Le mécanisme adopté s'appuie sur un système de \textit{makefile}. Chaque implémentation en possède un avec une cible \texttt{output}. Elle génère un fichier qui contient les valeurs des populations à la fin de la simulation. Le \texttt{makefile} principal, situé à la racine, possède lui une cible \texttt{test} qui appelle les cibles \texttt{output} de toutes les implémentations du projet puis compare leur résultat au fichier de référence (produit par exemple par \texttt{lbm\_py}).
 
 \subsection{Implémentations Python et C}  \label{title-implementation_python_C}
 
-Le projet a débuté avec le code Python \texttt{lbm\_py}, porté en C sous le nom de \texttt{lbm\_py2c}, et deux autres codes Python ont par la suite été implémentés sur cette base:
+Le projet a débuté avec le code Python \texttt{lbm\_py}, porté en C sous le nom de \texttt{lbm\_py2c} (figure~\ref{fig:lbm_5000_to_43000}), et deux autres codes Python ont par la suite été implémentés sur cette base:
 \begin{itemize}
 \item \texttt{lbm\_simple}: Simplifie \texttt{lbm\_py} en retirant l'écoulement ainsi que la gestion des obstacles et initialise l'espace de recherche avec une perturbation au centre (figure~\ref{fig:lbm_simple}). 
 \item \texttt{lbm\_simple\_3d}: Portage en trois dimensions de \texttt{lbm\_simple} et porté en C sous le même nom (figure~\ref{fig:lbm_simple_3d}). 
 \end{itemize}
 
-Les codes Python servent de base de test (voir section~\ref{title-tests}) pour leur implémentation respective en C puis, par la suite, Cuda.
+Les codes Python servent de base de test (voir section~\ref{title-tests}) pour leur implémentation respective en C puis Cuda.
 
 \begin{figure}[h]
+	\newcommand{\scale}{0.52}
+	\centering
+	\subfigure[5000 itérations]{%
+		\centering
+		\includegraphics[scale=\scale]{../data/lbm_images/cpu_lbm_5000.png}
+		\label{fig:lbm_5000}
+	}
+	\subfigure[10000 itérations]{%
+		\centering
+		\includegraphics[scale=\scale]{../data/lbm_images/cpu_lbm_10000.png}
+		\label{fig:lbm_10000}
+	}
+	\subfigure[15000 itérations]{%
+		\centering
+		\includegraphics[scale=\scale]{../data/lbm_images/cpu_lbm_15000.png}
+		\label{fig:lbm_15000}
+	}
+	\subfigure[20000 itérations]{%
+		\centering
+		\includegraphics[scale=\scale]{../data/lbm_images/cpu_lbm_20000.png}
+		\label{fig:lbm_20000}
+	}
+	\subfigure[25792 itérations]{%
+		\centering
+		\includegraphics[scale=\scale]{../data/lbm_images/cpu_lbm_25792.png}
+		\label{fig:lbm_25792}
+	}
+	\subfigure[39000 itérations]{%
+		\centering
+		\includegraphics[scale=\scale]{../data/lbm_images/cpu_lbm_39000.png}
+		\label{fig:lbm_39000}
+	}
+	\subfigure[40000 itérations]{%
+		\centering
+		\includegraphics[scale=\scale]{../data/lbm_images/cpu_lbm_40000.png}
+		\label{fig:lbm_40000}
+	}
+	\subfigure[41000 itérations]{%
+		\centering
+		\includegraphics[scale=\scale]{../data/lbm_images/cpu_lbm_41000.png}
+		\label{fig:lbm_41000}
+	}
+	\subfigure[42000 itérations]{%
+		\centering
+		\includegraphics[scale=\scale]{../data/lbm_images/cpu_lbm_42000.png}
+		\label{fig:lbm_42000}
+	}
+	\subfigure[43000 itérations]{%
+		\centering
+		\includegraphics[scale=\scale]{../data/lbm_images/cpu_lbm_43000.png}
+		\label{fig:lbm_43000}
+	}
+	\caption{Simulation \ac{LBM} d'un fluide autour d'un cylindre}
+	\label{fig:lbm_5000_to_43000}
+\end{figure}
+
+\begin{figure}[h]
+	\newcommand{\lbmsimplescale}{0.4}
 	\centering
 	\subfigure[100 itérations]{%
 		\centering
-		\includegraphics[scale=0.55, trim=45 90 50 90, clip]{images/lbm_simple/lbm_100.png}
+		\includegraphics[scale=\lbmsimplescale, trim=45 90 50 90, clip]{images/lbm_simple/lbm_100.png}
 		\label{fig:lbm_simple_100}
 	}
 	\subfigure[300 itérations]{%
 	\centering
-	\includegraphics[scale=0.55, trim=45 90 50 90, clip]{images/lbm_simple/lbm_300.png}
+	\includegraphics[scale=\lbmsimplescale, trim=45 90 50 90, clip]{images/lbm_simple/lbm_300.png}
 	\label{fig:lbm_simple_300}
     }
 	\subfigure[500 itérations]{%
 		\centering
-		\includegraphics[scale=0.55, trim=45 90 50 90, clip]{images/lbm_simple/lbm_500.png}
+		\includegraphics[scale=\lbmsimplescale, trim=45 90 50 90, clip]{images/lbm_simple/lbm_500.png}
 		\label{fig:lbm_simple_500}
 	}
 	\subfigure[1000 itérations]{%
 		\centering
-		\includegraphics[scale=0.55, trim=45 90 50 90, clip]{images/lbm_simple/lbm_1000.png}
+		\includegraphics[scale=\lbmsimplescale, trim=45 90 50 90, clip]{images/lbm_simple/lbm_1000.png}
 		\label{fig:lbm_simple_1000}
 	}
 	\caption{Simulation \ac{LBM} simplifiée avec une perturbation au centre du domaine}
@@ -46,75 +104,77 @@ Les codes Python servent de base de test (voir section~\ref{title-tests}) pour l
 \end{figure}
 
 \begin{figure}[h]
+	\newcommand{\lbmsimplescale}{0.25}
 	\centering
 	\subfigure[20 itérations]{%
 		\centering
-		\includegraphics[scale=0.37, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_20.png}
+		\includegraphics[scale=\lbmsimplescale, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_20.png}
 		\label{fig:lbm_simple_3d_20}
 	}
 	\subfigure[60 itérations]{%
 		\centering
-		\includegraphics[scale=0.37, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_60.png}
+		\includegraphics[scale=\lbmsimplescale, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_60.png}
 		\label{fig:lbm_simple_3d_60}
 	}
 	\subfigure[100 itérations]{%
 		\centering
-		\includegraphics[scale=0.37, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_100.png}
+		\includegraphics[scale=\lbmsimplescale, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_100.png}
 		\label{fig:lbm_simple_3d_100}
 	}
 	\subfigure[140 itérations]{%
 		\centering
-		\includegraphics[scale=0.37, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_140.png}
+		\includegraphics[scale=\lbmsimplescale, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_140.png}
 		\label{fig:lbm_simple_3d_140}
 	}
 	\subfigure[180 itérations]{%
 		\centering
-		\includegraphics[scale=0.37, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_180.png}
+		\includegraphics[scale=\lbmsimplescale, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_180.png}
 		\label{fig:lbm_simple_3d_180}
 	}
 	\subfigure[220 itérations]{%
 		\centering
-		\includegraphics[scale=0.37, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_220.png}
+		\includegraphics[scale=\lbmsimplescale, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_220.png}
 		\label{fig:lbm_simple_3d_220}
 	}
 	\subfigure[260 itérations]{%
 		\centering
-		\includegraphics[scale=0.37, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_260.png}
+		\includegraphics[scale=\lbmsimplescale, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_260.png}
 		\label{fig:lbm_simple_3d_260}
 	}
 	\subfigure[300 itérations]{%
 		\centering
-		\includegraphics[scale=0.37, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_300.png}
+		\includegraphics[scale=\lbmsimplescale, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_300.png}
 		\label{fig:lbm_simple_3d_300}
 	}
 	\subfigure[340 itérations]{%
 		\centering
-		\includegraphics[scale=0.37, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_340.png}
+		\includegraphics[scale=\lbmsimplescale, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_340.png}
 		\label{fig:lbm_simple_3d_340}
 	}
 	\subfigure[380 itérations]{%
 		\centering
-		\includegraphics[scale=0.37, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_380.png}
+		\includegraphics[scale=\lbmsimplescale, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_380.png}
 		\label{fig:lbm_simple_3d_380}
 	}
 	\subfigure[420 itérations]{%
 		\centering
-		\includegraphics[scale=0.37, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_420.png}
+		\includegraphics[scale=\lbmsimplescale, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_420.png}
 		\label{fig:lbm_simple_3d_420}
 	}	
 	\subfigure[460 itérations]{%
 		\centering
-		\includegraphics[scale=0.37, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_460.png}
+		\includegraphics[scale=\lbmsimplescale, trim=103 20 105 40, clip]{images/lbm_simple_3d/lbm_460.png}
 		\label{fig:lbm_simple_3d_460}
 	}
 	\caption{Coupe au centre d'une simulation \ac{LBM} simplifiée en 3D}
 	\label{fig:lbm_simple_3d}
 \end{figure}
+\clearpage
 
 \section{Implémentations Cuda}
 \subsection{Sources Cuda de Sailfish}
 %\subsubsection{Sources Python et extraction du code Cuda}
-Sailfish est un outil de simulation de dynamiques des fluides basés sur la \ac{LBM}. Bien qu'il soit écrit en Python, Sailfish génère, compile et exécute un code Cuda pour optimiser l'exécution de ses simulations sur \acs{GPU}.
+Sailfish est un outil de simulation de dynamiques des fluides basés sur \ac{LBM} . Bien qu'il soit écrit en Python, Sailfish génère, compile et exécute un code Cuda pour optimiser l'exécution de ses simulations sur \acs{GPU}.
 
 Dans leur article, \citet{januszewski_sailfish_2014} décrivent son fonctionnement général, mais afin d'avoir un aperçu plus concret, une analyse du code est nécessaire. 
 
@@ -122,17 +182,19 @@ Une brève analyse du code Python permet d'identifier que la fonction \texttt{ge
 
 Le code Cuda, plus long et plus compliqué qu'escompté, déclare de nombreuses fonctions dont plusieurs semblent avoir une utilité identique. Il est difficile d'identifier quelle portion du code est utilisé, et de quelle façon sans une analyse approfondie du fonctionnement de Sailfish.
 
+Il n'a pas conséquent pas été particulièrement exploité.
+
 \subsection{Code \eg{historique} de Sailfish}
-Le projet disponible sur le dépôt Github de Sailfish offre une intéressante implémentation, dans le dossier \texttt{historical}. Ces sources ne font pas partie du reste du projet, mais implémentent de façon simple une simulation D2Q9 de la \acs{LBM} sur \acs{GPU} avec des performances respectables. On y observe les pratiques détaillées ci-dessous.
+Le projet disponible sur le dépôt Github de Sailfish offre une intéressante implémentation, dans le dossier \texttt{/historical}. Ces sources ne font pas partie du reste du projet, mais implémentent de façon simple une simulation D2Q9 avec \acs{LBM} sur \acs{GPU} et produit des performances respectables. On y observe les pratiques détaillées dans les sous-section qui suivent.
 
 %\begin{itemize}
 %\item \textbf{Utilisation des registres}: 
 \subsubsection{Utilisation des registres}
-Les populations sont conservées dans la mémoire globale, à disposition de tous les cœurs du \acs{GPU} ainsi que du \acs{CPU} à travers un \texttt{cudaMemcpy}. Toutefois, le temps d'accès à ce type de mémoire est très lent. Plutôt que d'accéder aux populations sur la mémoire globale lors de chaque calcul, celles-ci sont copiées dans des variables locales du kernel. Ces variables, qui se situent dans les registres du \acs{GPU}, le type de mémoire le plus rapide, sont alors utilisées dans les calculs et sont finalement copiées dans la mémoire globale à la fin du kernel.
+Les populations sont conservées dans la mémoire globale, à disposition de tous les cœurs du \acs{GPU} ainsi que du \acs{CPU} à travers un \texttt{cudaMemcpy}. Toutefois, le temps d'accès à ce type de mémoire est très lent. Plutôt que d'accéder aux populations sur la mémoire globale lors de chaque calcul, celles-ci sont copiées dans des variables locales du \textit{kernel}. Ces variables, qui se situent dans les registres du \acs{GPU}, le type de mémoire le plus rapide, sont alors utilisées dans les calculs et sont finalement copiées dans la mémoire globale à la fin du \textit{kernel}.
 Cette méthode réduit sensiblement le nombre d'accès à la mémoire globale et augmente ainsi nettement les performances.
 %\item \textbf{Structure de donnée des populations}:
 \subsubsection{Structure de donnée des populations}
-Les populations ne sont pas toutes conservées dans le même tableau en mémoire globale. Chaque direction possède son propre tableau à une dimension.
+Les populations sont conservées dans 9 tableaux différent, soit un par direction, de la taille du domaine. L'arrangement mémoire suit par conséquent le modèle \acs{SoA}.
 
 %\item \textbf{Calcul des populations}: 
 \subsubsection{Calcul des populations}
@@ -142,84 +204,89 @@ Plutôt qu'utiliser une boucle pour itérer sur les différentes directions et e
 \subsubsection{\textit{Streaming coalesced}}\label{title-streaming-coalesced}
 Le \textit{streaming} copie les directions de la population calculée par un cœur \acs{GPU} dans les populations adjacentes qui résident en mémoire globale. L'accès à cette mémoire est lent, mais peut être optimisé par des accès contigus et aligné sur 16 octets. On dit de ce schéma d'accès à la mémoire qu'il est \eg{\textit{coalesced}}.
 
-Les \textit{threads} au sein d'un bloc sont activés par \textit{warp} de 32\footnote{ce nombre peut dépendre de la génération du \ac{GPU} utilisé} sur l'axe des \textit{x}. Ces \textit{threads}, qui accèdent à la mémoire globale lors du \textit{streaming}, doivent chacun y écrire une à une les valeurs des directions calculées qui résident dans leurs registres, soit 32 doubles par direction. La mémoire globale est accédée par transaction de 32, 64, 128 ou 256 octets. Par conséquent, si les 32 directions (qui occupent 256 octets) accédées par les \textit{threads} sont contiguës en mémoires, seule une transaction en mémoire globale par direction est nécessaire. 
+Les \textit{threads} au sein d'un bloc sont activés par \textit{warp} de 32 sur l'axe des \textit{x}. Ces \textit{threads}, qui accèdent à la mémoire globale lors du \textit{streaming}, doivent chacun y écrire une à une les valeurs des directions calculées qui résident dans leurs registres, soit 32 doubles par direction. La mémoire globale est accédée par transaction de 32, 64, 128 ou 256 octets. Par conséquent, si les directions des 32 populations (qui occupent 256 octets) accédées par les \textit{threads} sont contiguës en mémoires, seule une transaction en mémoire globale est nécessaire. 
 
 Les figures~\ref{fig:sailfish_hist_misaligned} à~\ref{fig:sailfish_hist_dir_aligned} illustrent le \textit{streaming} d'un bloc de 4 \textit{threads} sur un domaine $12 \times 3$.
 Sur la figure~\ref{fig:sailfish_hist_misaligned}, les \textit{threads} utilisent un schéma d'accès où les directions sont propagées aux populations adjacentes directement en mémoire globale. L'arrangement en mémoire des directions sur les populations accédées est illustré par la figure~\ref{fig:sailfish_hist_alignment}. On observe sur la figure~\ref{fig:sailfish_hist_dir_misaligned} que l'écriture des valeurs pour les directions nord et sud est naturellement alignée. Ce n'est toutefois pas le cas pour les autres directions puisqu'elles impliquent un décalage en $x$ de $-1$ à l'est et $+1$ à l'ouest. Leur accès n'est par conséquent pas \textit{coalesced}.
-%TODO check est/ouest nord...
-\begin{figure}[h]
+
+\begin{figure}[H]
 	\centering
-	\includegraphics[fbox,scale=1.05]{images/streaming/sailfish_hist_misaligned.pdf}
+%	\includegraphics[fbox,scale=1.05]{images/streaming/sailfish_hist_misaligned.pdf}
+	\includegraphics[fbox,scale=.7]{images/streaming/sailfish_hist_misaligned.pdf}
 	\caption{\textit{Streaming} \textit{uncoalesced} d'un bloc de quatre \textit{threads}}
 	\label{fig:sailfish_hist_misaligned}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[H]
 	\centering
-	\includegraphics[fbox,scale=1.1]{images/streaming/sailfish_hist_alignment.pdf}
+	\includegraphics[fbox,scale=1]{images/streaming/sailfish_hist_alignment.pdf}
 	\caption{Arrangement en mémoire des populations du \textit{streaming} de la figure~\ref{fig:sailfish_hist_misaligned}}
 	\label{fig:sailfish_hist_alignment}
 \end{figure}
 
-Pour remédier au désalignement inhérent à la position de la population calculée par chaque \textit{thread}, une stratégie en deux étapes est utilisée pour écrire les directions en mémoire globale (figure~\ref{fig:sailfish_hist_ti}). 
-\begin{enumerate}
-\item Dans un premier temps, au lieu de les propager directement en mémoire globale, les directions nord-ouest, ouest et sud-ouest de chaque \textit{thread} au sein d'un bloc sont écrites en mémoire partagée sur l'indice du \textit{thread} de gauche ($x-1$) et les directions nord-est, est et sud-est sur l'indice du \textit{thread} de droite ($x+1$).
-\item Dans un second temps, chaque \textit{thread} propage en mémoire globale les directions inscrites à son indice aux populations en dessus ($x - N_x$) et en dessous ($x + N_z$).
-\end{enumerate}
-Une barrière de synchronisation entre les deux étapes assure que chaque \textit{thread} a bien calculé et inscrit les directions en mémoire partagée, à l'attention de ses voisins, avant de procéder à la seconde étape.
-
-Les directions nord et sud, déjà alignées, sont directement propagées en mémoire globale, indépendamment lors de la première ou seconde étape\footnote{illustré ici lors de la première étape de la figure~\ref{fig:sailfish_hist_aligned}}. 
-
-La figure~\ref{fig:sailfish_hist_aligned} illustre ce mécanisme exécuté simultanément sur chaque \textit{thread} d'un bloc et la figure~\ref{fig:sailfish_hist_dir_aligned} l'alignement des indices des accès en mémoire globale. On constate avec cette stratégie des accès \textit{coalesced}, à l'exception de ceux des \textit{thread} au bord du bloc. En effet, ces derniers n'ont pas accès à la mémoire partagée du \textit{thread} adjacent qui se trouve dans un bloc différent. Ils doivent par conséquent propager certaines directions directement en mémoire globale.
-
-L'exemple utilisé illustre des blocs de 4 \textit{thread} par souci de lisibilité. En pratique, ceux-ci sont plus grands (32 ou 64) afin de réduire ainsi le nombre d'accès \textit{uncoalesced}.
-
-Toutefois, \citet{obrecht_global_2011} cherchent à éviter l'usage de la mémoire partagée plutôt qu'éviter à tout prix les accès \textit{uncoalesced}. En effet, bien que cette stratégie se montre efficace sur les anciennes générations de \acs{GPU}, le gain en performance semble nettement moindre sur les plus \acs{GPU}, qui réduisent le coût des accès \textit{uncoalesced} à l'aide de la mémoire cache. 
-%\end{itemize}
-
-
-\begin{figure}[h]
+\begin{figure}[H]
 	\centering
 	\includegraphics[fbox,scale=0.95]{images/streaming/sailfish_hist_dir_misaligned.pdf}
 	\caption{Accès mémoire désaligné des \textit{threads} lors du \textit{streaming} de la figure~\ref{fig:sailfish_hist_misaligned}}
 	\label{fig:sailfish_hist_dir_misaligned}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[H]
 	\centering
 	\includegraphics[fbox,scale=1.1]{images/streaming/sailfish_hist_ti.pdf}
 	\caption{Stratégie de \textit{streaming} \textit{coalesced} par réalignement des populations en mémoire partagée}
 	\label{fig:sailfish_hist_ti}
 \end{figure}
+\pagebreak
 
+Pour remédier au désalignement inhérent à la position de la population calculée par chaque \textit{thread}, une stratégie en deux étapes est utilisée pour écrire les directions en mémoire globale (figure~\ref{fig:sailfish_hist_ti}). 
+\begin{enumerate}
+\item Dans un premier temps, au lieu de les propager directement en mémoire globale, les directions nord-ouest, ouest et sud-ouest de chaque \textit{thread} au sein d'un bloc sont écrites en mémoire partagée sur l'indice du \textit{thread} de gauche ($x-1$) et les directions nord-est, est et sud-est sur l'indice du \textit{thread} de droite ($x+1$).
+\item Dans un second temps, chaque \textit{thread} cherche en mémoire partagée es directions inscrites à son indice et les propage en mémoire globale aux populations en dessus ($x - N_x$) et en dessous ($x + N_z$).
+\end{enumerate}
+Une barrière de synchronisation entre les deux étapes assure que chaque \textit{thread} a bien calculé et inscrit les directions en mémoire partagée, à l'attention de ses voisins, avant de procéder à la seconde étape.
 
-\begin{figure}[h]
+La figure~\ref{fig:sailfish_hist_aligned} illustre ce mécanisme exécuté simultanément sur chaque \textit{thread} d'un bloc et la figure~\ref{fig:sailfish_hist_dir_aligned} l'alignement des indices des accès en mémoire globale. On constate avec cette stratégie des accès \textit{coalesced}, à l'exception de ceux des \textit{thread} au bord du bloc. En effet, ces derniers n'ont pas accès à la mémoire partagée du \textit{thread} adjacent qui se trouve dans un bloc différent. Ils doivent par conséquent propager certaines directions directement en mémoire globale.
+
+\begin{figure}[H]
 	\centering
-	\includegraphics[fbox,scale=1.05]{images/streaming/sailfish_hist_aligned.pdf}
+	\includegraphics[fbox,scale=.7]{images/streaming/sailfish_hist_aligned.pdf}
 	\caption{\textit{Streaming} \textit{coalesced} d'un bloc de quatre \textit{threads}}
 	\label{fig:sailfish_hist_aligned}
 \end{figure}
 
-\begin{figure}[h]
+
+Les directions nord et sud, déjà alignées, sont directement propagées en mémoire globale, indépendamment lors de la première ou seconde étape.
+
+L'exemple utilisé illustre des blocs de 4 \textit{thread} par souci de lisibilité. En pratique, ceux-ci sont plus grands (32 ou 64) afin de réduire ainsi le nombre d'accès \textit{uncoalesced}.
+
+%\end{itemize}
+
+
+\begin{figure}[H]
 	\centering
-	\includegraphics[fbox,scale=0.95]{images/streaming/sailfish_hist_dir_aligned.pdf}
+	\includegraphics[fbox,scale=1]{images/streaming/sailfish_hist_dir_aligned.pdf}
 	\caption{Accès mémoire aligné des \textit{threads} lors du \textit{streaming} de la figure~\ref{fig:sailfish_hist_aligned}}
 	\label{fig:sailfish_hist_dir_aligned}
 \end{figure}
 
-\subsection{Différences entre calculs sur CPU et GPU} \label{title-floats}
-Cuda supporte la norme IEEE 754 pour les calculs avec nombre flottants \cite{ZZZweb_cuda_2017}. Toutefois, dans la première implémentation Cuda de la \acs{LBM}, le protocole de test (décrit en section~\ref{title-tests}) a montré des différences sur certains calculs réalisés par les codes \ac{CPU}.
+Toutefois, \citet{obrecht_global_2011} cherchent à éviter l'usage de la mémoire partagée plutôt qu'éviter à tout prix les accès \textit{uncoalesced}. En effet, bien que cette stratégie se montre efficace sur les anciennes générations de \acs{GPU}, le gain en performance semble nettement moindre sur les plus \acs{GPU}, qui réduisent le coût des accès \textit{uncoalesced} à l'aide de la mémoire cache. 
 
-Pour les mesurer, un code \ac{LBM} 2D \ac{CPU} et un code \ac{GPU} ont été implémentés et leurs résultats comparés. La figure~\ref{fig:lbm_float_deltas} illustre la différence moyenne entre les valeurs calculées sur \ac{CPU} et \ac{GPU} pour l'ensemble des populations $f_{in}$ de chaque itération.
+Un certain nombre de travaux montrent que les accès \textit{uncoallesced} en lecture sont légèrement moins couteux que les accès en écriture et qu'il est plus intéressant de profiter de cette propriété que d'utiliser la mémoire partagée. En effet, les accès à cette mémoire, pour y copier puis y lire les populations, bien qu'ils soient rapides, ne sont pas gratuits pour autant.
+
+\subsection{Différences entre calculs sur CPU et GPU} \label{title-floats}
+Cuda supporte la norme IEEE 754 pour les calculs avec nombre flottants \cite{ZZZweb_cuda_2017}. Toutefois, dans la première implémentation Cuda de \acs{LBM} , le protocole de test (décrit en section~\ref{title-tests}) a montré des différences sur certains calculs réalisés par les codes \acs{CPU}.
+
+Pour les mesurer, un code \ac{LBM} 2D \acs{CPU} et un code \acs{GPU} ont été implémentés et leurs résultats comparés. La figure~\ref{fig:lbm_float_deltas} illustre la différence moyenne entre les valeurs calculées sur \acs{CPU} et \acs{GPU} pour l'ensemble des populations $f_{in}$ de chaque itération.
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[scale=0.87, fbox]{../data/lbm_cpu_vs_gpu/deltas/Rplots.pdf}
+	\includegraphics[scale=0.685, fbox]{../data/lbm_cpu_vs_gpu/deltas/Rplots.pdf}
 	\caption{Différences moyennes (par itération) entre les calculs sur \acs{CPU} et \acs{GPU}}
 	\label{fig:lbm_float_deltas}
 \end{figure}
 
-L'écart entre les résultats observés sur \ac{CPU} et \ac{GPU} suit les étapes de la simulation réalisée (fluide autour d'un cylindre) illustrée par les figures~\ref{fig:lbm_5000_to_43000}:
+L'écart entre les résultats observés sur \acs{CPU} et \acs{GPU} suit les étapes de la simulation réalisée (fluide autour d'un cylindre) illustrée par les figures~\ref{fig:lbm_5000_to_43000}:
 \begin{itemize}
 	\item entre 0 et environ 12000 itérations, une trace se forme derrière le cylindre et l'écart moyen reste faible et stable (quinze zéros après la virgule);
 	\item entre 15000 et 20000 itérations, la trace commence à osciller et l'écart augmente brutalement (treize zéros après la virgule);
@@ -227,76 +294,20 @@ L'écart entre les résultats observés sur \ac{CPU} et \ac{GPU} suit les étape
 	\item dès environ 36000 itérations, l'oscillation est stabilisée (comme le montrent les figures~\ref{fig:lbm_39000} et~\ref{fig:lbm_43000}, le même motif réapparaît toutes les 4000 itérations environ) et les écarts avec.
 \end{itemize}
 
-\begin{figure}[h]
-	\centering
-	\subfigure[5000 itérations]{%
-		\centering
-		\includegraphics[scale=0.5]{../data/lbm_images/cpu_lbm_5000.png}
-		\label{fig:lbm_5000}
-	}
-	\subfigure[10000 itérations]{%
-		\centering
-		\includegraphics[scale=0.5]{../data/lbm_images/cpu_lbm_10000.png}
-		\label{fig:lbm_10000}
-	}
-	\subfigure[15000 itérations]{%
-		\centering
-		\includegraphics[scale=0.5]{../data/lbm_images/cpu_lbm_15000.png}
-		\label{fig:lbm_15000}
-	}
-	\subfigure[20000 itérations]{%
-		\centering
-		\includegraphics[scale=0.5]{../data/lbm_images/cpu_lbm_20000.png}
-		\label{fig:lbm_20000}
-	}
-	\subfigure[25792 itérations]{%
-		\centering
-		\includegraphics[scale=0.5]{../data/lbm_images/cpu_lbm_25792.png}
-		\label{fig:lbm_25792}
-	}
-	\subfigure[39000 itérations]{%
-		\centering
-		\includegraphics[scale=0.5]{../data/lbm_images/cpu_lbm_39000.png}
-		\label{fig:lbm_39000}
-	}
-	\subfigure[40000 itérations]{%
-		\centering
-		\includegraphics[scale=0.5]{../data/lbm_images/cpu_lbm_40000.png}
-		\label{fig:lbm_40000}
-	}
-	\subfigure[41000 itérations]{%
-		\centering
-		\includegraphics[scale=0.5]{../data/lbm_images/cpu_lbm_41000.png}
-		\label{fig:lbm_41000}
-	}
-	\subfigure[42000 itérations]{%
-		\centering
-		\includegraphics[scale=0.5]{../data/lbm_images/cpu_lbm_42000.png}
-		\label{fig:lbm_42000}
-	}
-	\subfigure[43000 itérations]{%
-		\centering
-		\includegraphics[scale=0.5]{../data/lbm_images/cpu_lbm_43000.png}
-		\label{fig:lbm_43000}
-	}
-	\caption{Simulation \ac{LBM} d'un fluide autour d'un cylindre}
-	\label{fig:lbm_5000_to_43000}
-\end{figure}
-
-Cette différence entre certains résultats sur \ac{CPU} et \ac{GPU} est le fruit d'une optimisation du compilateur Cuda. Sur \ac{CPU}, lorsqu'une opération du type $r = x \times y+z$ est rencontrée, le processeur calcul d'abord $r_{xy} = x \times y$ puis $r = r_{xy} + z$. Deux opérations sont donc réalisées, ce qui implique deux potentiels arrondis dans le cas des nombres flottants. Sur \ac{GPU}, le compilateur optimise ce type de calculs \cite{ZZZweb_cuda_2017-1} avec la fonction \ac{FMA} qui réalise $x \times y+z$ en une seule opération. Le calcul est ainsi plus rapide et précis (puisqu'un seul arrondi est effectué).
+Cette différence entre certains résultats sur \acs{CPU} et \acs{GPU} est le fruit d'une optimisation du compilateur Cuda. Sur \acs{CPU}, lorsqu'une opération du type $r = x \times y+z$ est rencontrée, le processeur calcul d'abord $r_{xy} = x \times y$ puis $r = r_{xy} + z$. Deux opérations sont donc réalisées, ce qui implique deux potentiels arrondis dans le cas des nombres flottants. Sur \acs{GPU}, le compilateur optimise ce type de calculs \cite{ZZZweb_cuda_2017-1} avec la fonction \ac{FMA} qui réalise $x \times y+z$ en une seule opération. Le calcul est ainsi plus rapide et précis (puisqu'un seul arrondi est effectué).
 
 Comme le souligne la documentation de Cuda, cette optimisation n'est pas forcément souhaitable dans certaines circonstances et peut être évitée avec l'utilisation de fonctions intrinsèques \cite{ZZZweb_cuda_2017-1, ZZZweb_cuda_2017-2}.
 
-Cette précaution force le \ac{GPU} à effectuer les multiplications et additions indépendamment et permet de s’assurer que les calculs réalisés sur \ac{CPU} et \ac{GPU} produisent les mêmes résultats.
+Cette précaution force le \acs{GPU} à effectuer les multiplications et additions indépendamment et permet de s’assurer que les calculs réalisés sur \acs{CPU} et \acs{GPU} produisent les mêmes résultats.
 
 \subsection{Passage de la 2D à la 3D et bibliothèque \texttt{lbmcuda}}
 De nombreuses implémentations 2D ont été réalisées. Elles ont d’abord été adaptées des portages en C, puis inspirées par le code historique de Sailfish, jusqu’à la dernière (nommé \texttt{lbm\_opt2}) qui a fini par atteindre des performances acceptables (450 MLUPS sur une Nvidia GeForce GT 750M). 
 
-Les 10 populations manquantes sont ajoutées en mémoire globale, aux divers calculs nécessaires à leur simulation ainsi qu'au \textit{streaming}. À ce stade, l'implémentation utilisait encore la mémoire partagée pour le \textit{streaming}. Suite à l'ajout des populations, l'implémentation est testée avec et sans ce mécanisme. Mais comme l'évoque la section~\ref{title-streaming-coalesced}, il s'avère que les \textit{GPU} récents ne pâtissent pas réellement des accès \textit{uncoalesced} en raison d'optimisation automatique à travers l'utilisation de la mémoire cache.
+Pour passer du modèle D2Q9 à D3Q19, les 10 populations manquantes sont ajoutées en mémoire globale et sont intégrées aux calculs de la collision ainsi qu'au \textit{streaming}. À ce stade, l'implémentation utilisait encore la mémoire partagée pour le \textit{streaming}. Suite à l'ajout des populations, l'implémentation est testée avec et sans ce mécanisme. Mais comme l'évoque la section~\ref{title-streaming-coalesced}, il s'avère que les \textit{GPU} récents ne pâtissent pas autant des accès \textit{uncoalesced} en raison d'optimisation automatique à travers l'utilisation de la mémoire cache.
 
 D'autres optimisations, proposées par \citet{januszewski_sailfish_2014} et \citet{tran_performance_2017} améliorent les performances:
 \begin{itemize}
-\item \textbf{Registres}: Les registres sont utilisés par certaines variables locales du kernel. C'est le type de mémoire le plus rapide, mais leur nombre est restreint. En dépasser la limite entraîne un débordement en mémoire local, moins rapide, et par conséquent une perte de performance. Hélas, le passage de D2Q9 à D3Q19 augmente significativement le nombre de variables locales et par conséquent l'utilisation des registres. Ne pas précalculer des valeurs utilisées plusieurs fois, et qui devraient être ainsi stockées dans des variables intermédiaires, mais les recalculer à chaque fois semble être une \eg{optimisation} contre-intuitive, mais réduit le nombre de registres et par conséquent contribue à améliorer les performances.
+\item \textbf{Registres}: Les registres sont utilisés par certaines variables locales du \textit{kernel}. C'est le type de mémoire le plus rapide, mais leur nombre est restreint. En dépasser la limite entraîne un débordement en mémoire local, moins rapide, et par conséquent une perte de performance. Hélas, le passage de D2Q9 à D3Q19 augmente significativement le nombre de variables locales et par conséquent l'utilisation des registres. Ne pas précalculer des valeurs utilisées plusieurs fois, et qui devraient être ainsi stockées dans des variables intermédiaires, mais les recalculer à chaque fois semble être une \eg{optimisation} contre-intuitive, mais réduit le nombre de registres et par conséquent contribue à améliorer les performances.
 \item \textbf{Cache L1}: \citet{januszewski_sailfish_2014} relèvent que les accès à la mémoire locale dus aux dépassements du nombre de registres passent par la cache L1 et que plus sa part inutilisée est grande et moins la mémoire globale est mise à contribution. Ils proposent ainsi d'augmenter la taille de la cache et de désactiver la cache L1 pour les accès à la mémoire globale. La première opération est accomplie par \texttt{cudaDeviceSetCacheConfig}:
 \begin{lstlisting}[numbers=none]
 if ( cudaDeviceSetCacheConfig (cudaFuncCachePreferL1) != cudaSuccess)
@@ -309,9 +320,9 @@ et la seconde en compilant le code Cuda avec les arguments \texttt{-Xptxas -dlcm
 Finalement, en vue de son intégration à Palabos et afin d'en simplifier l'utilisation, l'implémentation Cuda est portée dans une bibliothèque dynamique nommée \texttt{lbmcuda} que le projet \texttt{lbm\_simple\_lbmcuda} utilise pour implémenter la même configuration que \texttt{lbm\_simple} en C et Python. La bibliothèque implémente les principales fonctions suivantes:
 
 \begin{itemize}
-\item \texttt{lbm\_simulation\_create}: Créer un domaine de simulation en spécifiant ses dimensions ainsi que la valeur d'omega.
-\item \texttt{lbm\_simulation\_update}: Mets à jour les populations de domaine sur une itération.
-\item \texttt{lbm\_lattices\_read} et \texttt{lbm\_lattices\_read}: Transfert l'intégralité des populations du domaine respectivement depuis et vers le \acs{GPU}.
+\item \texttt{lbm\_simulation\_create}: Création d'un domaine de simulation en spécifiant ses dimensions ainsi que la valeur d'omega.
+\item \texttt{lbm\_simulation\_update}: Mets à jour les populations du domaine sur une itération.
+\item \texttt{lbm\_lattices\_read} et \texttt{lbm\_lattices\_read}: Transfert de l'intégralité des populations du domaine respectivement depuis et vers le \acs{GPU}.
 \item \texttt{lbm\_lattices\_read\_subdomain} et \texttt{lbm\_lattices\_write\_subdomain}: Transfert partiel du domaine.
 \item \texttt{lbm\_read\_palabos\_subdomain} et \texttt{lbm\_write\_palabos\_subdomain} : Transfert partiel du domaine avec réorganisation mémoire selon l'ordre utilisé par Palabos (voir section~\ref{title-strategie_reorganisation}).
 \end{itemize}
@@ -334,13 +345,13 @@ Ce découpage permet
 \item de déléguer les calculs à un \ac{CP} spécialisé.
 \end{enumerate*}
 
-Un \ac{CP} (ou accélérateur) est un module capable de calculer l'état d'un sous-domaine, normalement pris en charge par Palabos sur \ac{CPU}, mais cette fois confié par celui-ci. Son objectif est d'accélérer la vitesse des calculs en se spécialisant sur un certain type de sous-domaine. L'utilisation d'un \ac{CP} est illustrée dans le programme d'exemple \texttt{coProcessor}\footnote{dossier: \texttt{<palabos root>/examples/codesByTopic/coProcessor}} fourni dans Palabos où l'on distingue cinq étapes importantes.
+Un \ac{CP} (ou accélérateur) est un module capable de calculer l'état d'un sous-domaine, normalement pris en charge par Palabos sur \acs{CPU}, mais cette fois confié par celui-ci. Son objectif est d'accélérer la vitesse des calculs en se spécialisant sur un certain type de sous-domaine. L'utilisation d'un \ac{CP} est illustrée dans le programme d'exemple \texttt{coProcessor}\footnote{dossier: \texttt{<palabos root>/examples/codesByTopic/coProcessor}} fourni dans Palabos où l'on distingue cinq étapes importantes.
 
 \begin{enumerate}
 \item \textbf{Initialisation des \ac{CP}}: On commence par assigner un \ac{CP} aux sous-domaines désignés d'un espace de recherche découpé au préalable.
-\item \textbf{Transfert \ac{CPU} à \ac{CP}}: À ce stade, seul Palabos connaît l'état de l'espace de recherche. Par conséquent, on transfère les valeurs des populations dans les sous-domaines délégués aux \ac{CP}.
-\item \textbf{Calcul du \ac{CS}}: On calcule \textit{une} itération avec la \ac{LBM} sur l'ensemble des sous-domaines (avec Palabos et les \ac{CP}).
-\item \textbf{Transfert \ac{CP} à \ac{CPU}}: À ce stade, contrairement à la seconde étape, Palabos ignore l'état des sous-domaines assignés au \ac{CP}, que seuls eux connaissent. On transfère cette fois ces valeurs dans le sens opposé.
+\item \textbf{Transfert \acs{CPU} à \ac{CP}}: À ce stade, seul Palabos connaît l'état de l'espace de recherche. Par conséquent, on transfère les valeurs des populations dans les sous-domaines délégués aux \ac{CP}.
+\item \textbf{Calcul du \ac{CS}}: On calcule \textit{une} itération avec \ac{LBM}  sur l'ensemble des sous-domaines (avec Palabos et les \ac{CP}).
+\item \textbf{Transfert \ac{CP} à \acs{CPU}}: À ce stade, contrairement à la seconde étape, Palabos ignore l'état des sous-domaines assignés au \ac{CP}, que seuls eux connaissent. On transfère cette fois ces valeurs dans le sens opposé.
 \item \textbf{Duplication des chevauchements}:  Les enveloppes des sous-domaines se chevauchent. Il faut par conséquent dupliquer les valeurs d'un sous-domaine, calculé à l'étape précédente, dans les enveloppes des sous-domaines voisins.
 \end{enumerate}
 
@@ -352,11 +363,11 @@ Un co-processeur n'est autre qu'une classe qui hérite de \texttt{CoProcessor3D}
 \begin{itemize}
 \item \texttt{addDomain}: Associe un \texttt{ID} à un sous-domaine attribué au \ac{CP} et en défini les dimensions.
 \item \texttt{send}: Envoie l'état du sous-domaine, de la mémoire de Palabos vers celle du \ac{CP}.
-\item \texttt{collideAndStream}: Calcul une itération avec la \ac{LBM} sur un sous-domaine du \ac{CP}.
+\item \texttt{collideAndStream}: Calcule une itération sur un sous-domaine du \ac{CP}.
 \item \texttt{receive}: Envoie l'état du sous-domaine, de la mémoire du \ac{CP} vers celle de Palabos.
 \end{itemize}
 
-C'est ce mécanisme de \ac{CP} qui est utilisé pour donner à Palabos la capacité de calculer sur \acs{GPU}.
+C'est ce mécanisme de \ac{CP} qui est utilisé pour donner à Palabos la capacité de calculer un sous-domaine sur \acs{GPU}.
 
 \subsection{Transfert mémoire entre Palabos et un \acs{CP} }\label{title-transfert_palabos_cp}
 À chaque itération, il est nécessaire de transférer l'état des populations des sous-domaines deux fois:
@@ -365,7 +376,7 @@ C'est ce mécanisme de \ac{CP} qui est utilisé pour donner à Palabos la capaci
 \item \textbf{Après les avoir calculés sur les \ac{CP}}: depuis les \ac{CP} vers Palabos, pour propager leurs populations à l'itération suivante.
 \end{enumerate}
 
-Lors de l'appel à méthode \textit{send} et \textit{receive}, Palabos transmet un espace mémoire contiguë où les populations sont respectivement écrites et lues. Il est adressé en calculant l'index suivant:
+Lors de l'appel à méthode \texttt{send} et \texttt{receive}, Palabos transmet un espace mémoire contigu où les populations sont respectivement écrites et lues. Il est adressé en calculant l'index suivant:
 \begin{equation}
 i_{pal} = ( x*N_z*N_y + y*N_z + z) * 19 + dir
 \end{equation}
@@ -455,7 +466,7 @@ Comme le souligne la fin de la section~\ref{title-transfert_palabos_cp}, lorsque
 
 Deux stratégies de réorganisation ont été explorées:
 \begin{enumerate}
-\item \textbf{Réorganisation sur \ac{CPU} et transfert}: Cette stratégie réarrange les données reçues ou à transférer sur le \acs{CPU} dans l'ordre qu'utilise le \acs{GPU} en mémoire globale et tente de profiter de la forme du sous-domaine transmis pour réduire le nombre d'appels à \texttt{cudaMemcpy} lorsque la mémoire est contiguë.
+\item \textbf{Réorganisation sur \acs{CPU} et transfert}: Cette stratégie réarrange les données reçues ou à transférer sur le \acs{CPU} dans l'ordre qu'utilise le \acs{GPU} en mémoire globale et tente de profiter de la forme du sous-domaine transmis pour réduire le nombre d'appels à \texttt{cudaMemcpy} lorsque la mémoire est contiguë.
 
 L'ordre dans lequel la réorganisation et le transfert ont lieu dépend de l'opération:
 \begin{itemize}
@@ -483,9 +494,7 @@ L'étape de transfert tire parti des faces dont l'adressage est contigu pour ré
 On constate que le nombre de \texttt{cudaMemcpy} devient très important sur les faces dont les indices ne sont pas consécutifs. De plus, ils ne transfèrent qu'une seule valeur à la fois. Une telle face, d'un domaine $100\time100\times100$, nécessite 190000 appels à \texttt{cudaMemcpy} pour être transférée. 
 Cette stratégie offre par conséquent de très mauvaises performances.
 
-\item \textbf{Transfert et réorganisation sur \ac{GPU}}: Plutôt que réorganiser les données sur le \acs{CPU}, cette stratégie utilise à cette fin le \acs{GPU} et transfère d'un seul bloc les données entre le \acs{CPU} et le \acs{GPU} avec un unique \texttt{cudaMemcpy}.
-
-Encore une fois, l'opération dicte l'ordre dans lequel la réorganisation et le transfert à lieu ont lieu:
+\item \textbf{Transfert et réorganisation sur \acs{GPU}}: Plutôt que réorganiser les données sur le \acs{CPU}, cette stratégie utilise à cette fin le \acs{GPU} et transfère d'un seul bloc les données entre le \acs{CPU} et le \acs{GPU} avec un unique \texttt{cudaMemcpy}. Là encore, l'opération dicte l'ordre dans lequel la réorganisation et le transfert à lieu ont lieu:
 \begin{itemize}
 	\item \texttt{send}:
 	\begin{enumerate}
@@ -502,7 +511,7 @@ Encore une fois, l'opération dicte l'ordre dans lequel la réorganisation et le
 
 On observe une inversion de l'ordre des opérations, par rapport à la stratégie précédente. Dans le cas du \texttt{send}, les données sont directement transférées au \acs{GPU}, puis exécutent un \textit{kernel} dédié à la réorganisation et la copie des données vers la structure de donnée utilisées par le \textit{kernel} de calcul.
 
-Dans le cas du \textit{receive}, un autre kernel, dédié cette fois à la réorganisation et la copie des données depuis la structure de donnée de calcul, est exécuté avant que les donnés soient finalement transférés du \acs{GPU} au \acs{CPU}.
+Dans le cas du \textit{receive}, un autre \textit{kernel}, dédié cette fois à la réorganisation et la copie des données depuis la structure de donnée de calcul, est exécuté avant que les donnés soient finalement transférés du \acs{GPU} au \acs{CPU}.
 
 Cette méthode réduit à la fois considérablement le nombre d'appels à \texttt{cudaMemcpy} et profite de capacité de parallélisation du \acs{GPU} pour accélérer la réorganisation des données. Elle présente ainsi de bien meilleures performances.
 
@@ -543,7 +552,7 @@ Cette méthode réduit à la fois considérablement le nombre d'appels à \textt
 \end{figure}
 
 \subsection{Simulation d'écoulement dans une cavité} \label{title-cavity_benchmark}
-Pour tester l'intégration à Palabos et en mesurer les performances, l'implémentation \texttt{cavity\_benchmark} a été réalisée. À l'exception de quelques modifications (destinées à rendre les exécutions configurables notamment), leur code est essentiellement copié de l'exemple \texttt{coProcessor} fournit dans par Palabos.
+Pour tester l'intégration à Palabos et en mesurer les performances, l'implémentation \texttt{cavity\_benchmark} a été réalisée. À l'exception de quelques modifications (destinées à rendre les exécutions configurables notamment), leur code est essentiellement copié de l'exemple \texttt{coProcessor} fournit par Palabos.
 
 Cette implémentation simule l'écoulement d'un fluide dans une cavité. Le domaine est cubique et découpé en vingt-sept sous-domaines. Il est possible de choisir les dimensions du domaine central. Les autres domaines ajustent alors les leurs automatiquement. La figure~\ref{fig:decoupage_sous_domaine_cavity_benchmark} illustre le découpage et dimensionnement des sous-domaines pour deux exemples. Le premier pour un sous-domaine central dont les côtés mesurent le $\nicefrac{1}{3}$ de ceux du domaine et  $\nicefrac{2}{3}$ pour le second.
 
@@ -570,5 +579,5 @@ Cette implémentation simule l'écoulement d'un fluide dans une cavité. Le doma
 	\label{fig:decoupage_sous_domaine_cavity_benchmark}
 \end{figure}
 
-Le sous-domaine central est confié au co-processeur \acs{GPU} implémenté (ou à un co-processeur \acs{CPU} à des fins de test si on le désire) tandis que les vingt-six autres qui l'entourent sont calculés sur le \acs{CPU} par Palabos.
+Le sous-domaine central est confié au co-processeur \acs{GPU} (ou à un co-processeur \acs{CPU} à des fins de test si on le désire) tandis que les vingt-six autres qui l'entourent sont calculés sur le \acs{CPU} par Palabos.
 

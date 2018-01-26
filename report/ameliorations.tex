@@ -1,30 +1,30 @@
 \section{Erreur de déallocation de mémoire globale}
 
-La bibliothèque \texttt{lbmcuda} implémente la fonction \texttt{lbm\_simulation\_destroy} qu'elle prévoit pour désallouer des ressources utilisées en mémoire globale du \acs{GPU} à l'aide d'appel à \texttt{cudaFree}. Cette fonction est par conséquent appelée dans le destructeur de la classe \texttt{D3Q19CudaCoProcessor3D} de Palabos, pour libérer la mémoire lorsque le co-processeur \acs{GPU} est détruit. Toutefois, lors de l'appel au destructeur, les \textit{assert} placé autour des \texttt{cudaFree} dans \texttt{lbm\_simulation\_destroy} soulèvent que ceux-ci ont échoué à avec l'erreur suivante:
+La bibliothèque \texttt{lbmcuda} implémente la fonction \texttt{lbm\_simulation\_destroy} qu'elle prévoit pour désallouer des ressources utilisées en mémoire globale du \acs{GPU} à l'aide d'appel à \texttt{cudaFree}. Cette fonction est par conséquent appelée dans le destructeur de la classe \texttt{D3Q19CudaCoProcessor3D} de Palabos, pour libérer la mémoire lorsque le co-processeur \acs{GPU} est détruit. Toutefois, lors de l'appel au destructeur, les \textit{assert} placé autour des \texttt{cudaFree} dans \texttt{lbm\_simulation\_destroy} soulèvent que ceux-ci ont échoué avec l'erreur suivante:
 
 \begin{center}
 \texttt{driver shutting down}
 \end{center}
 
-\noindent Ce problème est connu avec l'utilisation de \texttt{cudaFree} dans un destructeur \cite{ZZZweb_stack_2018, ZZZweb_stack_2018-1} et il est difficile de le corriger. Il ne pose toutefois pas vraiment problème, puisqu'il apparait lorsque la simulation est terminée, et que l'execution de Palabos se termine. Par conséquent, la mémoire est, normalement, libérée automatiquement lorsque le processus prend fin.
+\noindent Ce problème est connu avec l'utilisation de \texttt{cudaFree} dans un destructeur \cite{ZZZweb_stack_2018, ZZZweb_stack_2018-1} et il est difficile de le corriger. Il ne pose toutefois pas vraiment problème, puisqu'il apparait lorsque la simulation est terminée, et que l'exécution de Palabos se termine. Par conséquent, la mémoire est, normalement, libérée automatiquement lorsque le processus prend fin.
 
-\section{Entrelacement du kernel de transfert et de calcul}
-Une optimisation de l'implémentation \acs{GPU} envisageable consiste à utilisée la méthode, proposée par \citet{feichtinger_performance_2015}, qui consiste à entrelacer l'exécution d'un kernel de transfert et d'un kernel de calcul. Le premier à la charge du transfert ainsi que du calcul de la bordure du sous-domaine, tandis que le second calcul le reste du sous-domaine, qui n'a alors plus de dépendance avec la bordure.
+\section{Entrelacement du \textit{kernel} de transfert et de calcul}
+Une optimisation de l'implémentation \acs{GPU} envisageable consiste à utiliser la méthode, proposée par \citet{feichtinger_performance_2015}, qui consiste à entrelacer l'exécution d'un \textit{kernel} de transfert et d'un \textit{kernel} de calcul. Le premier à la charge du transfert ainsi que du calcul de la bordure du sous-domaine, tandis que le second calcul le reste du sous-domaine, qui n'a alors plus de dépendance avec la bordure.
 
 Cette méthode permet ainsi de masquer au moins une partie du temps de transfert, l'étape la plus gourmande en temps d'exécution. 
 
 \section{Fusion des tableaux de population}
 
-L'implémentation souffre encore du nombre important de registre qu'elle requiert, et par conséquent des accès la mémoire local du \acs{GPU} qui en résulte. Plusieurs méthodes pour en réduire le nombre sont proposées par \citet{tran_performance_2017}. L'une d'elle pourrait encore être appliquée par la fusion des tableaux qui conservent les directions des populations. 
+L'implémentation souffre encore du nombre important de registres qu'elle requiert, et par conséquent des accès à la mémoire local du \acs{GPU} qui en résulte. Plusieurs méthodes pour en réduire leur nombre sont proposées par \citet{tran_performance_2017}. L'une d'elles pourrait encore être appliquée par la fusion des tableaux qui conservent les directions des populations. 
 
-En effet, une structure (figure~\ref{fig:struct_c_population}) accueil les tableaux de chaque direction, qui sont alloué chacun indépendamment.
+En effet, une structure (figure~\ref{fig:struct_c_population}) accueille les tableaux de chaque direction, qui sont alloué chacun indépendamment.
 
 \begin{figure}
 \centering
 \label{fig:struct_c_population}
 \lstinputlisting[linerange={17-40}]{../implementation/Libraries/lbmcuda/lbmcuda.h}
-\caption{Structure C pour l'arrangement \acs{SoA} des populations sur le kernel}
+\caption{Structure C pour l'arrangement \acs{SoA} des populations sur le \textit{kernel}}
 \end{figure}
 
 
-Moyennant une adaptation du calcul de l'index d'une population, cette structure pourrait être remplacée par l'utilisation d'un seul tableau contenant toutes les directions, toujours avec un arrangement \acs{SoA}. Cette méthode pourrait économiser quelques registres, puisque un seul un pointeur devrait être conservé, à la place de dix-neuf.
+Moyennant une adaptation du calcul de l'index d'une population, cette structure pourrait être remplacée par l'utilisation d'un seul tableau contenant toutes les directions, toujours avec un arrangement \acs{SoA}. Cette méthode pourrait économiser quelques registres, puisque seul un pointeur serait conservé, à la place de dix-neuf.
