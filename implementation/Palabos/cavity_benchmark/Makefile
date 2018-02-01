@@ -29,6 +29,11 @@ RPD?=1
 NP=1
 MPICMD=$(subst 1,mpirun -np $(NP),$(subst $(NP),,1))
 
+# External libraries path to compile with their makefiles
+LBMCUDA_PATH=../../Libraries/lbmcuda 
+TIMING_PATH=../../Libraries/timing
+LIBDEP=$(LBMCUDA_PATH) $(TIMING_PATH)
+
 # USE: multiple arguments are separated by spaces.
 #   For example: projectFiles = file1.cpp file2.cpp
 #                optimFlags   = -O -finline-functions
@@ -56,9 +61,9 @@ usePOSIX     = true
 # Path to external source files (other than Palabos)
 srcPaths =
 # Path to external libraries (other than Palabos)
-libraryPaths = ../../Libraries/timing
+libraryPaths = $(TIMING_PATH)
 # Path to inlude directories (other than Palabos)
-includePaths = ../../Libraries/timing
+includePaths = $(TIMING_PATH)
 # Dynamic and static libraries (other than Palabos)
 libraries    = -ltiming $(if $(filter $(shell uname),Linux),-lrt)
 
@@ -167,9 +172,10 @@ define SConsArgs
 	$(shell printf '$(subst $(newline),\n,${SConsArgsDefinition})')
 endef
 
-LBMCUDA_PATH=../../Libraries/lbmcuda 
+compile: libraries $(BINDIR)/$(GPUBIN) $(BINDIR)/$(CPUBIN)
 
-compile: $(BINDIR)/$(GPUBIN) $(BINDIR)/$(CPUBIN)
+libraries: 
+	@$(foreach library, $(LIBDEP), $(MAKE) -C $(library) | grep -v 'Nothing to be done for $(library)' || $$true;)
 
 $(BINDIR)/$(CPUBIN): compileFlags += -DPLB_NO_CUDA
 $(BINDIR)/$(GPUBIN): libraries += -llbmcuda
@@ -279,14 +285,14 @@ $(OUTDIR)/$(BENPRE)%.dat: $(BENDIR)/%.ben $(BENDIR)/%.nrg
 
 define get_dat_legend
 	$(eval xpu=$(shell echo $(1) | grep -q gpu && echo "GPU" || echo "CPU")) \
-	$(eval transfert=$(shell echo $(1) | grep -q boundary && echo "boundaries" || echo "full domain")) \
+	$(eval transfert=$(shell echo $(1) | grep -q boundary && echo "partiel" || echo "complet")) \
 	$(eval mpi=$(shell echo $(1) | grep -q mpi && echo "with MPI ")) \
 	'$(xpu) $(mpi)($(transfert))'
 endef
 
 benchplot: 
 	@$(foreach benchmark, $(BENCHMARKS), \
-		$(eval image=${subst $(BENDIR)/,$(OUTDIR)/,$(benchmark:.ben=.pdf)}) \
+		$(eval image=${subst $(BENDIR)/,$(OUTDIR)/$(OUTPRE),$(benchmark:.ben=.pdf)}) \
 		$(eval dats=$(shell ls ${subst $(BENDIR)/,$(OUTDIR)/*,$(benchmark:.ben=.dat)} | grep -v repeat)) \
 		python3 $(PLOTSCRIPT) $(benchmark) $(image) $(foreach dat, $(dats), $(dat) $(call get_dat_legend, $(dat)) ); \
 	)	
